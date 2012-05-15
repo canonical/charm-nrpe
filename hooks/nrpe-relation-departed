@@ -1,0 +1,17 @@
+#!/bin/sh
+# This must be renamed to the name of the relation. The goal here is to
+# affect any change needed by the remote unit leaving the relationship.
+# This script should be idempotent.
+
+set -e
+
+juju-log $JUJU_REMOTE_UNIT departed
+
+# FIXME: disabled as I can't get it to work.
+#juju-log "Removing $(relation-get private-address) from allowed ips."
+## FIXME: need to escape the address
+#sed -i "/allowed_hosts=/s/$(relation-get private-address)//g" /etc/nagios/nrpe.cfg
+## Clean up 
+#sed -i "/allowed_hosts=/s/,,/,/" /etc/nagios/nrpe.cfg
+#sed -i "/allowed_hosts=/s/,$/,/" /etc/nagios/nrpe.cfg
+#service nagios-nrpe-server reload

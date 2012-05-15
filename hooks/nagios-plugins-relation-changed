@@ -1,0 +1,12 @@
+#!/bin/sh
+# This script should be idempotent.
+
+set -e
+
+rm /etc/nagios/nrpe.d/plugin-*.cfg
+
+relation-get nagios-plugins | while read NAME COMMAND; do
+    echo "command[$NAME]=$COMMAND" >> /etc/nagios/nrpe.d/plugin-$NAME.cfg
+done
+
+service nagios-nrpe-server reload

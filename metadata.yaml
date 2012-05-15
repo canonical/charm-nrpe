@@ -1,5 +1,6 @@
 name: nagios-nrpe-server
 summary: Nagios Remote Plugin Executor Server
+subordinate: true
 description: |
   Nagios is a host/service/network monitoring and management system.  The
   purpose of this addon is to allow you to execute Nagios plugins on a
@@ -7,11 +8,9 @@ description: |
   as a background process on the remote host and processes command
   execution requests from the check_nrpe plugin on the Nagios host.
 provides:
-  relation-name:
-    interface: interface-name
+  nrpe:
+    interface: nrpe
 requires:
-  relation-name:
-    interface: interface-name
-peers:
-  relation-name:
-    interface: interface-name
+  nagios-plugins:
+    interface: nagios-plugins
+    scope: container

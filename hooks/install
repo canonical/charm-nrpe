@@ -2,4 +2,6 @@
 # Here do anything needed to install the service
 # i.e. apt-get install -y foo  or  bzr branch http://myserver/mycode /srv/webroot
 
+set -e
+
 apt-get install -y nagios-nrpe-server

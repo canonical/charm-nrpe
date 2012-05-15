@@ -1,0 +1,10 @@
+#!/bin/sh
+# This script should be idempotent.
+
+set -e
+
+juju-log $JUJU_REMOTE_UNIT joined
+
+juju-log "Adding $(relation-get private-address) to allowed_hosts."
+sed -i "s/\(allowed_hosts=.*\)/\1,$(relation-get private-address)/" /etc/nagios/nrpe.cfg
+service nagios-nrpe-server reload
