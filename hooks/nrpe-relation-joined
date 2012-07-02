@@ -1,10 +1,21 @@
-#!/bin/sh
+#!/bin/bash
 # This script should be idempotent.
 
 set -e
 
-juju-log $JUJU_REMOTE_UNIT joined
+. /usr/share/charm-helpers/sh/net.sh
+. hooks/nrpe.common.sh
 
-juju-log "Adding $(relation-get private-address) to allowed_hosts."
-sed -i "s/\(allowed_hosts=.*\)/\1,$(relation-get private-address)/" /etc/nagios/nrpe.cfg
+# NRPE requires IP
+address=$(ch_get_ip $(relation-get private-address))
+
+juju-log "Adding $address to allowed_hosts."
+
+target="$datadir/$JUJU_RELATION_ID-$unit_name"
+mkdir -p $datadir
+echo -n $address, > $target
+
+# Use include dir instead
+sed -i "s/^\(allowed_hosts=.*\)$/#\1/" /etc/nagios/nrpe.cfg
+
 service nagios-nrpe-server reload
