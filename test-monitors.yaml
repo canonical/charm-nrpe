@@ -1,0 +1,13 @@
+# used for testing config-changed
+version: '0.1'
+monitors:
+    nrpe:
+        procs:
+            name: Procs2
+            args:
+                command: check_total_procz
+        me:
+            name: My stuff
+            args:
+                command: check_procs
+                args: [ '/usr/sbin/nrpe' ]

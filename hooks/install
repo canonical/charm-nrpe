@@ -5,3 +5,8 @@
 set -e
 
 apt-get install -y nagios-nrpe-server
+# used in base monitors
+cat > /etc/nagios/nrpe.d/base-monitors.cfg <<EOF
+command[check_root_disk]=/usr/lib/nagios/plugins/check_disk -w 20 -c 10 -p /
+command[check_swap]=/usr/lib/nagios/plugins/check_swap -w 70 -c 50
+EOF

@@ -1,14 +1,11 @@
 This charm provides an nrpe subordinate to integrate with nagios logging.
 
 Adding the charm as a subordinate to a service will run an nrpe server
-on the unit and allow for nagios to query the service using that
-server.
+on the unit and allow for nagios to query the service using that server.
 
-The service provides a 'nagios-plugins' interface to define the plugins
-that the nrpe server can use. The charm should 'relation-set nagios-plugins'
-with a list of "NAME COMMAND" pairs for the plugins. The name is a short
-string to identify the check, conventially starting with "check_". The
-command is the command to run to perform the check.
-
-How the nagios server is instructed to monitor that check for the host
-is yet to be defined.
+The service provides a 'nagios-plugins' container scoped interface
+to define the plugins that the nrpe server can use. The charm should
+'relation-set monitors=monitors' with a monitors.yaml in the same
+format as the 'monitors' relation seen in the nagios charm. This will
+be merged with the base monitors and any monitors configured via the
+monitors setting.

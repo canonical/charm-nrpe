@@ -10,7 +10,12 @@ description: |
 provides:
   nrpe:
     interface: nrpe
+  monitors:
+    interface: monitors
 requires:
   nagios-plugins:
     interface: nagios-plugins
+    scope: container
+  general-info:
+    interface: juju-info
     scope: container

@@ -1,0 +1,6 @@
+options:
+    monitors:
+        type: string
+        default: ""
+        description: |
+            Set this to yaml which will be overlayed on top of base-monitors.yaml

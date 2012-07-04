@@ -1,0 +1,18 @@
+version: '0.1'
+monitors:
+    nrpe:
+        procs:
+            name: Procs
+            args:
+                command: check_total_procs
+        disk_root:
+            name: Root Disk
+            args:
+                command: check_root_disk
+        swap:
+            name: Swap
+            args:
+                command: check_swap
+    http:
+        nagios:
+            args: '/nagios3/'

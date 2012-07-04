@@ -1,12 +1,27 @@
-#!/bin/sh
-# This script should be idempotent.
+#!/usr/bin/python
 
-set -e
+import glob
+import yaml
 
-rm /etc/nagios/nrpe.d/plugin-*.cfg
+# Clear out old ones
+for name in glob.glob('/etc/nagios/nrpe.d/plugin-*.cfg')
+    os.unlink(name)
 
-relation-get nagios-plugins | while read NAME COMMAND; do
-    echo "command[$NAME]=$COMMAND" >> /etc/nagios/nrpe.d/plugin-$NAME.cfg
-done
+monitor_yaml = subprocess.check_output(['relation-get','monitors'])
+# Primary will be merged with full
+with open('primary-monitors.yaml','w') as primary:
+    primary.write(monitor_yaml)
 
-service nagios-nrpe-server reload
+monitors = monitor_yaml.get('nrpe',[])
+
+# Write new ones
+for monitor,mattrs in monitors.iteritems():
+    with open('/etc/nagios/nrpe.d/plugin-%s.cfg' % monitor, 'w'):
+        args = mattrs.get('args','')
+        if len(args):
+            sep = ' '
+        else:
+            sep = ''
+        monitor.write("command[%s]=%s%s%s" % (monitor, sep, args)
+
+subprocess.check_call(['service','nagios-nrpe-server','reload'])
