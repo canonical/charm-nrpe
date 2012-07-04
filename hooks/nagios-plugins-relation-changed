@@ -17,12 +17,12 @@ monitors = monitor_yaml.get('nrpe',[])
 
 # Write new ones
 for monitor,mattrs in monitors.iteritems():
-    with open('/etc/nagios/nrpe.d/plugin-%s.cfg' % monitor, 'w'):
+    with open('/etc/nagios/nrpe.d/plugin-%s.cfg' % monitor, 'w') as pluginconf:
         args = mattrs.get('args','')
         if len(args):
             sep = ' '
         else:
             sep = ''
-        monitor.write("command[%s]=%s%s%s" % (monitor, sep, args))
+        pluginconf.write("command[%s]=%s%s%s\n" % (monitor, sep, args))
 
 subprocess.check_call(['service','nagios-nrpe-server','reload'])
