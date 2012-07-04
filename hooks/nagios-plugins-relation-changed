@@ -1,28 +1,36 @@
 #!/usr/bin/python
 
+import os
 import glob
 import yaml
+import json
 import subprocess
 
 # Clear out old ones
 for name in glob.glob('/etc/nagios/nrpe.d/plugin-*.cfg'):
     os.unlink(name)
 
-monitor_yaml = subprocess.check_output(['relation-get','monitors'])
+monitors = json.loads(subprocess.check_output(['relation-get','monitors','--format=json']))
+if type(monitors) == str:
+    monitors = yaml.safe_load(monitors)
+
 # Primary will be merged with full
 with open('primary-monitors.yaml','w') as primary:
-    primary.write(monitor_yaml)
+    primary.write(yaml.safe_dump(monitors))
 
-monitors = monitor_yaml.get('nrpe',[])
+if type(monitors) == dict and 'monitors' in monitors:
+    monitors = monitors['monitors']
+
+monitors = monitors.get('nrpe',[])
 
 # Write new ones
 for monitor,mattrs in monitors.iteritems():
     with open('/etc/nagios/nrpe.d/plugin-%s.cfg' % monitor, 'w') as pluginconf:
-        args = mattrs.get('args','')
+        args = mattrs.get('args',{}).get('args',[])
         if len(args):
             sep = ' '
         else:
             sep = ''
-        pluginconf.write("command[%s]=%s%s%s\n" % (monitor, sep, args))
+        pluginconf.write("command[%s]=%s%s%s\n" % (monitor, monitor, sep, sep.join(args)))
 
 subprocess.check_call(['service','nagios-nrpe-server','reload'])

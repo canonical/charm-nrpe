@@ -2,25 +2,33 @@
 """ Call with a single argument to read that yaml and print out the merge. """
 
 import sys
+import os.path
 import subprocess
 import yaml
+import json
 
 from recursive_dictionary import RecursiveDictionary
 
+base_yaml = RecursiveDictionary(yaml.safe_load(open('base-monitors.yaml','r')))
+yamls = []
 if len(sys.argv) > 1:
-    mon_yaml = yaml.safe_load(open(sys.argv[1]))
+    for f in sys.argv[1:]:
+        yamls.append(yaml.safe_load(open(f)))
 else:
-    mon_yaml = yaml.safe_load(subprocess.check_output(['config-get','monitors']))
+    yamls.append(yaml.safe_load(json.loads(subprocess.check_output(['config-get','monitors','--format=json']))))
+    if os.path.exists('primary-monitors.yaml'):
+        with open('primary-monitors.yaml') as pm:
+            yamls.append(yaml.safe_load(pm))
 
-if mon_yaml != '' and mon_yaml is not None:
-    base_yaml = RecursiveDictionary(yaml.safe_load(open('base-monitors.yaml','r')))
-    base_yaml.rec_update(mon_yaml)
-    base_yaml = dict(base_yaml)
-    mon_yaml = dict(base_yaml)
+for y in yamls:
+    if type(y) == dict:
+        base_yaml.rec_update(y)
+
+base_yaml = dict(base_yaml)
 
 if len(sys.argv) > 1:
-    print yaml.safe_dump(mon_yaml)
+    print yaml.safe_dump(base_yaml)
     sys.exit(0)
 
 with open('monitors.yaml','w') as end_yaml:
-    yaml.safe_dump(mon_yaml, end_yaml)
+    yaml.safe_dump(base_yaml, end_yaml)
