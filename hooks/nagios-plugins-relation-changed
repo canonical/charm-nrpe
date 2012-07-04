@@ -2,9 +2,10 @@
 
 import glob
 import yaml
+import subprocess
 
 # Clear out old ones
-for name in glob.glob('/etc/nagios/nrpe.d/plugin-*.cfg')
+for name in glob.glob('/etc/nagios/nrpe.d/plugin-*.cfg'):
     os.unlink(name)
 
 monitor_yaml = subprocess.check_output(['relation-get','monitors'])
@@ -22,6 +23,6 @@ for monitor,mattrs in monitors.iteritems():
             sep = ' '
         else:
             sep = ''
-        monitor.write("command[%s]=%s%s%s" % (monitor, sep, args)
+        monitor.write("command[%s]=%s%s%s" % (monitor, sep, args))
 
 subprocess.check_call(['service','nagios-nrpe-server','reload'])
