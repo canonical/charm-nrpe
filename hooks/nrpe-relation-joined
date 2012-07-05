@@ -3,8 +3,8 @@
 
 set -e
 
-. /usr/share/charm-helpers/sh/net.sh
-. hooks/nrpe.common.sh
+. /usr/share/charm-helper/sh/net.sh
+. hooks/nrpe.common.bash
 
 # NRPE requires IP
 address=$(ch_get_ip $(relation-get private-address))
@@ -17,5 +17,7 @@ echo -n $address, > $target
 
 # Use include dir instead
 sed -i "s/^\(allowed_hosts=.*\)$/#\1/" /etc/nagios/nrpe.cfg
+
+regen_allowed
 
 service nagios-nrpe-server reload

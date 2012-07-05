@@ -1,0 +1,5 @@
+#!/bin/bash
+set -e
+hooks/install
+hooks/config-changed
+hooks/nagios-plugins-relation-changed

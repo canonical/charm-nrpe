@@ -1,0 +1,9 @@
+#!/bin/bash
+# Same process to get IP allowed
+hooks/nrpe-relation-joined
+# Generate monitors.yaml
+hooks/config-changed
+# We use this hook outside hook context so update all of them
+for rel in $(relation-ids monitors) ; do
+    relation-set -r $rel monitors="$(cat monitors.yaml)"
+done

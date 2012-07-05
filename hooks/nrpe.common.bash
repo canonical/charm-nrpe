@@ -18,6 +18,7 @@ trap cleanup EXIT
 
 regen_allowed() {
     new_file=$(mktemp $(dirname $live_config)/.$(basename $live_config).XXXXXX)
+    chmod 0740 $new_file
     local addresses=$(cat $datadir/*|sed -e 's/,$//')
     echo allowed_hosts=$addresses > $new_file
     if [ -e $live_config ] ; then

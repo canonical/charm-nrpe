@@ -15,7 +15,11 @@ if len(sys.argv) > 1:
     for f in sys.argv[1:]:
         yamls.append(yaml.safe_load(open(f)))
 else:
-    yamls.append(yaml.safe_load(json.loads(subprocess.check_output(['config-get','monitors','--format=json']))))
+    cmon = json.loads(subprocess.check_output(['config-get','monitors','--format=json']))
+    if cmon is not None and type(cmon) != dict:
+        cmon = yaml.safe_load(cmon)
+    if cmon is not None:
+        yamls.append(cmon)
     if os.path.exists('primary-monitors.yaml'):
         with open('primary-monitors.yaml') as pm:
             yamls.append(yaml.safe_load(pm))

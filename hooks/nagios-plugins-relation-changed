@@ -10,7 +10,18 @@ import subprocess
 for name in glob.glob('/etc/nagios/nrpe.d/plugin-*.cfg'):
     os.unlink(name)
 
-monitors = json.loads(subprocess.check_output(['relation-get','monitors','--format=json']))
+if 'JUJU_RELATION_ID' in os.environ:
+    relargs = ['relation-get','monitors','--format=json']
+else:
+    # assume a single relation, since this is a subordinate container relationship
+    relation_id = subprocess.check_output(
+            ['relation-ids', 'nagios-plugins']).strip()
+    unit_name = subprocess.check_output(
+            ['relation-list', '-r',relation_id]).strip()
+    relargs = ['relation-get','monitors',unit_name, '--format=json',
+               '-r', relation_id]
+
+monitors = json.loads(subprocess.check_output(relargs))
 if type(monitors) == str:
     monitors = yaml.safe_load(monitors)
 
@@ -26,11 +37,10 @@ monitors = monitors.get('nrpe',[])
 # Write new ones
 for monitor,mattrs in monitors.iteritems():
     with open('/etc/nagios/nrpe.d/plugin-%s.cfg' % monitor, 'w') as pluginconf:
-        args = mattrs.get('args',{}).get('args',[])
-        if len(args):
-            sep = ' '
-        else:
-            sep = ''
-        pluginconf.write("command[%s]=%s%s%s\n" % (monitor, monitor, sep, sep.join(args)))
+        args = mattrs.get('args',{}).get('command',[])
+        pluginconf.write("command[%s]=%s\n" % (monitor, ' '.join(args)))
 
 subprocess.check_call(['service','nagios-nrpe-server','reload'])
+
+# And now inform any related monitors
+subprocess.check_call(['hooks/monitors-relation-joined'])
