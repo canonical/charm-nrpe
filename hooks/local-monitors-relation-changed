@@ -1,0 +1,19 @@
+#!/usr/bin/python
+import os
+import json
+import sys
+
+primary_id=os.environ.get('JUJU_REMOTE_UNIT','testing/0').replace('/','-')
+os.mkdir('data')
+with open('data/primary_id','w') as primid:
+    primid.write(primary_id)
+
+monitors = json.loads(subprocess.check_output(['relation-get','--format=json','monitors']))
+if monitors is None or len(monitors) == 0:
+    sys.exit(0)
+
+with open('primary-monitors.yaml', 'w') as pmons:
+    if type(monitors) == dict:
+        yaml.dumps(monitors, pmons)
+    else:
+        pmons.write(monitors)

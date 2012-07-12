@@ -5,5 +5,5 @@ hooks/nrpe-relation-joined
 hooks/config-changed
 # We use this hook outside hook context so update all of them
 for rel in $(relation-ids monitors) ; do
-    relation-set -r $rel monitors="$(cat monitors.yaml)"
+    relation-set -r $rel monitors="$(cat monitors.yaml)" target-id="$(cat data/target_id)"
 done

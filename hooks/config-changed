@@ -9,6 +9,8 @@ import json
 
 from recursive_dictionary import RecursiveDictionary
 
+PLUGIN_PATH = '/usr/lib/nagios/plugins'
+
 base_yaml = RecursiveDictionary(yaml.safe_load(open('base-monitors.yaml','r')))
 yamls = []
 if len(sys.argv) > 1:
@@ -29,6 +31,40 @@ for y in yamls:
         base_yaml.rec_update(y)
 
 base_yaml = dict(base_yaml)
+
+def make_command(mclass, mon):
+    cmd_name = 'check_true'
+    cmd_line = ['/usr/bin/true']
+
+    if mclass == 'procrunning' or mclass == 'processcount':
+        executable = mon.get('executable')
+        cmd_name = '%s_%s' % (mclass, executable.replace('/','_'))
+        range_arg = '%s:%s' % (mon.get('min'), mon.get('max'))
+        cmd = os.path.join(PLUGIN_PATH, 'check_procs')
+        cmd_line = [cmd,'-w',range_arg,'-c','range_arg']
+        if executable:
+            cmd_line.extend(('-C',executable))
+
+    try:
+        with open('/etc/nagios/nrpe.d/%s.cfg' % cmd_name, 'w') as cmdfile:
+            cmdfile.write('%s=%s' % (cmd_name, ' '.join(cmd_line)))
+    except IOError:
+        print '%s=%s' % (cmd_name, ' '.join(cmd_line))
+    return cmd_name
+
+# Now transform local's into remote nrpe's
+local = base_yaml['monitors']['local']
+out_remotes = base_yaml['monitors'].get('remote',{})
+for mclass, mons in local.iteritems():
+    if mclass in ('mem','swap'):
+        # singles
+        out_remotes[mclass] = {'command': 'check_%s' % mclass}
+    else:
+        # Could have many
+        for mname, mon in mons.iteritems():
+            remote_key = '%s-%s' % (mclass, mname)
+            command = make_command(mclass, mon)
+            out_remotes['nrpe'][remote_key] = {'command': command}
 
 if len(sys.argv) > 1:
     print yaml.safe_dump(base_yaml)
