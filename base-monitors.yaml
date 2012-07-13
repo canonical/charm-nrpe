@@ -1,11 +1,9 @@
 version: '0.3'
 monitors:
-    remote:
-        nrpe:
-            disk:
-                root:
-                    path: /
-            swap:
-                swap:
-            mem:
-                mem:
+    remote: {}
+    local:
+        swap:
+        mem:
+        disk:
+            root:
+                path: /
