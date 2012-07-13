@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import sys
 import glob
 import yaml
 import json
@@ -16,6 +17,8 @@ else:
     # assume a single relation, since this is a subordinate container relationship
     relation_id = subprocess.check_output(
             ['relation-ids', 'nagios-plugins']).strip()
+    if not relation_id:
+        sys.exit(0)
     unit_name = subprocess.check_output(
             ['relation-list', '-r',relation_id]).strip()
     relargs = ['relation-get','monitors',unit_name, '--format=json',

@@ -2,9 +2,12 @@
 import os
 import json
 import sys
+import subprocess
+import yaml
 
 primary_id=os.environ.get('JUJU_REMOTE_UNIT','testing/0').replace('/','-')
-os.mkdir('data')
+if not os.path.exists('data'):
+    os.mkdir('data')
 with open('data/primary_id','w') as primid:
     primid.write(primary_id)
 
@@ -14,6 +17,6 @@ if monitors is None or len(monitors) == 0:
 
 with open('primary-monitors.yaml', 'w') as pmons:
     if type(monitors) == dict:
-        yaml.dumps(monitors, pmons)
+        yaml.safe_dump(monitors, pmons)
     else:
         pmons.write(monitors)
