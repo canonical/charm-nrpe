@@ -37,28 +37,44 @@ def make_command(mclass, mon):
     cmd_line = ['/usr/bin/true']
 
     if mclass == 'procrunning' or mclass == 'processcount':
-        executable = mon.get('executable')
+        executable = mon.get('executable','')
         cmd_name = '%s_%s' % (mclass, executable.replace('/','_'))
-        range_arg = '%s:%s' % (mon.get('min'), mon.get('max'))
+        range_arg = '%s:%s' % (mon.get('min',''), mon.get('max',''))
         cmd = os.path.join(PLUGIN_PATH, 'check_procs')
-        cmd_line = [cmd,'-w',range_arg,'-c','range_arg']
+        cmd_line = [cmd,'-w',range_arg,'-c',range_arg]
         if executable:
             cmd_line.extend(('-C',executable))
+    elif mclass == 'mem':
+        cmd_name = 'check_mem'
+        cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                'plugins','check_mem.pl')
+        cmd_line = [cmd, '-w', '85', '-c', '90']
+    elif mclass == 'disk':
+        path = mon.get('path','/')
+        cmd_name = 'disk_%s' % (path.replace('/', '_'))
+        cmd = os.path.join(PLUGIN_PATH, 'check_disk')
+        cmd_line = [cmd, '-w', '20', '-c', '10', '-p', path]
 
     try:
-        with open('/etc/nagios/nrpe.d/%s.cfg' % cmd_name, 'w') as cmdfile:
-            cmdfile.write('%s=%s' % (cmd_name, ' '.join(cmd_line)))
+        outpath = '/etc/nagios/nrpe.d/%s.cfg' % (cmd_name)
+        with open(outpath, 'w') as cmdfile:
+            cmdfile.write('command[%s]=%s' % (cmd_name, ' '.join(cmd_line)))
     except IOError:
+        print 'cannot write to %s' % (outpath)
         print '%s=%s' % (cmd_name, ' '.join(cmd_line))
     return cmd_name
 
 # Now transform local's into remote nrpe's
-local = base_yaml['monitors']['local']
+local = base_yaml['monitors'].get('local',{})
 out_remotes = base_yaml['monitors'].get('remote',{})
 for mclass, mons in local.iteritems():
-    if mclass in ('mem','swap'):
+    if 'nrpe' not in out_remotes:
+        out_remotes['nrpe'] = {}
+    if mclass == 'swap':
         # singles
-        out_remotes[mclass] = {'command': 'check_%s' % mclass}
+        out_remotes['nrpe'][mclass] = {'command': 'check_%s' % mclass}
+    elif mclass == 'mem':
+        out_remotes['nrpe'][mclass] = {'command': make_command(mclass, {})}
     else:
         # Could have many
         for mname, mon in mons.iteritems():
@@ -72,3 +88,5 @@ if len(sys.argv) > 1:
 
 with open('monitors.yaml','w') as end_yaml:
     yaml.safe_dump(base_yaml, end_yaml)
+
+subprocess.call(['service','nagios-nrpe-server','restart'])
