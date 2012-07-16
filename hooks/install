@@ -4,7 +4,10 @@
 
 set -e
 
-apt-get install -y nagios-nrpe-server
+add-apt-repository -y ppa:charmers/charm-helpers
+apt-get update
+
+apt-get install -y nagios-nrpe-server charm-helper-sh
 # used in base monitors
 cat > /etc/nagios/nrpe.d/base-monitors.cfg <<EOF
 command[check_root_disk]=/usr/lib/nagios/plugins/check_disk -w 20 -c 10 -p /
