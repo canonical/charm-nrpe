@@ -1,4 +1,4 @@
-name: nagios-nrpe-server
+name: nrpe
 format: 2
 summary: Nagios Remote Plugin Executor Server
 subordinate: true
