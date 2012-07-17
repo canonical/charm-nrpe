@@ -1,6 +1,6 @@
 #!/bin/bash
 # Same process to get IP allowed
-relname=${JUJU_RELATION_ID##:*}
+relname=${JUJU_RELATION_ID%%:*}
 if [ "$relname" = "monitors" ] ; then
     hooks/nrpe-relation-joined
 fi
