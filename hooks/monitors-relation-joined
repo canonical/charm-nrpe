@@ -1,9 +1,14 @@
 #!/bin/bash
 # Same process to get IP allowed
-hooks/nrpe-relation-joined
+relname=${JUJU_RELATION_ID##:*}
+if [ "$relname" = "monitors" ] ; then
+    hooks/nrpe-relation-joined
+fi
 # Generate monitors.yaml
 hooks/config-changed
 # We use this hook outside hook context so update all of them
+target_id=$(cat data/primary_id ||:)
+[ -n "$target_id" ] || exit 0
 for rel in $(relation-ids monitors) ; do
     relation-set -r $rel monitors="$(cat monitors.yaml)" target-id="$(cat data/primary_id)"
 done

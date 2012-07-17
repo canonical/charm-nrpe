@@ -20,3 +20,7 @@ with open('primary-monitors.yaml', 'w') as pmons:
         yaml.safe_dump(monitors, pmons)
     else:
         pmons.write(monitors)
+
+# This may have already fired, without a target id, so
+# try it again
+subprocess.call(['hooks/monitors-relation-joined'])
