@@ -1,6 +1,7 @@
 name: nrpe
 format: 2
 summary: Nagios Remote Plugin Executor Server
+maintainer: Clint Byrum <clint@ubuntu.com>
 subordinate: true
 description: |
   Nagios is a host/service/network monitoring and management system.  The
