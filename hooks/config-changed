@@ -48,7 +48,7 @@ def make_command(mclass, mon):
         cmd_name = 'check_mem'
         cmd = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                 '..', 'plugins', 'check_mem.pl'))
-        cmd_line = [cmd, '-u', '-w', '85', '-c', '90']
+        cmd_line = [cmd, '-C', '-u', '-w', '85', '-c', '90']
     elif mclass == 'disk':
         path = mon.get('path','/')
         cmd_name = 'disk_%s' % (path.replace('/', '_'))
