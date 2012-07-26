@@ -15,9 +15,6 @@ provides:
   monitors:
     interface: monitors
 requires:
-  nagios-plugins:
-    interface: nagios-plugins
-    scope: container
   local-monitors:
     interface: local-monitors
     scope: container
