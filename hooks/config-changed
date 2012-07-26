@@ -71,8 +71,15 @@ for mclass, mons in local.iteritems():
     if 'nrpe' not in out_remotes:
         out_remotes['nrpe'] = {}
     if mclass == 'swap':
-        # singles
-        out_remotes['nrpe'][mclass] = {'command': 'check_%s' % mclass}
+        # is there even swap on this box?
+        with open('/proc/swaps') as pswaps:
+            for line in pswaps:
+                # skip headers
+                if line[0] != '/':
+                    continue
+                # We have at least one swap partition
+                out_remotes['nrpe'][mclass] = {'command': 'check_swap'}
+                break
     elif mclass == 'mem':
         out_remotes['nrpe'][mclass] = {'command': make_command(mclass, {})}
     else:
