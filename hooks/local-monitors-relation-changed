@@ -5,7 +5,11 @@ import sys
 import subprocess
 import yaml
 
-primary_id=os.environ.get('JUJU_REMOTE_UNIT','testing/0').replace('/','-')
+if not 'JUJU_REMOTE_UNIT' in os.environ:
+    print 'Need JUJU_REMOTE_UNIT to run'
+    sys.exit(0)
+
+primary_id=os.environ['JUJU_REMOTE_UNIT'].replace('/','-')
 if not os.path.exists('data'):
     os.mkdir('data')
 with open('data/primary_id','w') as primid:

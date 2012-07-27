@@ -1,8 +1,11 @@
 #!/bin/bash
+set -e
 # Same process to get IP allowed
-relname=${JUJU_RELATION_ID%%:*}
-if [ "$relname" = "monitors" ] ; then
-    hooks/nrpe-relation-joined
+if [ "$1" -ne "reset" ] ; then
+    relname=${JUJU_RELATION_ID%%:*}
+    if [ "$relname" = "monitors" ] ; then
+        hooks/nrpe-relation-joined
+    fi
 fi
 # Generate monitors.yaml
 hooks/config-changed

@@ -2,4 +2,4 @@
 set -e
 hooks/install
 hooks/config-changed
-hooks/local-monitors-relation-changed
+hooks/monitors-relation-joined reset
