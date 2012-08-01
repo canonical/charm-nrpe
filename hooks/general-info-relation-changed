@@ -9,4 +9,4 @@ if not os.path.exists('data'):
 with open('data/primary_id','w') as primid:
     primid.write(primary_id)
 
-subprocess.call(['hooks/monitors-relation-changed'])
+subprocess.call(['hooks/monitors-relation-joined'])
