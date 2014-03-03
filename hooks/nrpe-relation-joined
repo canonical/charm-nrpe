@@ -7,7 +7,7 @@ set -e
 . hooks/nrpe.common.bash
 
 # NRPE requires IP
-address=$(ch_get_ip $(relation-get private-address))
+address=`nslookup $(unit-get private-address) | grep Add | grep -v '#' | cut -f 2 -d ' '`
 
 juju-log "Adding $address to allowed_hosts."
 
