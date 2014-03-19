@@ -3,11 +3,13 @@
 
 set -e
 
-. /usr/share/charm-helper/sh/net.sh
+return 1
+
+. lib/net.sh
 . hooks/nrpe.common.bash
 
 # NRPE requires IP
-address=`nslookup $(unit-get private-address) | grep Add | grep -v '#' | cut -f 2 -d ' '`
+address=$(ch_get_ip $(relation-get private-address))
 
 juju-log "Adding $address to allowed_hosts."
 
