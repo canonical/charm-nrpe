@@ -3,7 +3,7 @@
 
 set -e
 
-. /usr/share/charm-helper/sh/net.sh
+. lib/net.sh
 . hooks/nrpe.common.bash
 
 # NRPE requires IP
