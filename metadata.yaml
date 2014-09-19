@@ -9,6 +9,7 @@ description: |
   remote host in as transparent a manner as possible.  This program runs
   as a background process on the remote host and processes command
   execution requests from the check_nrpe plugin on the Nagios host.
+categories: ["misc"]
 provides:
   nrpe:
     interface: nrpe
