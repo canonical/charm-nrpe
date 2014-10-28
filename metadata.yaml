@@ -1,7 +1,6 @@
 name: nrpe
-format: 2
 summary: Nagios Remote Plugin Executor Server
-maintainer: Clint Byrum <clint@ubuntu.com>
+maintainers: [ "Clint Byrum <clint@ubuntu.com>", "Eric Mislivec <emislivec@nagios.com>" ]
 subordinate: true
 description: |
   Nagios is a host/service/network monitoring and management system.  The
@@ -9,7 +8,7 @@ description: |
   remote host in as transparent a manner as possible.  This program runs
   as a background process on the remote host and processes command
   execution requests from the check_nrpe plugin on the Nagios host.
-categories: ["misc"]
+tags: ["misc"]
 provides:
   nrpe:
     interface: nrpe

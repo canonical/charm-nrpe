@@ -1,0 +1,25 @@
+nrpe-nagios-mysql: 
+  services:
+    nrpe:
+      charm: nrpe
+      num_units: 0
+    nagios:
+      charm: cs:trusty/nagios
+      num_units: 1
+      expose: true
+    mysql:
+      charm: cs:trusty/mysql
+      num_units: 1
+    ubuntu:
+      charm: cs:trusty/ubuntu
+      num_units: 1
+  relations:
+    - - "mysql:local-monitors"
+      - "nrpe:local-monitors"
+    - - "nagios:nagios"
+      - "ubuntu:juju-info"
+    - - "nrpe:monitors"
+      - "nagios:monitors"
+    - - "nrpe:general-info"
+      - "ubuntu:juju-info"
+  series: trusty
