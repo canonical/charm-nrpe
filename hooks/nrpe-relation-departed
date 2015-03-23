@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -e
-
-. hooks/nrpe.common.bash
-rm -f $datadir/$JUJU_RELATION_ID-$unit_name
-regen_allowed

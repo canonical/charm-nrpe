@@ -1,6 +1,86 @@
 options:
-    monitors:
-        type: string
-        default:
-        description: |
-            Set this to yaml which will be overlayed on top of base-monitors.yaml
+  nagios_master:
+    default: "None"
+    type: string
+    description: IP address of the nagios master to allow rsyncs from
+  server_port:
+    default: 5666
+    type: int
+    description: port that nagios-nrpe-server will listen on
+  nagios_address_type:
+    default: "private"
+    type: string
+    description: |
+        Determines whether the nagios host check should use the private
+        or public IP address of an instance.  Can be "private" or "public".
+  nagios_host_context:
+    default: "juju"
+    type: string
+    description: |
+        a string that will be prepended to instance name to set the host name
+        in nagios. So for instance the hostname would be something like:
+            juju-postgresql-0
+        If you're running multiple environments with the same services in them
+        this allows you to differentiate between them.
+  nagios_hostname_type:
+    default: "unit"
+    type: string
+    description: |
+        Determines whether a server is identified by its unit name or
+        host name.  If you're in a virtual environment, "unit" is
+        probably best.  If you're using MaaS, you may prefer "host".
+  disk_root:
+    default: "-u GB -w 25% -c 20% -K 5%"
+    type: string
+    description: |
+        Root disk check. This can be made to also check non-root disk systems
+        as follows:
+            -u GB -w 20% -c 15% -r '/srv/juju/vol-' -C -u GB -w 25% -c 20%
+        The string '-p /' will be appended to this check, so you must finish
+        the string taking that into account. See the nagios check_disk plugin
+        help for further details.
+  zombies:
+    default: "-w 3 -c 6 -s Z"
+    type: string
+    description: Zombie processes check
+  procs:
+    default: "auto"
+    type: string
+    description: Number of processes check or 'auto' for the charm to generate
+        thresholds based on processor count
+  load:
+    default: "-w 8,8,8 -c 15,15,15"
+    type: string
+    description: Load check
+  users:
+    default: "-w 20 -c 25"
+    type: string
+    description: Users check
+  swap:
+    default: "-w 90% -c 75%"
+    type: string
+    description: Swap check
+  mem:
+    default: "-C -u -w 85 -c 90"
+    type: string
+    description: Memory check
+  monitors:
+    default: ''
+    type: string
+    description: |
+        Additional monitors defined in the monitors yaml format (see README)
+  hostgroups:
+    default: ""
+    type: string
+    description: Comma separated list of hostgroups to add for these hosts
+  hostcheck_inherit:
+    default: "server"
+    type: string
+    description: Hostcheck to inherit
+  export_nagios_definitions:
+    default: False
+    type: boolean
+    description: |
+        If True nagios check definitions are written to
+        '/var/lib/nagios/export' and rync is configured to allow nagios_master
+        to collect them. Useful when Nagios is outside of the juju environment

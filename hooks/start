@@ -1,4 +1,1 @@
-#!/bin/bash
-set -e
-
-service nagios-nrpe-server status || service nagios-nrpe-server start
+nrpe_hooks.py

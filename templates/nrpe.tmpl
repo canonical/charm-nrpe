@@ -1,0 +1,16 @@
+#--------------------------------------------------------
+# This file is managed by Juju
+#--------------------------------------------------------
+
+server_port={{ server_port }}
+allowed_hosts={{ external_nagios_master }},{{ monitor_allowed_hosts }}
+nrpe_user=nagios
+nrpe_group=nagios
+dont_blame_nrpe=0
+debug=0
+command_timeout=60
+pid_file=/var/run/nagios/nrpe.pid
+
+# All configuration snippets go into nrpe.d/
+include_dir=/etc/nagios/nrpe.d/
+

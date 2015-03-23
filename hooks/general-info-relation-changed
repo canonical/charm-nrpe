@@ -1,12 +1,1 @@
-#!/usr/bin/python
-
-import os
-import subprocess
-
-primary_id=os.environ.get('JUJU_REMOTE_UNIT','testing/0').replace('/','-')
-if not os.path.exists('data'):
-    os.mkdir('data')
-with open('data/primary_id','w') as primid:
-    primid.write(primary_id)
-
-subprocess.call(['hooks/monitors-relation-joined'])
+nrpe_hooks.py

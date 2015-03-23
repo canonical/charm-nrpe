@@ -1,5 +1,1 @@
-#!/bin/bash
-set -e
-hooks/install
-hooks/config-changed
-hooks/monitors-relation-joined reset
+nrpe_hooks.py

@@ -1,0 +1,10 @@
+#---------------------------------------------------
+# This file is Juju managed
+#--------------------------------------------------
+
+define host {
+    address     {{ nagios_ipaddress }}
+    host_name   {{ nagios_hostname }}
+    use         {{ hostcheck_inherit }}
+    hostgroups  machines, {{ hostgroups }}
+}

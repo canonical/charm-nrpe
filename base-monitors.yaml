@@ -1,9 +1,0 @@
-version: '0.3'
-monitors:
-    remote: {}
-    local:
-        swap:
-        mem:
-        disk:
-            root:
-                path: /
