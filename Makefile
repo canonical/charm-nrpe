@@ -1,8 +1,13 @@
 #!/usr/bin/make
 PYTHON := /usr/bin/env python
+export PYTHONPATH := hooks
 
-lint:
-	@flake8 --exclude hooks/charmhelpers hooks unit_tests tests/10-tests
+virtualenv:
+	virtualenv .venv
+	.venv/bin/pip install flake8 nose mock six
+
+lint: virtualenv
+	.venv/bin/flake8 --exclude hooks/charmhelpers hooks tests/10-tests
 	@charm proof
 
 bin/charm_helpers_sync.py:
