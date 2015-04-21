@@ -197,7 +197,10 @@ class NRPECheckCtxt(dict):
             self['cmd_exec'] = plugin_path + '/check_procs'
             self['description'] = 'Check process count'
             self['cmd_name'] = 'check_proc_principle'
-            self['cmd_params'] = '-w {min} -c {max}'.format(**check_opts)
+            if 'min' in check_opts:
+                self['cmd_params'] = '-w {min} -c {max}'.format(**check_opts)
+            else:
+                self['cmd_params'] = '-c {max}'.format(**check_opts)
         elif checktype == 'disk':
             self['cmd_exec'] = plugin_path + '/check_disk'
             self['description'] = 'Check disk usage ' + \
