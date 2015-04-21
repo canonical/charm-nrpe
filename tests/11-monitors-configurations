@@ -1,0 +1,58 @@
+#!/usr/bin/python3
+
+import amulet
+import requests
+
+seconds = 20000
+
+d = amulet.Deployment(series='trusty')
+
+d.add('nagios')
+d.add('mysql')
+d.add('nrpe')
+
+d.relate('nagios:monitors', 'mysql:monitors')
+d.relate('nrpe:monitors', 'nagios:monitors')
+d.relate('nrpe:local-monitors', 'mysql:local-monitors')
+
+d.expose('nagios')
+
+try:
+    d.setup(timeout=seconds)
+except amulet.helpers.TimeoutError:
+    amulet.raise_status(amulet.SKIP, msg="Environment wasn't stood up in time")
+except:
+    raise
+
+
+##
+# Set relationship aliases
+##
+mysql_unit = d.sentry.unit['mysql/0']
+nagios_unit = d.sentry.unit['nagios/0']
+
+
+def test_nrpe_monitors_config():
+    # look for procrunning in nrpe config
+    try:
+        mysql_unit.file_contents('/etc/nagios/nrpe.d/procrunning_mysqld.cfg')
+    except IOError as e:
+        amulet.raise_status(amulet.ERROR,
+                            msg="procrunning config not found. Error:" +
+                            e.args[1])
+
+
+def test_nagios_monitors_response():
+    # look for mysql_database requests
+    nagpwd = nagios_unit.file_contents('/var/lib/juju/nagios.passwd').strip()
+    host_url = ("http://%s/cgi-bin/nagios3/status.cgi?"
+                "host=mysql-0")
+    r = requests.get(host_url % nagios_unit.info['public-address'],
+                     auth=('nagiosadmin', nagpwd))
+    if not r.text.find('mysql-0-basic'):
+        amulet.raise_status(amulet.ERROR,
+                            msg='Nagios is not monitoring the' +
+                            ' hosts it supposed to.')
+
+test_nrpe_monitors_config()
+test_nagios_monitors_response()
