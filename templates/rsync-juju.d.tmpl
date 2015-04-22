@@ -1,0 +1,10 @@
+#------------------------------------------------------------
+# This file is managed by Juju.
+#------------------------------------------------------------
+
+[external-nagios]
+  path = /var/lib/nagios/export/
+  comment = External Nagios Node configs
+  list = false
+  read only = true
+  hosts allow = {{ external_nagios_master }}

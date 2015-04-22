@@ -1,4 +1,0 @@
-#!/bin/bash
-set -e
-rm -f primary-monitors.yaml
-rm -f data/primary_id

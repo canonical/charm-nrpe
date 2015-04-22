@@ -1,4 +1,4 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Format: http://dep.debian.net/deps/dep5/
 
 Files: *
 Copyright: Copyright 2012, Canonical Ltd., All Rights Reserved.
@@ -16,10 +16,26 @@ License: GPL-3
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-Files: plugins/check_mem.pl
+Files: files/plugins/check_exit_status.pl
+Copyright: Copyright (C) 2011 Chad Columbus <ccolumbu@hotmail.com>
+License: GPL-2
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+Files: files/plugins/check_mem.pl
 Copyright: Copyright (c) 2011 justin@techadvise.com
 License: MIT/X11
- .
  Permission is hereby granted, free of charge, to any person obtaining a copy of this
  software and associated documentation files (the "Software"), to deal in the Software
  without restriction, including without limitation the rights to use, copy, modify,
