@@ -11,6 +11,7 @@ d.add('nagios')
 d.add('mysql')
 d.add('nrpe')
 
+d.configure('mysql', {'dataset-size': '10%'})
 d.relate('nagios:monitors', 'mysql:monitors')
 d.relate('nrpe:monitors', 'nagios:monitors')
 d.relate('nrpe:local-monitors', 'mysql:local-monitors')
