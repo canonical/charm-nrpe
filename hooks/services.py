@@ -59,6 +59,7 @@ def manage():
             'data_lost': [
                 nrpe_utils.remove_rsync_fragments,
             ],
+            'start': [nrpe_utils.restart_rsync],
         },
     ])
     manager.manage()
