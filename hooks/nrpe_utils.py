@@ -11,7 +11,7 @@ import nrpe_helpers
 
 
 def restart_rsync(service_name):
-    """ Restart nrpe """
+    """ Restart rsync """
     host.service_restart('rsync')
 
 def restart_nrpe(service_name):
