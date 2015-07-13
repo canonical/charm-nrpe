@@ -14,6 +14,7 @@ def restart_rsync(service_name):
     """ Restart rsync """
     host.service_restart('rsync')
 
+
 def restart_nrpe(service_name):
     """ Restart nrpe """
     host.service_restart('nagios-nrpe-server')
