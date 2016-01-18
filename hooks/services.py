@@ -26,6 +26,7 @@ def manage():
                 nrpe_helpers.NagiosInfo(),
             ],
             'data_ready': [
+                nrpe_utils.update_principle_relation,
                 nrpe_utils.update_monitor_relation,
                 nrpe_utils.render_nrped_files,
                 helpers.render_template(
