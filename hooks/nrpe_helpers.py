@@ -156,7 +156,7 @@ class PrincipleRelation(helpers.RelationContext):
             return yaml.load(self[self.name][0]['monitors'])
 
     def provide_data(self):
-        return {'nagios-hostname': self.principle_relation.nagios_hostname()}
+        return {'nagios_hostname': self.nagios_hostname()}
 
 
 class NagiosInfo(dict):
