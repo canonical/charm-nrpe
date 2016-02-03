@@ -35,7 +35,7 @@ class TestDeployment(unittest.TestCase):
 
     def check_nrpe_setting(self, filename, expected_settings, juju_kv,
                            filedelim=None):
-        self.nrpe_sentry = self.deployment.sentry.unit['nrpe/0']
+        self.nrpe_sentry = self.deployment.sentry['nrpe'][0]
         if juju_kv:
             self.deployment.configure('nrpe', juju_kv)
             time.sleep(PAUSE_TIME)
@@ -56,7 +56,7 @@ class TestDeployment(unittest.TestCase):
         """ Check default monitor definitions are passed to Nagios """
         self.deployment.configure('nrpe', {'monitors': ''})
         time.sleep(PAUSE_TIME)
-        self.nrpe_sentry = self.deployment.sentry.unit['nrpe/0']
+        self.nrpe_sentry = self.deployment.sentry['nrpe'][0]
         relation_data = self.nrpe_sentry.relation(
             'monitors',
             'nagios:monitors',
@@ -76,7 +76,7 @@ class TestDeployment(unittest.TestCase):
 
     def test_monitors_relation_principle_monitors(self):
         """ Check monitor definitions from principle are passed to Nagios """
-        self.nrpe_sentry = self.deployment.sentry.unit['nrpe/0']
+        self.nrpe_sentry = self.deployment.sentry['nrpe'][0]
         relation_data = self.nrpe_sentry.relation(
             'monitors',
             'nagios:monitors',
@@ -134,7 +134,7 @@ class TestDeployment(unittest.TestCase):
             'nrpe', {'monitors': yaml.dump(user_monitors)}
         )
         time.sleep(PAUSE_TIME)
-        self.nrpe_sentry = self.deployment.sentry.unit['nrpe/0']
+        self.nrpe_sentry = self.deployment.sentry['nrpe'][0]
         relation_data = self.nrpe_sentry.relation(
             'monitors',
             'nagios:monitors',
@@ -155,8 +155,8 @@ class TestDeployment(unittest.TestCase):
 
     def test_services(self):
         """ Test basic services are running """
-        self.nagios_sentry = self.deployment.sentry.unit['nagios/0']
-        self.nrpe_sentry = self.deployment.sentry.unit['nrpe/0']
+        self.nagios_sentry = self.deployment.sentry['nagios'][0]
+        self.nrpe_sentry = self.deployment.sentry['nrpe'][0]
         commands = {
             self.nrpe_sentry:  ['service nagios-nrpe-server status'],
             self.nagios_sentry:  ['service nagios3 status'],
@@ -166,7 +166,7 @@ class TestDeployment(unittest.TestCase):
             amulet.raise_status(amulet.FAIL, msg=ret)
 
     def test_config_nagios_master(self):
-        unit = self.deployment.sentry.unit['nagios/0']
+        unit = self.deployment.sentry['nagios'][0]
         nagios_relation = unit.relation('monitors', 'nrpe:monitors')
         ipaddr = nagios_relation['private-address']
         test_config = {
@@ -227,7 +227,7 @@ class TestDeployment(unittest.TestCase):
         self.check_nrpe_setting(**test_config)
 
     def test_nagios_hostname_type(self):
-        sentry = self.deployment.sentry.unit['nrpe/0']
+        sentry = self.deployment.sentry['nrpe'][0]
         hostname = sentry.run('hostname')[0]
         test_config = {
             'filename': '/var/lib/nagios/export/host__%s.cfg' % (hostname),
