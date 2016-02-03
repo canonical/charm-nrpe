@@ -1,0 +1,51 @@
+#!/usr/bin/python
+
+import amulet
+import unittest
+from charmhelpers.contrib.amulet.utils import (
+    AmuletUtils,
+)
+autils = AmuletUtils()
+
+
+class TestBasicNRPEExternalMasterDeployment(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.deployment = amulet.Deployment(series='trusty')
+        cls.deployment.add('mysql')
+        cls.deployment.add('nrpe')
+        cls.deployment.configure('mysql', {'dataset-size': '10%'})
+        cls.deployment.relate('nrpe:nrpe-external-master',
+                              'mysql:nrpe-external-master')
+        try:
+            cls.deployment.setup(timeout=900)
+            cls.deployment.sentry.wait()
+        except amulet.helpers.TimeoutError:
+            msg = "Environment wasn't stood up in time"
+            amulet.raise_status(amulet.SKIP, msg=msg)
+        except:
+            raise
+
+    def test_nrpe_external_master_relation(self):
+        """
+        Check nagios_hostname and nagions_host_context are passed to principals
+        """
+        nrpe_sentry = self.deployment.sentry['nrpe'][0]
+        mysql = self.deployment.sentry['mysql'][0]
+        relation = [
+            'nrpe-external-master',
+            'mysql:nrpe-external-master']
+        nagios_hostname = "juju-{}".format(
+            mysql.info["unit_name"].replace('/', '-'))
+        expected = {
+            'private-address': autils.valid_ip,
+            'nagios_hostname': nagios_hostname,
+            'nagios_host_context': "juju"}
+        ret = autils.validate_relation_data(nrpe_sentry, relation, expected)
+        if ret:
+            message = autils.relation_error("nrpe to mysql", ret)
+            amulet.raise_status(amulet.FAIL, msg=message)
+
+
+if __name__ == '__main__':
+    unittest.main()
