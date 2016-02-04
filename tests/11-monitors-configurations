@@ -29,8 +29,8 @@ except:
 ##
 # Set relationship aliases
 ##
-mysql_unit = d.sentry.unit['mysql/0']
-nagios_unit = d.sentry.unit['nagios/0']
+mysql_unit = d.sentry['mysql'][0]
+nagios_unit = d.sentry['nagios'][0]
 
 
 def test_nrpe_monitors_config():

@@ -120,6 +120,19 @@ def process_local_monitors():
                 )
 
 
+def update_nrpe_external_master_relation(service_name):
+    """
+    Send updated nagsios_hostname to charms attached to nrpe_external_master
+    relation.
+    """
+    principle_relation = nrpe_helpers.PrincipleRelation()
+    for rid in hookenv.relation_ids('nrpe-external-master'):
+        hookenv.relation_set(
+            relation_id=rid,
+            relation_settings=principle_relation.provide_data()
+        )
+
+
 def update_monitor_relation(service_name):
     """ Send updated monitor yaml to charms attached to monitor relation """
     monitor_relation = nrpe_helpers.MonitorsRelation()

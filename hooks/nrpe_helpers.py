@@ -155,6 +155,13 @@ class PrincipleRelation(helpers.RelationContext):
         if 'monitors' in self[self.name][0]:
             return yaml.load(self[self.name][0]['monitors'])
 
+    def provide_data(self):
+        # Provide this data to principals because get_nagios_hostname expects
+        # them in charmhelpers/contrib/charmsupport/nrpe when writing principal
+        # service__* files
+        return {'nagios_hostname': self.nagios_hostname(),
+                'nagios_host_context':  hookenv.config('nagios_host_context')}
+
 
 class NagiosInfo(dict):
     def __init__(self):

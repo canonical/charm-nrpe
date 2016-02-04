@@ -1,0 +1,74 @@
+#!/usr/bin/python
+
+import amulet
+import re
+import unittest
+from charmhelpers.contrib.amulet.utils import (
+    AmuletUtils,
+)
+autils = AmuletUtils()
+
+
+class TestBasicNRPEExternalMasterDeployment(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.deployment = amulet.Deployment(series='trusty')
+        cls.deployment.add('mysql')
+        cls.deployment.add('nrpe')
+        cls.deployment.configure('nrpe', {'nagios_hostname_type': 'unit',
+                                          'nagios_host_context': 'mygroup'})
+        cls.deployment.configure('mysql', {'dataset-size': '10%'})
+        cls.deployment.relate('nrpe:nrpe-external-master',
+                              'mysql:nrpe-external-master')
+        try:
+            cls.deployment.setup(timeout=900)
+            cls.deployment.sentry.wait()
+        except amulet.helpers.TimeoutError:
+            msg = "Environment wasn't stood up in time"
+            amulet.raise_status(amulet.SKIP, msg=msg)
+        except:
+            raise
+
+    def test_nrpe_external_master_relation(self):
+        """
+        Check nagios_hostname and nagions_host_context are passed to principals
+        """
+        nrpe_sentry = self.deployment.sentry['nrpe'][0]
+        mysql = self.deployment.sentry['mysql'][0]
+        relation = [
+            'nrpe-external-master',
+            'mysql:nrpe-external-master']
+        nagios_hostname = "mygroup-{}".format(
+            mysql.info["unit_name"].replace('/', '-'))
+        expected = {
+            'private-address': autils.valid_ip,
+            'nagios_hostname': nagios_hostname,
+            'nagios_host_context': 'mygroup'}
+        ret = autils.validate_relation_data(nrpe_sentry, relation, expected)
+        if ret:
+            message = autils.relation_error("nrpe to mysql principal", ret)
+            amulet.raise_status(amulet.FAIL, msg=message)
+
+    def test_exported_nagiosconfig_nrpe_external_master_principal(self):
+        """
+        The hostname defined in exported nagios service files matches
+        nagios_hostname from the nrpe-external-master relation.
+        """
+        mysql = self.deployment.sentry['mysql'][0]
+        nagios_hostname = "mygroup-{}".format(
+           mysql.info["unit_name"].replace('/', '-'))
+        mysql_service_file = "service__mygroup-{}_check_mysql.cfg".format(
+            mysql.info["unit_name"].replace('/', '-'))
+        content = mysql.file_contents("/var/lib/nagios/export/{}".format(
+            mysql_service_file))
+        for line in content.split('\n'):
+           host_match = re.match('.*host_name\s+([-\w]+)',line)
+           if host_match:
+               service_hostname = host_match.groups()[0]
+               if service_hostname != nagios_hostname:
+                   message = 'Invalid host_name {} in {}. Expected {}'.format(
+                       service_hostname, mysql_service_file, nagios_hostname)
+                   amulet.raise_status(amulet.FAIL, msg=message)
+
+if __name__ == '__main__':
+    unittest.main()
