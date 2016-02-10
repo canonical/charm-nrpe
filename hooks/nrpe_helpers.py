@@ -274,9 +274,10 @@ class SubordinateCheckDefinitions(dict):
             },
         ]
         self['checks'] = []
+        sub_postfix = str(hookenv.config("sub_postfix"))
         for check in checks:
             check['description'] += " (sub)"
-            check['cmd_name'] += "_sub"
+            check['cmd_name'] += sub_postfix
             self['checks'].append(check)
 
     def proc_count(self):

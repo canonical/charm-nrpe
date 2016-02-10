@@ -244,6 +244,16 @@ class TestDeployment(unittest.TestCase):
         }
         self.check_nrpe_setting(**test_config)
 
+    def test_sub_postfix(self):
+        sentry = self.deployment.sentry['nrpe'][0]
+        test_config = {
+            'filename': '/etc/nagios/nrpe.d/check_disk_root_testing.cfg',
+            'expected_settings': {'command[check_disk_root]': '/usr/lib/nagios/plugins/check_disk -u GB -w 25% -c 20% -K 5% -p /'},
+            'juju_kv': { 'sub_postfix': 'testing'},
+            'filedelim': '=',
+        }
+        self.check_nrpe_setting(**test_config)
+
     def test_custom_disk_check_params(self):
         chk_key = 'command[check_disk_root]=/usr/lib/nagios/plugins/check_disk'
         test_config = {

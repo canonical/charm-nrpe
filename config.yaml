@@ -84,3 +84,9 @@ options:
         If True nagios check definitions are written to
         '/var/lib/nagios/export' and rync is configured to allow nagios_master
         to collect them. Useful when Nagios is outside of the juju environment
+  sub_postfix:
+    default: "_sub"
+    type: string
+    description: |
+        A string to be appended onto all the nrpe checks created by this charm
+        to avoid potential clashes with existing checks
