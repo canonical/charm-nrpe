@@ -27,6 +27,26 @@ also list checks that is has configured by listing them in the remote nrpe
 section and finally it can request external monitors are setup by using one of
 the other remote types. See "Monitors yaml" below.
 
+Other Subordinate Charms
+========================
+
+If another subordinate charm deployed to the same principle has a
+local-monitors or nrpe-external-master relation then it can also be related to
+the local nrpe charm. For example,
+
+echo -e "glance:\n  vip: 10.5.106.1" > glance.yaml
+juju deploy -n3 --config glance.yaml glance
+juju deploy hacluster glance-hacluster
+juju deploy nrpe glance-nrpe
+juju deploy nagios
+juju add-relation glance glance-hacluster
+juju add-relation glance-nrpe:monitors nagios:monitors
+juju add-relation glance glance-nrpe
+juju add-relation glance-hacluster glance-nrpe
+
+The glance-hacluster charm will pass montioring information to glance-nrpe
+which will amalgamate all montior definitions before passing them to nagios
+
 Check sources
 =============
 

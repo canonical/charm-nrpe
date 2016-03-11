@@ -6,6 +6,44 @@ from charmhelpers.core.services import helpers
 from charmhelpers.core import hookenv
 
 
+def merge_monitor_dicts(monitor_dicts):
+    """ Merge monitor dictionaries
+
+    @param monitor_dicts: A dict of monitor dicts
+    @returns a single dict which contains all the checks defined within
+             monitor_dicts
+    """
+    monitors = {
+        'monitors': {
+            'remote': {
+                'nrpe': {}
+            }
+        }
+    }
+    for monitor_src in monitor_dicts.keys():
+        monitor_dict = monitor_dicts[monitor_src]
+        if not monitor_dict or 'monitors' not in monitor_dict:
+            continue
+        if 'remote' in monitor_dict['monitors']:
+            remote_mons = monitor_dict['monitors']['remote']
+            for checktype in remote_mons.keys():
+                if checktype in monitors['monitors']['remote']:
+                    monitors['monitors']['remote'][checktype].update(
+                        remote_mons[checktype]
+                    )
+                else:
+                    monitors['monitors']['remote'][checktype] = \
+                        remote_mons[checktype]
+        if 'local' in monitor_dict['monitors']:
+            monitors['monitors']['remote']['nrpe'].update(
+                MonitorsRelation.convert_local_checks(
+                    monitor_dict['monitors']['local'],
+                    monitor_src,
+                )
+            )
+    return monitors
+
+
 class MonitorsRelation(helpers.RelationContext):
     name = 'monitors'
     interface = 'monitors'
@@ -17,7 +55,8 @@ class MonitorsRelation(helpers.RelationContext):
     def is_ready(self):
         return self.principle_relation.is_ready()
 
-    def convert_local_checks(self, monitors, monitor_src):
+    @staticmethod
+    def convert_local_checks(monitors, monitor_src):
         """ Convert check from local checks to remote nrpe checks
 
         monitors -- monitor dict
@@ -70,35 +109,8 @@ class MonitorsRelation(helpers.RelationContext):
         """ Return monitor dict of all monitors merged together and local
             monitors converted to remote nrpe checks
         """
-        monitors = {
-            'monitors': {
-                'remote': {
-                    'nrpe': {}
-                }
-            }
-        }
         monitor_dicts = self.get_monitor_dicts()
-        for monitor_src in monitor_dicts.keys():
-            monitor_dict = monitor_dicts[monitor_src]
-            if not monitor_dict or 'monitors' not in monitor_dict:
-                continue
-            if 'remote' in monitor_dict['monitors']:
-                remote_mons = monitor_dict['monitors']['remote']
-                for checktype in remote_mons.keys():
-                    if checktype in monitors['monitors']['remote']:
-                        monitors['monitors']['remote'][checktype].update(
-                            remote_mons[checktype]
-                        )
-                    else:
-                        monitors['monitors']['remote'][checktype] = \
-                            remote_mons[checktype]
-            if 'local' in monitor_dict['monitors']:
-                monitors['monitors']['remote']['nrpe'].update(
-                    self.convert_local_checks(
-                        monitor_dict['monitors']['local'],
-                        monitor_src,
-                    )
-                )
+        monitors = merge_monitor_dicts(monitor_dicts)
         monitors['version'] = '0.3'
         return monitors
 
@@ -149,11 +161,15 @@ class PrincipleRelation(helpers.RelationContext):
             return nagios_hostname
 
     def get_monitors(self):
-        """ Return monitors passed by principle charm """
+        """ Return monitors passed by services on the self.interface relation
+        """
         if not self.is_ready():
             return
-        if 'monitors' in self[self.name][0]:
-            return yaml.load(self[self.name][0]['monitors'])
+        all_monitors = {}
+        for rel in self[self.name]:
+            if rel.get('__relid__') and rel.get('monitors'):
+                all_monitors[rel['__relid__']] = yaml.load(rel['monitors'])
+        return merge_monitor_dicts(all_monitors)
 
     def provide_data(self):
         # Provide this data to principals because get_nagios_hostname expects
