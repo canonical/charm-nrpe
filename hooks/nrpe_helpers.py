@@ -6,57 +6,41 @@ from charmhelpers.core.services import helpers
 from charmhelpers.core import hookenv
 
 
-def merge_monitor_dicts(monitor_dicts):
-    """ Merge monitor dictionaries
-
-    @param monitor_dicts: A dict of monitor dicts
-    @returns a single dict which contains all the checks defined within
-             monitor_dicts
+class Monitors(dict):
+    """ Represent the list of checks that a remote Nagios can query converting
+        local check to ones that can be queried remotely
     """
-    monitors = {
-        'monitors': {
+
+    def __init__(self, version='0.3'):
+        self['monitors'] = {
             'remote': {
                 'nrpe': {}
             }
         }
-    }
-    for monitor_src in monitor_dicts.keys():
-        monitor_dict = monitor_dicts[monitor_src]
-        if not monitor_dict or 'monitors' not in monitor_dict:
-            continue
-        if 'remote' in monitor_dict['monitors']:
-            remote_mons = monitor_dict['monitors']['remote']
-            for checktype in remote_mons.keys():
-                if checktype in monitors['monitors']['remote']:
-                    monitors['monitors']['remote'][checktype].update(
-                        remote_mons[checktype]
-                    )
-                else:
-                    monitors['monitors']['remote'][checktype] = \
-                        remote_mons[checktype]
-        if 'local' in monitor_dict['monitors']:
-            monitors['monitors']['remote']['nrpe'].update(
-                MonitorsRelation.convert_local_checks(
-                    monitor_dict['monitors']['local'],
-                    monitor_src,
-                )
+        self['version'] = version
+
+    def add_monitors(self, mdict, monitor_label='default'):
+        if not mdict or not mdict.get('monitors'):
+            return
+
+        for checktype in mdict['monitors'].get('remote', []):
+            check_details = mdict['monitors']['remote'][checktype]
+            if self['monitors']['remote'].get(checktype):
+                self['monitors']['remote'][checktype].update(check_details)
+            else:
+                self['monitors']['remote'][checktype] = check_details
+
+        for checktype in mdict['monitors'].get('local', []):
+            check_details = self.convert_local_checks(
+                mdict['monitors']['local'],
+                monitor_label,
             )
-    return monitors
+            self['monitors']['remote']['nrpe'].update(check_details)
+         
+    def add_nrpe_check(self, check_name, command):
+        self['monitors']['remote']['nrpe'][check_name] = command
 
-
-class MonitorsRelation(helpers.RelationContext):
-    name = 'monitors'
-    interface = 'monitors'
-
-    def __init__(self, *args, **kwargs):
-        self.principle_relation = PrincipleRelation()
-        super(MonitorsRelation, self).__init__(*args, **kwargs)
-
-    def is_ready(self):
-        return self.principle_relation.is_ready()
-
-    @staticmethod
-    def convert_local_checks(monitors, monitor_src):
+    def convert_local_checks(self, monitors, monitor_src):
         """ Convert check from local checks to remote nrpe checks
 
         monitors -- monitor dict
@@ -74,23 +58,30 @@ class MonitorsRelation(helpers.RelationContext):
                     {'command': check_def['cmd_name']}
         return mons
 
+
+class MonitorsRelation(helpers.RelationContext):
+    name = 'monitors'
+    interface = 'monitors'
+
+    def __init__(self, *args, **kwargs):
+        self.principle_relation = PrincipleRelation()
+        super(MonitorsRelation, self).__init__(*args, **kwargs)
+
+    def is_ready(self):
+        return self.principle_relation.is_ready()
+
     def get_subordinate_monitors(self):
         """ Return default monitors defined by this charm """
-        monitors = {
-            'monitors': {
-                'remote': {
-                    'nrpe': {}
-                }
-            }
-        }
+        monitors = Monitors()
         for check in SubordinateCheckDefinitions()['checks']:
-            monitors['monitors']['remote']['nrpe'][check['cmd_name']] = \
-                {'command': check['cmd_name']}
+            monitors.add_nrpe_check(check['cmd_name'], check['cmd_name'])
         return monitors
 
     def get_user_defined_monitors(self):
         """ Return monitors defined by monitors config option """
-        return yaml.safe_load(hookenv.config('monitors'))
+        monitors = Monitors()
+        monitors.add_monitors(yaml.safe_load(hookenv.config('monitors')), 'user')
+        return monitors
 
     def get_principle_monitors(self):
         """ Return monitors passed by relation with principle """
@@ -109,10 +100,15 @@ class MonitorsRelation(helpers.RelationContext):
         """ Return monitor dict of all monitors merged together and local
             monitors converted to remote nrpe checks
         """
-        monitor_dicts = self.get_monitor_dicts()
-        monitors = merge_monitor_dicts(monitor_dicts)
-        monitors['version'] = '0.3'
-        return monitors
+        all_monitors = Monitors()
+        monitors = [
+            self.get_principle_monitors(),
+            self.get_subordinate_monitors(),
+            self.get_user_defined_monitors(),
+        ]
+        for mon in monitors:
+            all_monitors.add_monitors(mon)
+        return all_monitors
 
     def get_data(self):
         super(MonitorsRelation, self).get_data()
@@ -165,11 +161,11 @@ class PrincipleRelation(helpers.RelationContext):
         """
         if not self.is_ready():
             return
-        all_monitors = {}
+        monitors = Monitors()
         for rel in self[self.name]:
-            if rel.get('__relid__') and rel.get('monitors'):
-                all_monitors[rel['__relid__']] = yaml.load(rel['monitors'])
-        return merge_monitor_dicts(all_monitors)
+            if rel.get('monitors'):
+                monitors.add_monitors(yaml.load(rel['monitors']), 'principle')
+        return monitors
 
     def provide_data(self):
         # Provide this data to principals because get_nagios_hostname expects
