@@ -36,7 +36,7 @@ class Monitors(dict):
                 monitor_label,
             )
             self['monitors']['remote']['nrpe'].update(check_details)
-         
+
     def add_nrpe_check(self, check_name, command):
         self['monitors']['remote']['nrpe'][check_name] = command
 
@@ -80,7 +80,8 @@ class MonitorsRelation(helpers.RelationContext):
     def get_user_defined_monitors(self):
         """ Return monitors defined by monitors config option """
         monitors = Monitors()
-        monitors.add_monitors(yaml.safe_load(hookenv.config('monitors')), 'user')
+        monitors.add_monitors(yaml.safe_load(hookenv.config('monitors')),
+                              'user')
         return monitors
 
     def get_principle_monitors(self):
