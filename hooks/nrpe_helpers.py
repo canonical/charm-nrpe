@@ -244,8 +244,9 @@ class SubordinateCheckDefinitions(dict):
 
         if hookenv.config('load') == 'auto':
             load_thresholds = ('-w %(warn)d,%(warn)d,%(warn)d '
-                               '-c %(crit)d,%(crit)d,%(crit)d') % {'warn': round(procs * 0.7),
-                                                                   'crit': procs}
+                               '-c %(crit)d,%(crit)d,%(crit)d') \
+                              % {'warn': round(procs * 0.7),
+                                 'crit': procs}
         else:
             load_thresholds = hookenv.config('load')
 
