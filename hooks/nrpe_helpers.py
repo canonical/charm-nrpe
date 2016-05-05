@@ -234,12 +234,21 @@ class NRPECheckCtxt(dict):
 class SubordinateCheckDefinitions(dict):
     """ Return dict of checks the charm configures """
     def __init__(self):
+        procs = self.proc_count()
+
         if hookenv.config('procs') == "auto":
-            procs = self.proc_count()
             proc_thresholds = "-w {} -c {}".format(25 * procs + 100,
                                                    50 * procs + 100)
         else:
             proc_thresholds = hookenv.config('procs')
+
+        if hookenv.config('load') == 'auto':
+            load_thresholds = ('-w %(warn)d,%(warn)d,%(warn)d '
+                               '-c %(crit)d,%(crit)d,%(crit)d') % {'warn': round(procs * 0.7),
+                                                                   'crit': procs}
+        else:
+            load_thresholds = hookenv.config('load')
+
         pkg_plugin_dir = '/usr/lib/nagios/plugins/'
         local_plugin_dir = '/usr/local/lib/nagios/plugins/'
         checks = [
@@ -265,7 +274,7 @@ class SubordinateCheckDefinitions(dict):
                 'description': 'System Load',
                 'cmd_name': 'check_load',
                 'cmd_exec': pkg_plugin_dir + 'check_load',
-                'cmd_params': hookenv.config('load'),
+                'cmd_params': load_thresholds,
             },
             {
                 'description': 'Number of Users',
