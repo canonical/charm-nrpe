@@ -243,7 +243,7 @@ class SubordinateCheckDefinitions(dict):
             proc_thresholds = hookenv.config('procs')
 
         if hookenv.config('load') == 'auto':
-            load_thresholds = ('-w %(warn)d,%(warn)d,%(warn)d '
+            load_thresholds = ('-w %(warn).1f,%(warn).1f,%(warn).1f '
                                '-c %(crit)d,%(crit)d,%(crit)d') \
                               % {'warn': procs * 0.7,
                                  'crit': procs}
