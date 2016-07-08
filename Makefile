@@ -1,9 +1,9 @@
 #!/usr/bin/make
-PYTHON := /usr/bin/env python
+PYTHON := /usr/bin/python3
 export PYTHONPATH := hooks
 
 virtualenv:
-	virtualenv .venv
+	virtualenv -p $(PYTHON) .venv
 	.venv/bin/pip install flake8 nose mock six
 
 lint: virtualenv
