@@ -26,3 +26,6 @@ requires:
   local-monitors:
     interface: local-monitors
     scope: container
+series:
+  - xenial
+  - trusty
