@@ -45,5 +45,5 @@ publish-stable:
 	export rev=`charm push . $(CHARM_STORE_URL) 2>&1 \
                 | tee /dev/tty | grep url: | cut -f 2 -d ' '` \
 	&& git tag -f -m "$$rev" `echo $$rev | tr -s '~:/' -` \
-	&& git push -f --tags $(REPO) \
+	&& git push --tags $(REPO) \
 	&& charm publish -c stable $$rev
