@@ -1,18 +1,16 @@
 # Copyright 2014-2015 Canonical Limited.
 #
-# This file is part of charm-helpers.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# charm-helpers is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License version 3 as
-# published by the Free Software Foundation.
+#  http://www.apache.org/licenses/LICENSE-2.0
 #
-# charm-helpers is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License
-# along with charm-helpers.  If not, see <http://www.gnu.org/licenses/>.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import importlib
 from tempfile import NamedTemporaryFile
@@ -90,6 +88,30 @@ CLOUD_ARCHIVE_POCKETS = {
     'kilo/proposed': 'trusty-proposed/kilo',
     'trusty-kilo/proposed': 'trusty-proposed/kilo',
     'trusty-proposed/kilo': 'trusty-proposed/kilo',
+    # Liberty
+    'liberty': 'trusty-updates/liberty',
+    'trusty-liberty': 'trusty-updates/liberty',
+    'trusty-liberty/updates': 'trusty-updates/liberty',
+    'trusty-updates/liberty': 'trusty-updates/liberty',
+    'liberty/proposed': 'trusty-proposed/liberty',
+    'trusty-liberty/proposed': 'trusty-proposed/liberty',
+    'trusty-proposed/liberty': 'trusty-proposed/liberty',
+    # Mitaka
+    'mitaka': 'trusty-updates/mitaka',
+    'trusty-mitaka': 'trusty-updates/mitaka',
+    'trusty-mitaka/updates': 'trusty-updates/mitaka',
+    'trusty-updates/mitaka': 'trusty-updates/mitaka',
+    'mitaka/proposed': 'trusty-proposed/mitaka',
+    'trusty-mitaka/proposed': 'trusty-proposed/mitaka',
+    'trusty-proposed/mitaka': 'trusty-proposed/mitaka',
+    # Newton
+    'newton': 'xenial-updates/newton',
+    'xenial-newton': 'xenial-updates/newton',
+    'xenial-newton/updates': 'xenial-updates/newton',
+    'xenial-updates/newton': 'xenial-updates/newton',
+    'newton/proposed': 'xenial-proposed/newton',
+    'xenial-newton/proposed': 'xenial-proposed/newton',
+    'xenial-proposed/newton': 'xenial-proposed/newton',
 }
 
 # The order of this list is very important. Handlers should be listed in from
@@ -156,14 +178,14 @@ def filter_installed_packages(packages):
     return _pkgs
 
 
-def apt_cache(in_memory=True):
+def apt_cache(in_memory=True, progress=None):
     """Build and return an apt cache"""
-    import apt_pkg
+    from apt import apt_pkg
     apt_pkg.init()
     if in_memory:
         apt_pkg.config.set("Dir::Cache::pkgcache", "")
         apt_pkg.config.set("Dir::Cache::srcpkgcache", "")
-    return apt_pkg.Cache()
+    return apt_pkg.Cache(progress)
 
 
 def apt_install(packages, options=None, fatal=False):
@@ -215,19 +237,27 @@ def apt_purge(packages, fatal=False):
     _run_apt_command(cmd, fatal)
 
 
-def apt_hold(packages, fatal=False):
-    """Hold one or more packages"""
-    cmd = ['apt-mark', 'hold']
+def apt_mark(packages, mark, fatal=False):
+    """Flag one or more packages using apt-mark"""
+    log("Marking {} as {}".format(packages, mark))
+    cmd = ['apt-mark', mark]
     if isinstance(packages, six.string_types):
         cmd.append(packages)
     else:
         cmd.extend(packages)
-    log("Holding {}".format(packages))
 
     if fatal:
-        subprocess.check_call(cmd)
+        subprocess.check_call(cmd, universal_newlines=True)
     else:
-        subprocess.call(cmd)
+        subprocess.call(cmd, universal_newlines=True)
+
+
+def apt_hold(packages, fatal=False):
+    return apt_mark(packages, 'hold', fatal=fatal)
+
+
+def apt_unhold(packages, fatal=False):
+    return apt_mark(packages, 'unhold', fatal=fatal)
 
 
 def add_source(source, key=None):
@@ -366,15 +396,13 @@ def install_remote(source, *args, **kwargs):
     # We ONLY check for True here because can_handle may return a string
     # explaining why it can't handle a given source.
     handlers = [h for h in plugins() if h.can_handle(source) is True]
-    installed_to = None
     for handler in handlers:
         try:
-            installed_to = handler.install(source, *args, **kwargs)
-        except UnhandledSource:
-            pass
-    if not installed_to:
-        raise UnhandledSource("No handler found for source {}".format(source))
-    return installed_to
+            return handler.install(source, *args, **kwargs)
+        except UnhandledSource as e:
+            log('Install source attempt unsuccessful: {}'.format(e),
+                level='WARNING')
+    raise UnhandledSource("No handler found for source {}".format(source))
 
 
 def install_from_config(config_var_name):
@@ -394,7 +422,7 @@ def plugins(fetch_handlers=None):
                 importlib.import_module(package),
                 classname)
             plugin_list.append(handler_class())
-        except (ImportError, AttributeError):
+        except NotImplementedError:
             # Skip missing plugins so that they can be ommitted from
             # installation if desired
             log("FetchHandler {} not found, skipping plugin".format(
