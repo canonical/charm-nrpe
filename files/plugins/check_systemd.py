@@ -20,9 +20,9 @@ try:
         service_unit = manager.LoadUnit(service_name)
         service_proxy = bus.get_object('org.freedesktop.systemd1', str(service_unit))
         service = dbus.Interface(service_proxy, dbus_interface='org.freedesktop.systemd1.Unit')
-        service_res = service_proxy.Get('org.freedesktop.systemd1.Unit','ActiveState', dbus_interface='org.freedesktop.DBus.Properties')
+        service_res = service_proxy.Get('org.freedesktop.systemd1.Unit','SubState', dbus_interface='org.freedesktop.DBus.Properties')
 
-        if service_res == 'active':
+        if service_res == 'running':
             print('OK: %s is running' % service_name)
             sys.exit(0)
         else:
