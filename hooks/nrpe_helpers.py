@@ -153,6 +153,12 @@ class PrincipleRelation(helpers.RelationContext):
             return socket.gethostname()
         else:
             principle_unitname = self[self.name][0]['__unit__']
+            # if a unit has primary=true in its relation data, prefer it over
+            # the first related unit, which is inconsistent
+            for relunit in self[self.name]:
+                if relunit.get('primary','False').lower() == 'true':
+                    principle_unitname = relunit['__unit__']
+                    break
             nagios_hostname = "{}-{}".format(host_context, principle_unitname)
             nagios_hostname = nagios_hostname.replace('/', '-')
             return nagios_hostname
