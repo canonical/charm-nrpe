@@ -159,7 +159,7 @@ listed in the local section:
 
 
 
-1.  The defintion is read and a check defintion it written /etc/nagios/nrpe.d
+1.  The definition is read and a check definition it written /etc/nagios/nrpe.d
 2.  The check is defined as a remote nrpe check in the yaml passed to nagios
 
 In the example above a check\_proc\_nagios3\_user.cfg file would be written

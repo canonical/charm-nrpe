@@ -156,7 +156,7 @@ class PrincipleRelation(helpers.RelationContext):
             # if a unit has primary=true in its relation data, prefer it over
             # the first related unit, which is inconsistent
             for relunit in self[self.name]:
-                if relunit.get('primary','False').lower() == 'true':
+                if relunit.get('primary', 'False').lower() == 'true':
                     principle_unitname = relunit['__unit__']
                     break
             nagios_hostname = "{}-{}".format(host_context, principle_unitname)
@@ -179,7 +179,7 @@ class PrincipleRelation(helpers.RelationContext):
         # them in charmhelpers/contrib/charmsupport/nrpe when writing principal
         # service__* files
         return {'nagios_hostname': self.nagios_hostname(),
-                'nagios_host_context':  hookenv.config('nagios_host_context')}
+                'nagios_host_context': hookenv.config('nagios_host_context')}
 
 
 class NagiosInfo(dict):
@@ -206,7 +206,7 @@ class RsyncEnabled(helpers.RelationContext):
 
 
 class NRPECheckCtxt(dict):
-    """ Convert a local monitor definition into dict needed for writting the
+    """ Convert a local monitor definition into dict needed for writing the
         nrpe check definition
     """
     def __init__(self, checktype, check_opts, monitor_src):
@@ -251,8 +251,7 @@ class SubordinateCheckDefinitions(dict):
         if hookenv.config('load') == 'auto':
             load_thresholds = ('-w %(warn).1f,%(warn).1f,%(warn).1f '
                                '-c %(crit)d,%(crit)d,%(crit)d') \
-                              % {'warn': procs * 0.7,
-                                 'crit': procs}
+                % {'warn': procs * 0.7, 'crit': procs}
         else:
             load_thresholds = hookenv.config('load')
 
@@ -300,6 +299,12 @@ class SubordinateCheckDefinitions(dict):
                 'cmd_name': 'check_mem',
                 'cmd_exec': local_plugin_dir + 'check_mem.pl',
                 'cmd_params': hookenv.config('mem'),
+            },
+            {
+                'description': 'Connnection tracking table',
+                'cmd_name': 'check_conntrack',
+                'cmd_exec': local_plugin_dir + 'check_conntrack.sh',
+                'cmd_params': hookenv.config('conntrack'),
             },
         ]
         self['checks'] = []

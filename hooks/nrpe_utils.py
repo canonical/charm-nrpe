@@ -86,7 +86,7 @@ def install_charm_files(service_name):
 
 
 def render_nrpe_check_config(checkctxt):
-    """ Write nrpe check deifintion """
+    """ Write nrpe check definition """
     render(
         'nrpe_command.tmpl',
         '/etc/nagios/nrpe.d/{}.cfg'.format(checkctxt['cmd_name']),

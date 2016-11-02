@@ -63,9 +63,14 @@ class TestDeployment(unittest.TestCase):
         )
         monitors = yaml.safe_load(relation_data['monitors'])
         checks = [
-            'check_mem_sub', 'check_disk_root_sub', 'check_swap_sub',
-            'check_load_sub', 'check_users_sub', 'check_zombie_procs_sub',
-            'check_total_procs_sub'
+            'check_mem_sub',
+            'check_disk_root_sub',
+            'check_swap_sub',
+            'check_load_sub',
+            'check_users_sub',
+            'check_zombie_procs_sub',
+            'check_total_procs_sub',
+            'check_conntrack_sub',
         ]
         for check in checks:
             if check not in monitors['monitors']['remote']['nrpe'].keys():
@@ -158,8 +163,8 @@ class TestDeployment(unittest.TestCase):
         self.nagios_sentry = self.deployment.sentry['nagios'][0]
         self.nrpe_sentry = self.deployment.sentry['nrpe'][0]
         commands = {
-            self.nrpe_sentry:  ['service nagios-nrpe-server status'],
-            self.nagios_sentry:  ['service nagios3 status'],
+            self.nrpe_sentry: ['service nagios-nrpe-server status'],
+            self.nagios_sentry: ['service nagios3 status'],
         }
         ret = autils.validate_services(commands)
         if ret:
@@ -308,6 +313,15 @@ class TestDeployment(unittest.TestCase):
             'filename': '/etc/nagios/nrpe.d/check_swap_sub.cfg',
             'expected_settings': {chk_key: '-w 5% -c 1%'},
             'juju_kv': {'swap': '-w 5% -c 1%'}
+        }
+        self.check_nrpe_setting(**test_config)
+
+    def test_custom_conntrack_check_params(self):
+        chk_key = 'command[check_conntrack]=/usr/local/lib/nagios/plugins/check_conntrack.sh'
+        test_config = {
+            'filename': '/etc/nagios/nrpe.d/check_conntrack_sub.cfg',
+            'expected_settings': {chk_key: '-w 50 -c 70'},
+            'juju_kv': {'conntrack': '-w 50 -c 70'}
         }
         self.check_nrpe_setting(**test_config)
 
