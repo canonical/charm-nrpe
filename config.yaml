@@ -55,6 +55,10 @@ options:
         Load check (e.g. -w 8,8,8 -c 15,15,15), if 'auto' is set, then
         NUM_CPUS*0.7 is used for the warning threshold and NUM_CPUS for the
         critical one
+  conntrack:
+    default: "-w 80 -c 90"
+    type: string
+    description: conntrack table check
   users:
     default: "-w 20 -c 25"
     type: string
