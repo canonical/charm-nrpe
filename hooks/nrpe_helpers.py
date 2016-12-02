@@ -186,7 +186,7 @@ class NagiosInfo(dict):
     def __init__(self):
         self.principle_relation = PrincipleRelation()
         self['external_nagios_master'] = '127.0.0.1'
-        if hookenv.config()['nagios_master'] != 'None':
+        if hookenv.config('nagios_master') != 'None':
             self['external_nagios_master'] = \
                 "{},{}".format(self['external_nagios_master'],
                                hookenv.config()['nagios_master'])
