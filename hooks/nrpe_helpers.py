@@ -186,10 +186,10 @@ class NagiosInfo(dict):
     def __init__(self):
         self.principle_relation = PrincipleRelation()
         self['external_nagios_master'] = '127.0.0.1'
-        if hookenv.config()['nagios_master'] != 'None':
+        if hookenv.config('nagios_master') != 'None':
             self['external_nagios_master'] = \
                 "{},{}".format(self['external_nagios_master'],
-                               hookenv.config()['nagios_master'])
+                               hookenv.config('nagios_master'))
         self['nagios_hostname'] = self.principle_relation.nagios_hostname()
         ip_key = hookenv.config('nagios_address_type') + '-address'
         self['nagios_ipaddress'] = hookenv.unit_get(ip_key)
@@ -199,7 +199,7 @@ class RsyncEnabled(helpers.RelationContext):
 
     def __init__(self):
         self['export_nagios_definitions'] = \
-            hookenv.config()['export_nagios_definitions']
+            hookenv.config('export_nagios_definitions')
 
     def is_ready(self):
         return self['export_nagios_definitions']
