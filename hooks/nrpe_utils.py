@@ -44,13 +44,6 @@ def remove_host_export_fragments(service_name):
         os.unlink(fname)
 
 
-def remove_rsync_fragments(service_name):
-    """ Remove config fragment that configures rsync for export fragments """
-    rsync_file = '/etc/rsync-juju.d/010-nrpe-external-master.conf'
-    if os.path.isfile(rsync_file):
-        os.unlink(rsync_file)
-
-
 def install_charm_files(service_name):
     """ Install files shipped with charm """
     nag_dirs = ['/etc/nagios/nrpe.d/', '/usr/local/lib/nagios/plugins',
