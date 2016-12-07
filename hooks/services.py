@@ -57,9 +57,6 @@ def manage():
                            'host__{}.cfg'.format(nag_hostname)
                 ),
             ],
-            'data_lost': [
-                nrpe_utils.remove_rsync_fragments,
-            ],
             'start': [nrpe_utils.restart_rsync],
         },
     ])
