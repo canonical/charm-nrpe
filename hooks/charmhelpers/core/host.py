@@ -30,14 +30,31 @@ import subprocess
 import hashlib
 import functools
 import itertools
-from contextlib import contextmanager
-from collections import OrderedDict
-
 import six
 
+from contextlib import contextmanager
+from collections import OrderedDict
 from .hookenv import log
 from .fstab import Fstab
+from charmhelpers.osplatform import get_platform
 
+__platform__ = get_platform()
+if __platform__ == "ubuntu":
+    from charmhelpers.core.host_factory.ubuntu import (
+        service_available,
+        add_new_group,
+        lsb_release,
+        cmp_pkgrevno,
+    )  # flake8: noqa -- ignore F401 for this import
+elif __platform__ == "centos":
+    from charmhelpers.core.host_factory.centos import (
+        service_available,
+        add_new_group,
+        lsb_release,
+        cmp_pkgrevno,
+    )  # flake8: noqa -- ignore F401 for this import
+
+UPDATEDB_PATH = '/etc/updatedb.conf'
 
 def service_start(service_name):
     """Start a system service"""
@@ -144,25 +161,16 @@ def service_running(service_name):
                 return False
             else:
                 # This works for upstart scripts where the 'service' command
-                # returns a consistent string to represent running 'start/running'
-                if "start/running" in output:
+                # returns a consistent string to represent running
+                # 'start/running'
+                if ("start/running" in output or
+                        "is running" in output or
+                        "up and running" in output):
                     return True
         elif os.path.exists(_INIT_D_CONF.format(service_name)):
             # Check System V scripts init script return codes
             return service('status', service_name)
         return False
-
-
-def service_available(service_name):
-    """Determine whether a system service is available"""
-    try:
-        subprocess.check_output(
-            ['service', service_name, 'status'],
-            stderr=subprocess.STDOUT).decode('UTF-8')
-    except subprocess.CalledProcessError as e:
-        return b'unrecognized service' not in e.output
-    else:
-        return True
 
 
 SYSTEMD_SYSTEM = '/run/systemd/system'
@@ -173,8 +181,9 @@ def init_is_systemd():
     return os.path.isdir(SYSTEMD_SYSTEM)
 
 
-def adduser(username, password=None, shell='/bin/bash', system_user=False,
-            primary_group=None, secondary_groups=None, uid=None, home_dir=None):
+def adduser(username, password=None, shell='/bin/bash',
+            system_user=False, primary_group=None,
+            secondary_groups=None, uid=None, home_dir=None):
     """Add a user to the system.
 
     Will log but otherwise succeed if the user already exists.
@@ -286,17 +295,7 @@ def add_group(group_name, system_group=False, gid=None):
             log('group with gid {0} already exists!'.format(gid))
     except KeyError:
         log('creating group {0}'.format(group_name))
-        cmd = ['addgroup']
-        if gid:
-            cmd.extend(['--gid', str(gid)])
-        if system_group:
-            cmd.append('--system')
-        else:
-            cmd.extend([
-                '--group',
-            ])
-        cmd.append(group_name)
-        subprocess.check_call(cmd)
+        add_new_group(group_name, system_group, gid)
         group_info = grp.getgrnam(group_name)
     return group_info
 
@@ -308,15 +307,17 @@ def add_user_to_group(username, group):
     subprocess.check_call(cmd)
 
 
-def rsync(from_path, to_path, flags='-r', options=None):
+def rsync(from_path, to_path, flags='-r', options=None, timeout=None):
     """Replicate the contents of a path"""
     options = options or ['--delete', '--executability']
     cmd = ['/usr/bin/rsync', flags]
+    if timeout:
+        cmd = ['timeout', str(timeout)] + cmd
     cmd.extend(options)
     cmd.append(from_path)
     cmd.append(to_path)
     log(" ".join(cmd))
-    return subprocess.check_output(cmd).decode('UTF-8').strip()
+    return subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode('UTF-8').strip()
 
 
 def symlink(source, destination):
@@ -541,16 +542,6 @@ def restart_on_change_helper(lambda_f, restart_map, stopstart=False,
     return r
 
 
-def lsb_release():
-    """Return /etc/lsb-release in a dict"""
-    d = {}
-    with open('/etc/lsb-release', 'r') as lsb:
-        for l in lsb:
-            k, v = l.split('=')
-            d[k.strip()] = v.strip()
-    return d
-
-
 def pwgen(length=None):
     """Generate a random pasword."""
     if length is None:
@@ -674,25 +665,6 @@ def get_nic_hwaddr(nic):
     return hwaddr
 
 
-def cmp_pkgrevno(package, revno, pkgcache=None):
-    """Compare supplied revno with the revno of the installed package
-
-    *  1 => Installed revno is greater than supplied arg
-    *  0 => Installed revno is the same as supplied arg
-    * -1 => Installed revno is less than supplied arg
-
-    This function imports apt_cache function from charmhelpers.fetch if
-    the pkgcache argument is None. Be sure to add charmhelpers.fetch if
-    you call this function, or pass an apt_pkg.Cache() instance.
-    """
-    import apt_pkg
-    if not pkgcache:
-        from charmhelpers.fetch import apt_cache
-        pkgcache = apt_cache()
-    pkg = pkgcache[package]
-    return apt_pkg.version_compare(pkg.current_ver.ver_str, revno)
-
-
 @contextmanager
 def chdir(directory):
     """Change the current working directory to a different directory for a code
@@ -715,7 +687,7 @@ def chownr(path, owner, group, follow_links=True, chowntopdir=False):
     :param str path: The string path to start changing ownership.
     :param str owner: The owner string to use when looking up the uid.
     :param str group: The group string to use when looking up the gid.
-    :param bool follow_links: Also Chown links if True
+    :param bool follow_links: Also follow and chown links if True
     :param bool chowntopdir: Also chown path itself if True
     """
     uid = pwd.getpwnam(owner).pw_uid
@@ -729,7 +701,7 @@ def chownr(path, owner, group, follow_links=True, chowntopdir=False):
         broken_symlink = os.path.lexists(path) and not os.path.exists(path)
         if not broken_symlink:
             chown(path, uid, gid)
-    for root, dirs, files in os.walk(path):
+    for root, dirs, files in os.walk(path, followlinks=follow_links):
         for name in dirs + files:
             full = os.path.join(root, name)
             broken_symlink = os.path.lexists(full) and not os.path.exists(full)
@@ -763,3 +735,42 @@ def get_total_ram():
                     assert unit == 'kB', 'Unknown unit'
                     return int(value) * 1024  # Classic, not KiB.
         raise NotImplementedError()
+
+
+UPSTART_CONTAINER_TYPE = '/run/container_type'
+
+
+def is_container():
+    """Determine whether unit is running in a container
+
+    @return: boolean indicating if unit is in a container
+    """
+    if init_is_systemd():
+        # Detect using systemd-detect-virt
+        return subprocess.call(['systemd-detect-virt',
+                                '--container']) == 0
+    else:
+        # Detect using upstart container file marker
+        return os.path.exists(UPSTART_CONTAINER_TYPE)
+
+
+def add_to_updatedb_prunepath(path, updatedb_path=UPDATEDB_PATH):
+    with open(updatedb_path, 'r+') as f_id:
+        updatedb_text = f_id.read()
+        output = updatedb(updatedb_text, path)
+        f_id.seek(0)
+        f_id.write(output)
+        f_id.truncate()
+
+
+def updatedb(updatedb_text, new_path):
+    lines = [line for line in updatedb_text.split("\n")]
+    for i, line in enumerate(lines):
+        if line.startswith("PRUNEPATHS="):
+            paths_line = line.split("=")[1].replace('"', '')
+            paths = paths_line.split(" ")
+            if new_path not in paths:
+                paths.append(new_path)
+                lines[i] = 'PRUNEPATHS="{}"'.format(' '.join(paths))
+    output = "\n".join(lines)
+    return output
