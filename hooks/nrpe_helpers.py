@@ -251,7 +251,7 @@ class SubordinateCheckDefinitions(dict):
         if hookenv.config('load') == 'auto':
             # Give 1min load alerts higher thresholds than 15 min load alerts
             warn_multipliers = (4,2,1)
-            crit_mutlipliers = (8,4,2)
+            crit_multipliers = (8,4,2)
             load_thresholds = ('-w %s -c %s') \
                 % (','.join([str(m*procs) for m in warn_multipliers]),
                    ','.join([str(m*procs) for m in crit_multipliers]))
