@@ -313,6 +313,8 @@ class SubordinateCheckDefinitions(dict):
         self['checks'] = []
         sub_postfix = str(hookenv.config("sub_postfix"))
         for check in checks:
+            if check['cmd_params'] == "":
+                continue
             check['description'] += " (sub)"
             check['cmd_name'] += sub_postfix
             self['checks'].append(check)
