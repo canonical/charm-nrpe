@@ -201,3 +201,10 @@ Remote check types
 Supported remote types:
     http, mysql, nrpe, tcp, rpc, pgsql
     (See Nagios charm for up-to-date list and options)
+
+Spaces
+======
+
+By defining 'monitors' binding, you can influence which nrpe's IP will be reported
+back to Nagios. This can be very handy if nrpe is placed on machines with multiple
+IPs/networks.

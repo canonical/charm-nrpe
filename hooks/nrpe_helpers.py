@@ -119,9 +119,15 @@ class MonitorsRelation(helpers.RelationContext):
         self['monitor_allowed_hosts'] = ','.join(addresses)
 
     def provide_data(self):
+        try:
+            address = hookenv.network_get_primary_address('monitors')
+        except NotImplementedError:
+            address = hookenv.unit_get('private-address')
+
         relation_info = {
             'target-id': self.principle_relation.nagios_hostname(),
             'monitors': self.get_monitors(),
+            'private-address': address,
         }
         return relation_info
 
