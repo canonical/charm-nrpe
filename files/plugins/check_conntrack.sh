@@ -20,8 +20,16 @@ if ! lsmod | grep -q conntrack; then
     exit $STATE_OK
 fi
 
-max=$(sysctl net.netfilter.nf_conntrack_max | awk '{ print $3 }')
-current=$(sysctl net.netfilter.nf_conntrack_count | awk '{ print $3 }')
+max=$(sysctl net.netfilter.nf_conntrack_max 2>/dev/null | awk '{ print $3 }')
+if [ -z "$max" ]; then
+    echo "UNKNOWN: unable to retrieve value of net.netfilter.nf_conntrack_max"
+    exit $STATE_UNKNOWN
+fi
+current=$(sysctl net.netfilter.nf_conntrack_count 2>/dev/null | awk '{ print $3 }')
+if [ -z "$current" ]; then
+    echo "UNKNOWN: unable to retrieve value of net.netfilter.nf_conntrack_count"
+    exit $STATE_UNKNOWN
+fi
 
 # default thresholds
 crit=90

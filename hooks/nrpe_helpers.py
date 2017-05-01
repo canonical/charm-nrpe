@@ -250,11 +250,11 @@ class SubordinateCheckDefinitions(dict):
 
         if hookenv.config('load') == 'auto':
             # Give 1min load alerts higher thresholds than 15 min load alerts
-            warn_multipliers = (4,2,1)
-            crit_multipliers = (8,4,2)
+            warn_multipliers = (4, 2, 1)
+            crit_multipliers = (8, 4, 2)
             load_thresholds = ('-w %s -c %s') \
-                % (','.join([str(m*procs) for m in warn_multipliers]),
-                   ','.join([str(m*procs) for m in crit_multipliers]))
+                % (','.join([str(m * procs) for m in warn_multipliers]),
+                   ','.join([str(m * procs) for m in crit_multipliers]))
         else:
             load_thresholds = hookenv.config('load')
 
@@ -313,6 +313,8 @@ class SubordinateCheckDefinitions(dict):
         self['checks'] = []
         sub_postfix = str(hookenv.config("sub_postfix"))
         for check in checks:
+            if check['cmd_params'] == "":
+                continue
             check['description'] += " (sub)"
             check['cmd_name'] += sub_postfix
             self['checks'].append(check)
