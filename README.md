@@ -44,8 +44,8 @@ juju add-relation glance-nrpe:monitors nagios:monitors
 juju add-relation glance glance-nrpe
 juju add-relation glance-hacluster glance-nrpe
 
-The glance-hacluster charm will pass montioring information to glance-nrpe
-which will amalgamate all montior definitions before passing them to nagios
+The glance-hacluster charm will pass monitoring information to glance-nrpe
+which will amalgamate all monitor definitions before passing them to nagios.
 
 Check sources
 =============
