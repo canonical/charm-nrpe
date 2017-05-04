@@ -208,3 +208,12 @@ Spaces
 By defining 'monitors' binding, you can influence which nrpe's IP will be reported
 back to Nagios. This can be very handy if nrpe is placed on machines with multiple
 IPs/networks.
+
+Actions
+=======
+
+The charm defines 2 actions, 'list-nrpe-checks' that gives a list of all the
+nrpe checks defined for this unit and what commands they use.  The other is
+run-nrpe-check, which allows you to run a specified nrpe check and get the
+output.  This is useful to confirm if an alert is actually resolved.
+

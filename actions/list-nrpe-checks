@@ -1,0 +1,16 @@
+#!/bin/bash
+
+nrpedir=/etc/nagios/nrpe.d
+
+if [ ! -d $nrpedir ]; then
+    action-fail "No $nrpedir exists"
+    exit 1
+else
+  for i in $nrpedir/*.cfg; do 
+    check=$(grep command $i | awk -F "=" '{ print $1 }' | sed -e 's/command\[//' | sed -e 's/\]//' | sed -e 's/_/-/g'); 
+    command=$(grep command $i | awk -F "=" '{ print $2 }'); 
+    action-set checks.$check="$command";
+  done
+fi
+
+action-set timestamp="$(date)"

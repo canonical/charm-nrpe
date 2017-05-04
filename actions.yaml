@@ -1,0 +1,9 @@
+list-nrpe-checks:
+    description: Lists all NRPE checks defined on this unit
+run-nrpe-check:
+    description: Run a specific NRPE check defined on this unit
+    params:
+        name:
+            type: string
+            description: Check name to run
+    required: [name]

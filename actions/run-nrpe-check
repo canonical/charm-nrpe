@@ -1,0 +1,15 @@
+#!/bin/bash
+
+check=$(action-get name | sed -e 's/-/_/g')
+
+nrpedir="/etc/nagios/nrpe.d"
+checkfile="$nrpedir/${check}.cfg"
+
+if [ -f $checkfile ]; then
+    command=$(awk -F "=" '{ print $2 }' $checkfile)
+    output=$(sudo -u nagios $command)
+    action-set check-output="$output"
+else
+    action-fail "$checkfile does not exist"
+fi
+
