@@ -46,4 +46,4 @@ publish-stable:
                 | tee /dev/tty | grep url: | cut -f 2 -d ' '` \
 	&& git tag -f -m "$$rev" `echo $$rev | tr -s '~:/' -` \
 	&& git push --tags $(REPO) \
-	&& charm publish -c stable $$rev
+	&& charm release -c stable $$rev
