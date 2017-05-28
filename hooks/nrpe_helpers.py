@@ -199,6 +199,17 @@ class NagiosInfo(dict):
         self['nagios_hostname'] = self.principle_relation.nagios_hostname()
         ip_key = hookenv.config('nagios_address_type') + '-address'
         self['nagios_ipaddress'] = hookenv.unit_get(ip_key)
+        if hookenv.config('dont_blame_nrpe') == True:
+            self['dont_blame_nrpe'] = '1'
+        else:
+            self['dont_blame_nrpe'] = '0'
+        if hookenv.config('debug') == True:
+            self['debug'] = '1'
+        else:
+            self['debug'] = '0'
+        monitors = Monitors()
+        monitors.add_monitors(yaml.safe_load(hookenv.config('monitors')),
+                              'user')
 
 
 class RsyncEnabled(helpers.RelationContext):

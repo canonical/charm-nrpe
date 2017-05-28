@@ -29,6 +29,20 @@ options:
         Determines whether a server is identified by its unit name or
         host name.  If you're in a virtual environment, "unit" is
         probably best.  If you're using MaaS, you may prefer "host".
+  dont_blame_nrpe:
+    default: False
+    type: boolean
+    description: |
+        Setting dont_blame_nrpe to True sets dont_blame_nrpe=1 in nrpe.cfg
+        This config option which allows specifying arguments to nrpe scripts.
+        This can be a security risk so it is disabled by default. Nrpe is
+        compiled with --enable-command-args option by default, which this config
+        option enables.
+  debug:
+    default: False
+    type: boolean
+    description: |
+        Setting debug to True enables the debug=1 nrpe.cfg
   disk_root:
     default: "-u GB -w 25% -c 20% -K 5%"
     type: string
