@@ -47,7 +47,7 @@ options:
     default: "auto"
     type: string
     description: Number of processes check or 'auto' for the charm to generate
-        thresholds based on processor count
+        thresholds based on processor count. Kernel threads are ignored.
   load:
     default: "auto"
     type: string

@@ -249,8 +249,8 @@ class SubordinateCheckDefinitions(dict):
         procs = self.proc_count()
 
         if hookenv.config('procs') == "auto":
-            proc_thresholds = "-w {} -c {}".format(25 * procs + 100,
-                                                   50 * procs + 100)
+            proc_thresholds = "-k -w {} -c {}".format(25 * procs + 100,
+                                                      50 * procs + 100)
         else:
             proc_thresholds = hookenv.config('procs')
 
