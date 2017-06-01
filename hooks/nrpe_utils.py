@@ -50,7 +50,7 @@ def install_charm_files(service_name):
                 '/var/lib/nagios/export/']
     for nag_dir in nag_dirs:
         if not os.path.exists(nag_dir):
-            host.mkdir(nag_dir)
+            host.mkdir(nag_dir, perms=0o755)
     charm_file_dir = os.path.join(hookenv.charm_dir(), 'files')
     charm_plugin_dir = os.path.join(charm_file_dir, 'plugins')
     pkg_plugin_dir = '/usr/lib/nagios/plugins/'
