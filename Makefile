@@ -34,7 +34,7 @@ test:
 	@juju test -v -p AMULET_HTTP_PROXY --timeout 900 \
         00-setup 10-tests
 
-publish-stable:
+check-status:
 	@if [ -n "`git status --porcelain`" ]; then \
 	    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'; \
 	    echo '!!! There are uncommitted changes !!!'; \
@@ -42,8 +42,17 @@ publish-stable:
 	    false; \
 	fi
 	git clean -fdx
+
+publish-stable: check-status
 	export rev=`charm push . $(CHARM_STORE_URL) 2>&1 \
                 | tee /dev/tty | grep url: | cut -f 2 -d ' '` \
 	&& git tag -f -m "$$rev" `echo $$rev | tr -s '~:/' -` \
 	&& git push --tags $(REPO) \
 	&& charm release -c stable $$rev
+
+publish-candidate: check-status
+	export rev=`charm push . $(CHARM_STORE_URL) 2>&1 \
+                | tee /dev/tty | grep url: | cut -f 2 -d ' '` \
+	&& git tag -f -m "$$rev" `echo $$rev | tr -s '~:/' -` \
+	&& git push --tags $(REPO) \
+	&& charm release -c candidate $$rev
