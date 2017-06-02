@@ -54,7 +54,8 @@ def manage():
                 helpers.render_template(
                     source='export_host.cfg.tmpl',
                     target='/var/lib/nagios/export/'
-                           'host__{}.cfg'.format(nag_hostname)
+                           'host__{}.cfg'.format(nag_hostname),
+                    perms=0o644,
                 ),
             ],
             'start': [nrpe_utils.restart_rsync],
