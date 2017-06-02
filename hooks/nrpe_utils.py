@@ -4,8 +4,10 @@ import glob
 
 from charmhelpers import fetch
 from charmhelpers.core import host
-from charmhelpers.core.templating import render
 from charmhelpers.core import hookenv
+from charmhelpers.core.services import helpers
+from charmhelpers.core.services.base import ManagerCallback
+from charmhelpers.core.templating import render
 
 import nrpe_helpers
 
@@ -115,7 +117,7 @@ def process_local_monitors():
 
 def update_nrpe_external_master_relation(service_name):
     """
-    Send updated nagsios_hostname to charms attached to nrpe_external_master
+    Send updated nagios_hostname to charms attached to nrpe_external_master
     relation.
     """
     principle_relation = nrpe_helpers.PrincipleRelation()
@@ -134,3 +136,27 @@ def update_monitor_relation(service_name):
             relation_id=rid,
             relation_settings=monitor_relation.provide_data()
         )
+
+
+class ExportManagerCallback(ManagerCallback):
+
+    """
+    This class exists in order to defer lookup of nagios_hostname()
+    until the template is ready to be rendered.  This should reduce the
+    incidence of incorrectly-rendered hostnames in /var/lib/nagios/exports.
+    See charmhelpers.core.services.base.ManagerCallback and
+    charmhelpers.core.services.helpers.TemplateCallback for more background.
+    """
+
+    def __call__(self, manager, service_name, event_name):
+        nag_hostname = nrpe_helpers.PrincipleRelation().nagios_hostname()
+        target = '/var/lib/nagios/export/host__{}.cfg'.format(nag_hostname)
+        renderer = helpers.render_template(
+            source='export_host.cfg.tmpl',
+            target=target,
+            perms=0o644,
+        )
+        renderer(manager, service_name, event_name)
+
+
+create_host_export_fragment = ExportManagerCallback()

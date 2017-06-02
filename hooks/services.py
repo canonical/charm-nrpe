@@ -8,7 +8,6 @@ import nrpe_helpers
 
 def manage():
     config = hookenv.config()
-    nag_hostname = nrpe_helpers.PrincipleRelation().nagios_hostname()
     manager = ServiceManager([
         {
             'service': 'nrpe-install',
@@ -28,6 +27,7 @@ def manage():
             'data_ready': [
                 nrpe_utils.update_nrpe_external_master_relation,
                 nrpe_utils.update_monitor_relation,
+                nrpe_utils.create_host_export_fragment,
                 nrpe_utils.render_nrped_files,
                 helpers.render_template(
                     source='nrpe.tmpl',
@@ -51,12 +51,7 @@ def manage():
                     source='rsync-juju.d.tmpl',
                     target='/etc/rsync-juju.d/010-nrpe-external-master.conf'
                 ),
-                helpers.render_template(
-                    source='export_host.cfg.tmpl',
-                    target='/var/lib/nagios/export/'
-                           'host__{}.cfg'.format(nag_hostname),
-                    perms=0o644,
-                ),
+                nrpe_utils.create_host_export_fragment,
             ],
             'start': [nrpe_utils.restart_rsync],
         },
