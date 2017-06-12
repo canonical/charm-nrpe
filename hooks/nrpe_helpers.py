@@ -199,11 +199,11 @@ class NagiosInfo(dict):
         self['nagios_hostname'] = self.principle_relation.nagios_hostname()
         ip_key = hookenv.config('nagios_address_type') + '-address'
         self['nagios_ipaddress'] = hookenv.unit_get(ip_key)
-        if hookenv.config('dont_blame_nrpe') == True:
+        if hookenv.config('dont_blame_nrpe') is True:
             self['dont_blame_nrpe'] = '1'
         else:
             self['dont_blame_nrpe'] = '0'
-        if hookenv.config('debug') == True:
+        if hookenv.config('debug') is True:
             self['debug'] = '1'
         else:
             self['debug'] = '0'

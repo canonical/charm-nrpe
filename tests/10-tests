@@ -212,7 +212,27 @@ class TestDeployment(unittest.TestCase):
             'filedelim': '=',
         }
         self.check_nrpe_setting(**test_config)
-        self.deployment.configure('nrpe', {'server_port': '5666'})
+        self.deployment.configure('nrpe', {'server_port': '5888'})
+
+    def test_config_debug(self):
+        test_config = {
+            'filename': '/etc/nagios/nrpe.cfg',
+            'expected_settings': {'debug': '1'},
+            'juju_kv': {'debug': 'True'},
+            'filedelim': '=',
+        }
+        self.check_nrpe_setting(**test_config)
+        self.deployment.configure('nrpe', {'debug': 'True'})
+
+    def test_config_dont_blame_nrpe(self):
+        test_config = {
+            'filename': '/etc/nagios/nrpe.cfg',
+            'expected_settings': {'dont_blame_nrpe': '1'},
+            'juju_kv': {'dont_blame_nrpe': 'True'},
+            'filedelim': '=',
+        }
+        self.check_nrpe_setting(**test_config)
+        self.deployment.configure('nrpe', {'dont_blame_nrpe': 'True'})
 
     def test_nagios_host_context(self):
         hostname = 'bob-mysql-0'
@@ -317,7 +337,8 @@ class TestDeployment(unittest.TestCase):
         self.check_nrpe_setting(**test_config)
 
     def test_custom_conntrack_check_params(self):
-        chk_key = 'command[check_conntrack]=/usr/local/lib/nagios/plugins/check_conntrack.sh'
+        chk_key = 'command[check_conntrack]=/usr/local/lib/nagios/plugins/'
+        'check_conntrack.sh'
         test_config = {
             'filename': '/etc/nagios/nrpe.d/check_conntrack_sub.cfg',
             'expected_settings': {chk_key: '-w 50 -c 70'},
