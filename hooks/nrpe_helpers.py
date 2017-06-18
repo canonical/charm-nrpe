@@ -203,10 +203,6 @@ class NagiosInfo(dict):
         self['dont_blame_nrpe'] = '1' if hookenv.config('dont_blame_nrpe') else '0'
         self['debug'] = '1' if hookenv.config('debug') else '0'
 
-        monitors = Monitors()
-        monitors.add_monitors(yaml.safe_load(hookenv.config('monitors')),
-                              'user')
-
 
 class RsyncEnabled(helpers.RelationContext):
 
