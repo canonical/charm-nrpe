@@ -337,8 +337,8 @@ class TestDeployment(unittest.TestCase):
         self.check_nrpe_setting(**test_config)
 
     def test_custom_conntrack_check_params(self):
-        chk_key = 'command[check_conntrack]=/usr/local/lib/nagios/plugins/'
-        'check_conntrack.sh'
+        chk_key = ('command[check_conntrack]=/usr/local/lib/nagios/plugins/'
+                   'check_conntrack.sh')
         test_config = {
             'filename': '/etc/nagios/nrpe.d/check_conntrack_sub.cfg',
             'expected_settings': {chk_key: '-w 50 -c 70'},
