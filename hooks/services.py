@@ -1,12 +1,14 @@
 from charmhelpers.core import hookenv
 from charmhelpers.core.services.base import ServiceManager
 from charmhelpers.core.services import helpers
+from charmhelpers.core.hookenv import status_set
 
 import nrpe_utils
 import nrpe_helpers
 
 
 def manage():
+    status_set('maintenance', 'starting')
     config = hookenv.config()
     manager = ServiceManager([
         {
@@ -57,3 +59,4 @@ def manage():
         },
     ])
     manager.manage()
+    status_set('active', 'ready')
