@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# This script checks swap pageouts and reports number of kbytes moved 
+# from physical ram to swap space in a given number of seconds
+#
+# Usage: "check_swap_activity -i interval  -w warning_kbyts  -c critical_kbytes
+#
+#
+
+set -eu
+
+. /usr/lib/nagios/plugins/utils.sh
+
+
+help() {
+cat << EOH
+usage: $0 [ -i ## ] -w ## -c ## 
+
+Measures page-outs to swap over a given interval, by default 5 seconds.
+
+   -i time in seconds to monitor (defaults to 5 seconds)
+   -w warning Level in kbytes
+   -c critical Level in kbytes
+
+EOH
+}
+
+TIMEWORD=seconds
+WARN_LVL=
+CRIT_LVL=
+INTERVAL=5
+## FETCH ARGUMENTS
+while getopts "i:w:c:" OPTION; do
+        case "${OPTION}" in
+                i)
+                        INTERVAL=${OPTARG}
+                        if [ $INTERVAL -eq 1 ]; then
+                            TIMEWORD=second
+                        fi
+                        ;;
+                w)
+                        WARN_LVL=${OPTARG}
+                        ;;
+                c)
+                        CRIT_LVL=${OPTARG}
+                        ;;
+                ?)
+                        help
+                        exit 3
+                        ;;
+        esac
+done
+
+if [ -z ${WARN_LVL} ] || [ -z ${CRIT_LVL} ]  ; then
+        help
+        exit 3
+fi
+
+## Get swap pageouts over $INTERVAL
+PAGEOUTS=$(vmstat -w ${INTERVAL} 2 | tail -n 1 | awk '{print $8}')
+
+SUMMARY="| swapout_size=${PAGEOUTS}KB;${WARN_LVL};${CRIT_LVL};"
+if [ ${PAGEOUTS} -lt ${WARN_LVL} ]; then
+        # pageouts are below threshold
+        echo "OK - ${PAGEOUTS} kb swapped out in last ${INTERVAL} ${TIMEWORD} $SUMMARY"
+        exit $STATE_OK
+elif [ ${PAGEOUTS} -ge ${CRIT_LVL} ]; then
+        ## SWAP IS IN CRITICAL STATE
+        echo "CRITICAL - ${PAGEOUTS} kb swapped out in last ${INTERVAL} ${TIMEWORD} $SUMMARY" 
+        exit $STATE_CRITICAL
+elif [ ${PAGEOUTS} -ge ${WARN_LVL} ] && [ ${PAGEOUTS} -lt ${CRIT_LVL} ]; then
+        ## SWAP IS IN WARNING STATE
+        echo "WARNING - ${PAGEOUTS} kb swapped out in last ${INTERVAL} ${TIMEWORD} $SUMMARY"
+        exit $STATE_WARNING
+else
+        echo "CRITICAL: Failure to process pageout information $SUMMARY"
+        exit $STATE_UNKNOWN
+fi

@@ -304,6 +304,12 @@ class SubordinateCheckDefinitions(dict):
                 'cmd_params': hookenv.config('swap'),
             },
             {
+                'description': 'Swap Activity',
+                'cmd_name': 'check_swap_activity',
+                'cmd_exec': local_plugin_dir + 'check_swap_activity',
+                'cmd_params': hookenv.config('swap_activity'),
+            },
+            {
                 'description': 'Memory',
                 'cmd_name': 'check_mem',
                 'cmd_exec': local_plugin_dir + 'check_mem.pl',
