@@ -200,6 +200,9 @@ class NagiosInfo(dict):
         ip_key = hookenv.config('nagios_address_type') + '-address'
         self['nagios_ipaddress'] = hookenv.unit_get(ip_key)
 
+        self['dont_blame_nrpe'] = '1' if hookenv.config('dont_blame_nrpe') else '0'
+        self['debug'] = '1' if hookenv.config('debug') else '0'
+
 
 class RsyncEnabled(helpers.RelationContext):
 
