@@ -158,13 +158,13 @@ class PrincipleRelation(helpers.RelationContext):
         if hostname_type == 'host' or not self.is_ready():
             return socket.gethostname()
         else:
-            principle_unitname = self[self.name][0]['__unit__']
-            # if a unit has primary=true in its relation data, prefer it over
-            # the first related unit, which is inconsistent
-            for relunit in self[self.name]:
-                if relunit.get('primary', 'False').lower() == 'true':
-                    principle_unitname = relunit['__unit__']
-                    break
+            principle_unitname = hookenv.principal_unit('nrpe-external-master')
+            # Fallback to using "primary" if it exists.
+            if not principle_unitname:
+                for relunit in self[self.name]:
+                    if relunit.get('primary', 'False').lower() == 'true':
+                        principle_unitname = relunit['__unit__']
+                        break
             nagios_hostname = "{}-{}".format(host_context, principle_unitname)
             nagios_hostname = nagios_hostname.replace('/', '-')
             return nagios_hostname
