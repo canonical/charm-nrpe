@@ -20,6 +20,11 @@ if ! lsmod | grep -q conntrack; then
     exit $STATE_OK
 fi
 
+if ! [ -e /proc/sys/net/netfilter/nf_conntrack_max ]; then
+    echo "OK: conntrack not available"
+    exit $STATE_OK
+fi
+
 max=$(sysctl net.netfilter.nf_conntrack_max 2>/dev/null | awk '{ print $3 }')
 if [ -z "$max" ]; then
     echo "UNKNOWN: unable to retrieve value of net.netfilter.nf_conntrack_max"
