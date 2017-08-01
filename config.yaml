@@ -78,9 +78,13 @@ options:
     type: string
     description: Users check
   swap:
-    default: "-w 90% -c 75%"
+    default: "-w 40% -c 25%"
     type: string
     description: Swap check
+  swap_activity:
+    default: "-i 5 -w 100 -c 500"
+    type: string
+    description: Swap activity check
   mem:
     default: "-C -u -w 85 -c 90"
     type: string

@@ -71,6 +71,7 @@ class TestDeployment(unittest.TestCase):
             'check_zombie_procs_sub',
             'check_total_procs_sub',
             'check_conntrack_sub',
+            'check_swap_activity_sub',
         ]
         for check in checks:
             if check not in monitors['monitors']['remote']['nrpe'].keys():
@@ -333,6 +334,15 @@ class TestDeployment(unittest.TestCase):
             'filename': '/etc/nagios/nrpe.d/check_swap_sub.cfg',
             'expected_settings': {chk_key: '-w 5% -c 1%'},
             'juju_kv': {'swap': '-w 5% -c 1%'}
+        }
+        self.check_nrpe_setting(**test_config)
+
+    def test_custom_swap_activity_check_params(self):
+        chk_key = 'command[check_swap_activity]=/usr/local/lib/nagios/plugins/check_swap_activity'
+        test_config = {
+            'filename': '/etc/nagios/nrpe.d/check_swap_activity_sub.cfg',
+            'expected_settings': {chk_key: '-w 20 -c 700'},
+            'juju_kv': {'swap_activity': '-w 20 -c 700'}
         }
         self.check_nrpe_setting(**test_config)
 
