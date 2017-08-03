@@ -37,7 +37,7 @@ def test_nrpe_monitors_config():
     # look for procrunning in nrpe config
     try:
         mysql_unit.file_contents('/etc/nagios/nrpe.d/'
-                                 'check_proc_mysqld_principle.cfg')
+                                 'check_proc_mysqld_principal.cfg')
     except IOError as e:
         amulet.raise_status(amulet.ERROR,
                             msg="procrunning config not found. Error:" +

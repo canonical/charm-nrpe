@@ -23,7 +23,7 @@ def manage():
             'required_data': [
                 config,
                 nrpe_helpers.MonitorsRelation(),
-                nrpe_helpers.PrincipleRelation(),
+                nrpe_helpers.PrincipalRelation(),
                 nrpe_helpers.NagiosInfo(),
             ],
             'data_ready': [
@@ -36,14 +36,14 @@ def manage():
                     target='/etc/nagios/nrpe.cfg'
                 ),
             ],
-            'provided_data': [nrpe_helpers.PrincipleRelation()],
+            'provided_data': [nrpe_helpers.PrincipalRelation()],
             'start': [nrpe_utils.restart_nrpe],
         },
         {
             'service': 'nrpe-rsync',
             'required_data': [
                 config,
-                nrpe_helpers.PrincipleRelation(),
+                nrpe_helpers.PrincipalRelation(),
                 nrpe_helpers.RsyncEnabled(),
                 nrpe_helpers.NagiosInfo(),
             ],

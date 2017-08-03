@@ -5,10 +5,10 @@ This subordinate charm is used to configure nrpe (Nagios Remote Plugin
 Executor). It can be related to the nagios charm via the monitors relation and
 will pass a monitors yaml to nagios informing it of what checks to monitor.
 
-Principle Relations
+Principal Relations
 ===================
 
-This charm can be attatched to any principle charm (via the juju-info relation)
+This charm can be attatched to any principal charm (via the juju-info relation)
 regardless of whether it has implemented the local-monitors or
 nrpe-external-master relations. For example,
 
@@ -21,7 +21,7 @@ juju add-relation nrpe:monitors nagios:monitors
 If joined via the juju-info relation the default checks are configured and
 additional checks can be added via the monitors config option (see below).
 
-The local-monitors relations allows the principle to request checks to be setup
+The local-monitors relations allows the principal to request checks to be setup
 by passing a monitors yaml and listing them in the 'local' section. It can
 also list checks that is has configured by listing them in the remote nrpe
 section and finally it can request external monitors are setup by using one of
@@ -30,7 +30,7 @@ the other remote types. See "Monitors yaml" below.
 Other Subordinate Charms
 ========================
 
-If another subordinate charm deployed to the same principle has a
+If another subordinate charm deployed to the same principal has a
 local-monitors or nrpe-external-master relation then it can also be related to
 the local nrpe charm. For example,
 
@@ -62,11 +62,11 @@ For example to increase the alert threshold for number of processes:
 
 juju set nrpe load="-w 10,10,10 -c 25,25,25"
 
-Principle Requested Checks
+Principal Requested Checks
 --------------------------
 
-Monitors passed to this charm by the principle charm via the local-monitors
-or nrpe-external-master relation. The principle charm can write its own
+Monitors passed to this charm by the principal charm via the local-monitors
+or nrpe-external-master relation. The principal charm can write its own
 check definition into */etc/nagios/nrpe.d* and then inform this charm via the
 monitors setting. It can also request a direct external check of a service
 without using nrpe. See "Monitors yaml" below for examples.
@@ -74,7 +74,7 @@ without using nrpe. See "Monitors yaml" below for examples.
 User Requested Checks
 ---------------------
 
-This works in the same way as the Principle requested except the monitors yaml
+This works in the same way as the Principal requested except the monitors yaml
 is set by the user via the monitors config option. For example to add a monitor
 for the rsylog process:
 
@@ -110,7 +110,7 @@ Monitors yaml
 =============
 
 The list of monitors past down the monitors relation is an amalgamation of the
-lists provided via the principle, the user and the default checks.
+lists provided via the principal, the user and the default checks.
 
 The monitors yaml is of the following form:
 
@@ -175,7 +175,7 @@ and the monitors yaml passed to nagios would include:
 	    check_proc_nagios3_user:
 	        command: check_proc_nagios3_user
 
-The principle charm, or the user via the monitors config option, can request an
+The principal charm, or the user via the monitors config option, can request an
 external check by adding it to the remote section of the monitors yaml. In the
 example above direct checks of a webserver and of mysql are being requested.
 This charm passes those on to nagios unaltered.

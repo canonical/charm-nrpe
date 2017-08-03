@@ -120,11 +120,11 @@ def update_nrpe_external_master_relation(service_name):
     Send updated nagios_hostname to charms attached to nrpe_external_master
     relation.
     """
-    principle_relation = nrpe_helpers.PrincipleRelation()
+    principal_relation = nrpe_helpers.PrincipalRelation()
     for rid in hookenv.relation_ids('nrpe-external-master'):
         hookenv.relation_set(
             relation_id=rid,
-            relation_settings=principle_relation.provide_data()
+            relation_settings=principal_relation.provide_data()
         )
 
 
@@ -149,7 +149,7 @@ class ExportManagerCallback(ManagerCallback):
     """
 
     def __call__(self, manager, service_name, event_name):
-        nag_hostname = nrpe_helpers.PrincipleRelation().nagios_hostname()
+        nag_hostname = nrpe_helpers.PrincipalRelation().nagios_hostname()
         target = '/var/lib/nagios/export/host__{}.cfg'.format(nag_hostname)
         renderer = helpers.render_template(
             source='export_host.cfg.tmpl',
