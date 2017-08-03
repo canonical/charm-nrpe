@@ -158,7 +158,7 @@ class PrincipleRelation(helpers.RelationContext):
         if hostname_type == 'host' or not self.is_ready():
             return socket.gethostname()
         else:
-            principle_unitname = hookenv.principal_unit('nrpe-external-master')
+            principle_unitname = hookenv.principal_unit()
             # Fallback to using "primary" if it exists.
             if not principle_unitname:
                 for relunit in self[self.name]:
