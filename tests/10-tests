@@ -80,8 +80,8 @@ class TestDeployment(unittest.TestCase):
                     msg='{} not found in monitors relation'.format(check)
                 )
 
-    def test_monitors_relation_principle_monitors(self):
-        """ Check monitor definitions from principle are passed to Nagios """
+    def test_monitors_relation_principal_monitors(self):
+        """ Check monitor definitions from principal are passed to Nagios """
         self.nrpe_sentry = self.deployment.sentry['nrpe'][0]
         relation_data = self.nrpe_sentry.relation(
             'monitors',
@@ -94,7 +94,7 @@ class TestDeployment(unittest.TestCase):
                 msg='mysql remote monitor not found in monitors relation',
             )
         nrpe_checks = monitors['monitors']['remote']['nrpe'].keys()
-        if 'check_proc_mysqld_principle' not in nrpe_checks:
+        if 'check_proc_mysqld_principal' not in nrpe_checks:
             amulet.raise_status(
                 amulet.FAIL,
                 msg='mysql process monitor not found in monitors relation',

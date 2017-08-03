@@ -44,7 +44,7 @@ class Monitors(dict):
         """ Convert check from local checks to remote nrpe checks
 
         monitors -- monitor dict
-        monitor_src -- Monitor source principle, subordinate or user
+        monitor_src -- Monitor source principal, subordinate or user
         """
         mons = {}
         for checktype in monitors.keys():
@@ -64,11 +64,11 @@ class MonitorsRelation(helpers.RelationContext):
     interface = 'monitors'
 
     def __init__(self, *args, **kwargs):
-        self.principle_relation = PrincipleRelation()
+        self.principal_relation = PrincipalRelation()
         super(MonitorsRelation, self).__init__(*args, **kwargs)
 
     def is_ready(self):
-        return self.principle_relation.is_ready()
+        return self.principal_relation.is_ready()
 
     def get_subordinate_monitors(self):
         """ Return default monitors defined by this charm """
@@ -84,14 +84,14 @@ class MonitorsRelation(helpers.RelationContext):
                               'user')
         return monitors
 
-    def get_principle_monitors(self):
-        """ Return monitors passed by relation with principle """
-        return self.principle_relation.get_monitors()
+    def get_principal_monitors(self):
+        """ Return monitors passed by relation with principal """
+        return self.principal_relation.get_monitors()
 
     def get_monitor_dicts(self):
         """ Return all monitor dicts """
         monitor_dicts = {
-            'principle': self.get_principle_monitors(),
+            'principal': self.get_principal_monitors(),
             'subordinate': self.get_subordinate_monitors(),
             'user': self.get_user_defined_monitors(),
         }
@@ -103,7 +103,7 @@ class MonitorsRelation(helpers.RelationContext):
         """
         all_monitors = Monitors()
         monitors = [
-            self.get_principle_monitors(),
+            self.get_principal_monitors(),
             self.get_subordinate_monitors(),
             self.get_user_defined_monitors(),
         ]
@@ -125,14 +125,14 @@ class MonitorsRelation(helpers.RelationContext):
             address = hookenv.unit_get('private-address')
 
         relation_info = {
-            'target-id': self.principle_relation.nagios_hostname(),
+            'target-id': self.principal_relation.nagios_hostname(),
             'monitors': self.get_monitors(),
             'private-address': address,
         }
         return relation_info
 
 
-class PrincipleRelation(helpers.RelationContext):
+class PrincipalRelation(helpers.RelationContext):
 
     def __init__(self, *args, **kwargs):
         if hookenv.relations_of_type('nrpe-external-master'):
@@ -144,7 +144,7 @@ class PrincipleRelation(helpers.RelationContext):
         elif hookenv.relations_of_type('local-monitors'):
             self.name = 'local-monitors'
             self.interface = 'local-monitors'
-        super(PrincipleRelation, self).__init__(*args, **kwargs)
+        super(PrincipalRelation, self).__init__(*args, **kwargs)
 
     def is_ready(self):
         if self.name not in self:
@@ -158,14 +158,14 @@ class PrincipleRelation(helpers.RelationContext):
         if hostname_type == 'host' or not self.is_ready():
             return socket.gethostname()
         else:
-            principle_unitname = hookenv.principal_unit()
+            principal_unitname = hookenv.principal_unit()
             # Fallback to using "primary" if it exists.
-            if not principle_unitname:
+            if not principal_unitname:
                 for relunit in self[self.name]:
                     if relunit.get('primary', 'False').lower() == 'true':
-                        principle_unitname = relunit['__unit__']
+                        principal_unitname = relunit['__unit__']
                         break
-            nagios_hostname = "{}-{}".format(host_context, principle_unitname)
+            nagios_hostname = "{}-{}".format(host_context, principal_unitname)
             nagios_hostname = nagios_hostname.replace('/', '-')
             return nagios_hostname
 
@@ -177,7 +177,7 @@ class PrincipleRelation(helpers.RelationContext):
         monitors = Monitors()
         for rel in self[self.name]:
             if rel.get('monitors'):
-                monitors.add_monitors(yaml.load(rel['monitors']), 'principle')
+                monitors.add_monitors(yaml.load(rel['monitors']), 'principal')
         return monitors
 
     def provide_data(self):
@@ -190,13 +190,13 @@ class PrincipleRelation(helpers.RelationContext):
 
 class NagiosInfo(dict):
     def __init__(self):
-        self.principle_relation = PrincipleRelation()
+        self.principal_relation = PrincipalRelation()
         self['external_nagios_master'] = '127.0.0.1'
         if hookenv.config('nagios_master') != 'None':
             self['external_nagios_master'] = \
                 "{},{}".format(self['external_nagios_master'],
                                hookenv.config('nagios_master'))
-        self['nagios_hostname'] = self.principle_relation.nagios_hostname()
+        self['nagios_hostname'] = self.principal_relation.nagios_hostname()
         ip_key = hookenv.config('nagios_address_type') + '-address'
         self['nagios_ipaddress'] = hookenv.unit_get(ip_key)
 
@@ -231,7 +231,7 @@ class NRPECheckCtxt(dict):
         elif checktype == 'processcount':
             self['cmd_exec'] = plugin_path + '/check_procs'
             self['description'] = 'Check process count'
-            self['cmd_name'] = 'check_proc_principle'
+            self['cmd_name'] = 'check_proc_principal'
             if 'min' in check_opts:
                 self['cmd_params'] = '-w {min} -c {max}'.format(**check_opts)
             else:
@@ -240,7 +240,7 @@ class NRPECheckCtxt(dict):
             self['cmd_exec'] = plugin_path + '/check_disk'
             self['description'] = 'Check disk usage ' + \
                 check_opts['path'].replace('/', '_'),
-            self['cmd_name'] = 'check_disk_principle'
+            self['cmd_name'] = 'check_disk_principal'
             self['cmd_params'] = '-w 20 -c 10 -p ' + check_opts['path']
         self['description'] += ' ({})'.format(monitor_src)
         self['cmd_name'] += '_' + monitor_src
