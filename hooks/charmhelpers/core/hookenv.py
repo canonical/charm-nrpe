@@ -43,6 +43,7 @@ ERROR = "ERROR"
 WARNING = "WARNING"
 INFO = "INFO"
 DEBUG = "DEBUG"
+TRACE = "TRACE"
 MARKER = object()
 
 cache = {}
@@ -211,7 +212,7 @@ def principal_unit():
         return os.environ['JUJU_UNIT_NAME']
     elif principal_unit is not None:
         return principal_unit
-    # For Juju 2.1 and below, let's try work out the principal unit by
+    # For Juju 2.1 and below, let's try work out the principle unit by
     # the various charms' metadata.yaml.
     for reltype in relation_types():
         for rid in relation_ids(reltype):
@@ -789,6 +790,9 @@ class Hooks(object):
 
 def charm_dir():
     """Return the root directory of the current charm"""
+    d = os.environ.get('JUJU_CHARM_DIR')
+    if d is not None:
+        return d
     return os.environ.get('CHARM_DIR')
 
 
