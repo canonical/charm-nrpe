@@ -156,7 +156,9 @@ class PrincipalRelation(helpers.RelationContext):
         host_context = hookenv.config('nagios_host_context')
         hostname_type = hookenv.config('nagios_hostname_type')
         if hostname_type == 'host' or not self.is_ready():
-            return socket.gethostname()
+            nagios_hostname = "{}-{}".format(host_context,
+                                             socket.gethostname())
+            return nagios_hostname
         else:
             principal_unitname = hookenv.principal_unit()
             # Fallback to using "primary" if it exists.
