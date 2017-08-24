@@ -2,11 +2,13 @@ options:
   nagios_master:
     default: "None"
     type: string
-    description: IP address of the nagios master to allow rsyncs from
+    description: |
+        IP address of the nagios master from which to allow rsync access
   server_port:
     default: 5666
     type: int
-    description: port that nagios-nrpe-server will listen on
+    description: |
+        Port on which nagios-nrpe-server will listen
   nagios_address_type:
     default: "private"
     type: string
@@ -17,7 +19,7 @@ options:
     default: "juju"
     type: string
     description: |
-        a string that will be prepended to instance name to set the host name
+        A string which will be prepended to instance name to set the host name
         in nagios. So for instance the hostname would be something like:
             juju-postgresql-0
         If you're running multiple environments with the same services in them
@@ -36,13 +38,13 @@ options:
         Setting dont_blame_nrpe to True sets dont_blame_nrpe=1 in nrpe.cfg
         This config option which allows specifying arguments to nrpe scripts.
         This can be a security risk so it is disabled by default. Nrpe is
-        compiled with --enable-command-args option by default, which this config
+        compiled with --enable-command-args option by default, which this
         option enables.
   debug:
     default: False
     type: boolean
     description: |
-        Setting debug to True enables the debug=1 nrpe.cfg
+        Setting debug to True enables debug=1 in nrpe.cfg
   disk_root:
     default: "-u GB -w 25% -c 20% -K 5%"
     type: string
@@ -54,29 +56,38 @@ options:
         the string taking that into account. See the nagios check_disk plugin
         help for further details.
   zombies:
-    default: "-w 3 -c 6 -s Z"
+    default: ""
     type: string
-    description: Zombie processes check
+    description: |
+      Zombie processes check; defaults to disabled. To enable, set the desired
+      check_procs arguments pertaining to zombies, for example: "-w 3 -c 6 -s Z"
   procs:
-    default: "auto"
+    default: ""
     type: string
-    description: Number of processes check or 'auto' for the charm to generate
-        thresholds based on processor count. Kernel threads are ignored.
+    description: |
+        Set thresholds for number of running processes.  Defaults to disabled;
+        to enable, specify 'auto' for the charm to generate thresholds based
+        on processor count, or manually provide arguments for check_procs, for
+        example: "-k -w 250 -c 300" to set warning and critical levels
+        manually and exclude kernel threads.
   load:
     default: "auto"
     type: string
     description: |
-        Load check (e.g. -w 8,8,8 -c 15,15,15), if 'auto' is set, then
-        NUM_CPUS*0.7 is used for the warning threshold and NUM_CPUS for the
-        critical one
+        Load check arguments (e.g. "-w 8,8,8 -c 15,15,15"); if 'auto' is set,
+        then NUM_CPUS*0.7 is used for the warning threshold and NUM_CPUS for
+        critical.
   conntrack:
     default: "-w 80 -c 90"
     type: string
     description: conntrack table check
   users:
-    default: "-w 20 -c 25"
+    default: ""
     type: string
-    description: Users check
+    description: |
+        Set thresholds for number of logged-in users.  Defaults to disabled;
+        to enable, manually provide arguments for check_user, for example:
+        "-w 20 -c 25"
   swap:
     default: "-w 40% -c 25%"
     type: string
