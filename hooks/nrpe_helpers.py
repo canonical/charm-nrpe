@@ -333,8 +333,13 @@ class SubordinateCheckDefinitions(dict):
         sub_postfix = str(hookenv.config("sub_postfix"))
         # Automatically use _sub for checks shipped on a unit with the nagios
         # charm. Mostly for backwards compatibility.
-        if sub_postfix == '' and hookenv.principal_unit_charm() == 'nagios':
-            sub_postfix = '_sub'
+        principal_unit = hookenv.principal_unit()
+        if sub_postfix == '' and principal_unit:
+            md = hookenv._metadata_unit(principal_unit)
+            if md:
+                charm_name = md.pop('name', None)
+                if charm_name == 'nagios':
+                    sub_postfix = '_sub'
         for check in checks:
             if check['cmd_params'] == "":
                 continue
