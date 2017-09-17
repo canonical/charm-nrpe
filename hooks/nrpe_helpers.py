@@ -336,10 +336,8 @@ class SubordinateCheckDefinitions(dict):
         principal_unit = hookenv.principal_unit()
         if sub_postfix == '' and principal_unit:
             md = hookenv._metadata_unit(principal_unit)
-            if md:
-                charm_name = md.pop('name', None)
-                if charm_name == 'nagios':
-                    sub_postfix = '_sub'
+            if md and md.pop('name', None) == 'nagios':
+                sub_postfix = '_sub'
         for check in checks:
             if check['cmd_params'] == "":
                 continue
