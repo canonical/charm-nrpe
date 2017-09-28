@@ -46,12 +46,6 @@ def remove_host_export_fragments(service_name):
         os.unlink(fname)
 
 
-def remove_nrped_files():
-    """ Remove nrpe.d files """
-    for fname in glob.glob('/etc/nagios/nrpe.d/*.cfg'):
-        os.unlink(fname)
-
-
 def install_charm_files(service_name):
     """ Install files shipped with charm """
     nag_dirs = ['/etc/nagios/nrpe.d/', '/usr/local/lib/nagios/plugins',
@@ -97,8 +91,6 @@ def render_nrpe_check_config(checkctxt):
 
 def render_nrped_files(service_name):
     """ Render each of the predefined checks """
-    # Remove existing first in case sub_postfix has changed, for instance
-    remove_nrped_files()
     for checkctxt in nrpe_helpers.SubordinateCheckDefinitions()['checks']:
         render_nrpe_check_config(checkctxt)
     process_local_monitors()

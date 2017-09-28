@@ -1,3 +1,5 @@
+import glob
+import os
 import socket
 import yaml
 import subprocess
@@ -332,6 +334,9 @@ class SubordinateCheckDefinitions(dict):
         self['checks'] = []
         sub_postfix = str(hookenv.config("sub_postfix"))
         for check in checks:
+            # Remove pre-existing check in case sub_postfix has changed or check string is now empty
+            for fname in glob.glob('/etc/nagios/nrpe.d/{}*.cfg'.format(check['cmd_name'])):
+                os.unlink(fname)
             if check['cmd_params'] == "":
                 continue
             check['description'] += " (sub)"
