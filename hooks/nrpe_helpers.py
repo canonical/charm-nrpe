@@ -4,6 +4,7 @@ import subprocess
 
 from charmhelpers.core.services import helpers
 from charmhelpers.core import hookenv
+import os
 
 
 class Monitors(dict):
@@ -128,6 +129,7 @@ class MonitorsRelation(helpers.RelationContext):
             'target-id': self.principal_relation.nagios_hostname(),
             'monitors': self.get_monitors(),
             'private-address': address,
+            'machine_id': os.environ['JUJU_MACHINE_ID'],
         }
         return relation_info
 
