@@ -121,7 +121,7 @@ options:
         '/var/lib/nagios/export' and rync is configured to allow nagios_master
         to collect them. Useful when Nagios is outside of the juju environment
   sub_postfix:
-    default: "_sub"
+    default: ""
     type: string
     description: |
         A string to be appended onto all the nrpe checks created by this charm
