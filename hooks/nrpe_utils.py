@@ -82,16 +82,21 @@ def install_charm_files(service_name):
 
 def render_nrpe_check_config(checkctxt):
     """ Write nrpe check definition """
-    render(
-        'nrpe_command.tmpl',
-        '/etc/nagios/nrpe.d/{}.cfg'.format(checkctxt['cmd_name']),
-        checkctxt
-    )
+    # Only render if we actually have cmd parameters
+    if checkctxt['cmd_params']:
+        render(
+            'nrpe_command.tmpl',
+            '/etc/nagios/nrpe.d/{}.cfg'.format(checkctxt['cmd_name']),
+            checkctxt
+        )
 
 
 def render_nrped_files(service_name):
     """ Render each of the predefined checks """
     for checkctxt in nrpe_helpers.SubordinateCheckDefinitions()['checks']:
+        # Clean up existing files
+        for fname in checkctxt['matching_files']:
+            os.unlink(fname)
         render_nrpe_check_config(checkctxt)
     process_local_monitors()
 
