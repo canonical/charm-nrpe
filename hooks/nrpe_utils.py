@@ -96,7 +96,11 @@ def render_nrped_files(service_name):
     for checkctxt in nrpe_helpers.SubordinateCheckDefinitions()['checks']:
         # Clean up existing files
         for fname in checkctxt['matching_files']:
-            os.unlink(fname)
+            try:
+                os.unlink(fname)
+            except FileNotFoundError:
+                # Don't clean up non-existent files
+                pass
         render_nrpe_check_config(checkctxt)
     process_local_monitors()
 
