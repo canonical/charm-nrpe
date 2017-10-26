@@ -60,6 +60,32 @@ class Monitors(dict):
         return mons
 
 
+def get_local_ingress_address(binding='monitors'):
+    # using network-get to retrieve the address details if available.
+    hookenv.log('Getting hostname for binding %s' % binding)
+    try:
+        network_info = hookenv.network_get(binding)
+        if network_info is not None and 'ingress-addresses' in network_info:
+            hookenv.log('Using ingress-addresses')
+            hostname = network_info['ingress-addresses'][0]
+            hookenv.log(hostname)
+            return hostname
+    except NotImplementedError:
+        # We'll fallthrough to the Pre 2.3 code below.
+        pass
+
+    # Pre 2.3 output
+    try:
+        hostname = hookenv.network_get_primary_address(binding)
+        hookenv.log('Using primary-addresses')
+    except NotImplementedError:
+        # pre Juju 2.0
+        hostname = hookenv.unit_get('private_address')
+        hookenv.log('Using unit_get private address')
+    hookenv.log(hostname)
+    return hostname
+
+
 class MonitorsRelation(helpers.RelationContext):
     name = 'monitors'
     interface = 'monitors'
@@ -112,23 +138,26 @@ class MonitorsRelation(helpers.RelationContext):
             all_monitors.add_monitors(mon)
         return all_monitors
 
+    def ingress_address(self, relation_data):
+        if 'ingress-address' in relation_data:
+            return relation_data['ingress-address']
+        return relation_data['private-address']
+
     def get_data(self):
         super(MonitorsRelation, self).get_data()
         if not hookenv.relation_ids(self.name):
             return
-        addresses = [info['private-address'] for info in self['monitors']]
+        addresses = [self.ingress_address(info) for info in self['monitors']]
         self['monitor_allowed_hosts'] = ','.join(addresses)
 
     def provide_data(self):
-        try:
-            address = hookenv.network_get_primary_address('monitors')
-        except NotImplementedError:
-            address = hookenv.unit_get('private-address')
+        address = get_local_ingress_address('monitors')
 
         relation_info = {
             'target-id': self.principal_relation.nagios_hostname(),
             'monitors': self.get_monitors(),
             'private-address': address,
+            'ingress-address': address,
             'machine_id': os.environ['JUJU_MACHINE_ID'],
         }
         return relation_info
