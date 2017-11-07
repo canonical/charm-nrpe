@@ -76,7 +76,8 @@ class MonitorsRelation(helpers.RelationContext):
         """ Return default monitors defined by this charm """
         monitors = Monitors()
         for check in SubordinateCheckDefinitions()['checks']:
-            monitors.add_nrpe_check(check['cmd_name'], check['cmd_name'])
+            if check['cmd_params']:
+                monitors.add_nrpe_check(check['cmd_name'], check['cmd_name'])
         return monitors
 
     def get_user_defined_monitors(self):

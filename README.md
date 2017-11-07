@@ -62,6 +62,8 @@ For example to increase the alert threshold for number of processes:
 
 juju set nrpe load="-w 10,10,10 -c 25,25,25"
 
+Default checks maybe disabled by setting them to the empty string.
+
 Principal Requested Checks
 --------------------------
 
