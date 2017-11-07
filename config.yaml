@@ -55,6 +55,8 @@ options:
         The string '-p /' will be appended to this check, so you must finish
         the string taking that into account. See the nagios check_disk plugin
         help for further details.
+        .
+        Set to '' in order to disable this check.
   zombies:
     default: ""
     type: string
@@ -77,10 +79,15 @@ options:
         Load check arguments (e.g. "-w 8,8,8 -c 15,15,15"); if 'auto' is set,
         then NUM_CPUS*0.7 is used for the warning threshold and NUM_CPUS for
         critical.
+        .
+        Set to '' in order to disable this check.
   conntrack:
     default: "-w 80 -c 90"
     type: string
-    description: conntrack table check
+    description: |
+        Check conntrack (net.netfilter.nf_conntrack_count) against thresholds.
+        .
+        Set to '' in order to disable this check.
   users:
     default: ""
     type: string
@@ -91,15 +98,25 @@ options:
   swap:
     default: "-w 40% -c 25%"
     type: string
-    description: Swap check
+    description: |
+        Check swap utilisation.  See the nagios check_swap plugin help for
+        further details.
+        .
+        Set to '' in order to disable this check.
   swap_activity:
     default: "-i 5 -w 100 -c 500"
     type: string
-    description: Swap activity check
+    description: |
+        Swap activity check.
+        .
+        Set to '' in order to disable this check.
   mem:
     default: "-C -u -w 85 -c 90"
     type: string
-    description: Memory check
+    description: |
+        Check memory % used.
+        .
+        Set to '' in order to disable this check.
   monitors:
     default: ''
     type: string

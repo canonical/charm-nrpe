@@ -275,6 +275,11 @@ class SubordinateCheckDefinitions(dict):
         else:
             load_thresholds = hookenv.config('load')
 
+        if hookenv.config('disk_root'):
+            disk_root_thresholds = hookenv.config('disk_root') + " -p / "
+        else:
+            disk_root_thresholds = ''
+
         pkg_plugin_dir = '/usr/lib/nagios/plugins/'
         local_plugin_dir = '/usr/local/lib/nagios/plugins/'
         checks = [
@@ -282,7 +287,7 @@ class SubordinateCheckDefinitions(dict):
                 'description': 'Root disk',
                 'cmd_name': 'check_disk_root',
                 'cmd_exec': pkg_plugin_dir + 'check_disk',
-                'cmd_params': hookenv.config('disk_root') + " -p / ",
+                'cmd_params': disk_root_thresholds,
             },
             {
                 'description': 'Number of Zombie processes',
