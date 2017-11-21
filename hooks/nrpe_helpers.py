@@ -337,6 +337,12 @@ class SubordinateCheckDefinitions(dict):
                 'cmd_exec': local_plugin_dir + 'check_conntrack.sh',
                 'cmd_params': hookenv.config('conntrack'),
             },
+            {
+                'description': 'XFS Errors',
+                'cmd_name': 'check_xfs_errors',
+                'cmd_exec': local_plugin_dir + 'check_xfs_errors.py',
+                'cmd_params': hookenv.config('xfs_errors'),
+            },
         ]
         self['checks'] = []
         sub_postfix = str(hookenv.config("sub_postfix"))
