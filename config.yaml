@@ -144,9 +144,9 @@ options:
         A string to be appended onto all the nrpe checks created by this charm
         to avoid potential clashes with existing checks
   xfs_errors:
-    default: "120"
+    default: ""
     type: string
     description: |
         dmesg history length to check for xfs errors, in minutes
         .
-        Set to '' in order to disable this check.
+        Defaults to disabled, set the time to enable.
