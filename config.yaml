@@ -117,6 +117,28 @@ options:
         Check memory % used.
         .
         Set to '' in order to disable this check.
+  lacp_bonds:
+    default: ''
+    type: string
+    description: |
+        LACP bond interfaces, space-delimited (ie. 'bond0 bond1')
+  netlinks:
+    default: ''
+    type: string
+    description: |
+        Network interfaces to monitor for correct link state, MTU size
+        and speed negotiated
+        .
+        For example:
+        - eth0 mtu:9000 speed:25000
+        - lo mtu:65536 op:unknown
+        - br0-mgmt mtu:9000
+        - br0-sta mtu:9000
+        - br0-stc mtu:9000
+        - br0-api mtu:1500
+        - bond0 mtu:9000 speed:50000
+        - bond0.25 mtu:1500 speed:50000
+        - ...
   monitors:
     default: ''
     type: string
