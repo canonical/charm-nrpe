@@ -127,9 +127,10 @@ options:
     type: string
     description: |
         Network interfaces to monitor for correct link state, MTU size
-        and speed negotiated
+        and speed negotiated. Parsed keywords are mtu, speed, op.
+        Other keywords are ignored.
         .
-        For example:
+        For example (multi-line starts with pipe):
         - eth0 mtu:9000 speed:25000
         - lo mtu:65536 op:unknown
         - br0-mgmt mtu:9000
@@ -138,6 +139,7 @@ options:
         - br0-api mtu:1500
         - bond0 mtu:9000 speed:50000
         - bond0.25 mtu:1500 speed:50000
+        - ens3 mtu:1500 speed:-1 desc:openstack_iface
         - ...
   monitors:
     default: ''

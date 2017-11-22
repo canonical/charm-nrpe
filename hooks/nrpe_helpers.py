@@ -360,6 +360,36 @@ class SubordinateCheckDefinitions(dict):
                 'cmd_params': hookenv.config('xfs_errors'),
             },
         ]
+
+        if hookenv.config('lacp_bonds').strip():
+            for bond_iface in hookenv.config('lacp_bonds').strip().split():
+                if os.path.exists('/sys/class/net/{}'.format(bond_iface)):
+                    description = 'LACP Check {}'.format(bond_iface)
+                    cmd_name = 'check_lacp_{}'.format(bond_iface)
+                    cmd_exec = local_plugin_dir + 'check_lacp_bond.py'
+                    cmd_params = '-i {}'.format(bond_iface)
+                    lacp_check = {'description': description,
+                                  'cmd_name': cmd_name,
+                                  'cmd_exec': cmd_exec,
+                                  'cmd_params': cmd_params
+                                  }
+                    checks.append(lacp_check)
+
+        if hookenv.config('netlinks'):
+            ifaces = yaml.safe_load(hookenv.config('netlinks'))
+            d_ifaces = self.parse_netlinks(ifaces)
+            for iface in d_ifaces:
+                description = 'Netlinks status ({})'.format(iface)
+                cmd_name = 'check_netlinks_{}'.format(iface)
+                cmd_exec = local_plugin_dir + 'check_netlinks.py'
+                cmd_params = d_ifaces[iface]
+                netlink_check = {'description': description,
+                                 'cmd_name': cmd_name,
+                                 'cmd_exec': cmd_exec,
+                                 'cmd_params': cmd_params
+                                 }
+                checks.append(netlink_check)
+
         self['checks'] = []
         sub_postfix = str(hookenv.config("sub_postfix"))
         # Automatically use _sub for checks shipped on a unit with the nagios
@@ -369,10 +399,15 @@ class SubordinateCheckDefinitions(dict):
             md = hookenv._metadata_unit(principal_unit)
             if md and md.pop('name', None) == 'nagios':
                 sub_postfix = '_sub'
+        NRPE_CONFIG_SUB_TMPL = '/etc/nagios/nrpe.d/{}_*.cfg'
+        NRPE_CONFIG_TMPL = '/etc/nagios/nrpe.d/{}*.cfg'
         for check in checks:
-            # This can be used to clean up old files before rendering the new ones.
-            check['matching_files'] = glob.glob('/etc/nagios/nrpe.d/{}_*.cfg'.format(check['cmd_name']))
-            check['matching_files'].extend(glob.glob('/etc/nagios/nrpe.d/{}.cfg'.format(check['cmd_name'])))
+            # This can be used to clean up old files before rendering the new
+            # ones
+            nrpe_configfiles_sub = NRPE_CONFIG_SUB_TMPL.format(check['cmd_name'])
+            nrpe_configfiles = NRPE_CONFIG_TMPL.format(check['cmd_name'])
+            check['matching_files'] = glob.glob(nrpe_configfiles_sub)
+            check['matching_files'].extend(glob.glob(nrpe_configfiles))
             check['description'] += " (sub)"
             check['cmd_name'] += sub_postfix
             self['checks'].append(check)
@@ -380,3 +415,47 @@ class SubordinateCheckDefinitions(dict):
     def proc_count(self):
         """ Return number number of processing units """
         return int(subprocess.check_output('nproc'))
+
+    def parse_netlinks(self, ifaces):
+        """Parses a list of strings, or a single string
+
+        Looks if the interfaces exist and configures extra parameters (or
+        properties) -> ie. ['mtu:9000', 'speed:1000', 'op:up']
+        """
+        IFACE = '/sys/class/net/{}'
+        PROPS = {'mtu': '-m {}',
+                 'speed': '-s {}',
+                 'op': '-o {}'}
+
+        if type(ifaces) == str:
+            ifaces = [ifaces]
+
+        d_ifaces = {}
+        for iface in ifaces:
+            iface_props = iface.strip().split()
+            # no ifaces defined; SKIP
+            if len(iface_props) == 0:
+                continue
+
+            # non-existing iface; SKIP
+            iface_dev = iface_props[0]
+            if not os.path.exists(IFACE.format(iface_dev)):
+                continue
+
+            # parse extra parameters (properties)
+            del iface_props[0]
+            extra_params = ''
+            for prop in iface_props:
+                # wrong format (key:value); SKIP
+                if prop.find(':') < 0:
+                    continue
+
+                # only one ':' expected
+                kv = prop.split(':')
+                if len(kv) == 2 and kv[0].lower() in PROPS:
+                    extra_params += ' '
+                    extra_params += PROPS[kv[0].lower()].format(kv[1])
+
+            d_ifaces[iface_dev] = '-i {}{}'.format(iface_dev,
+                                                   extra_params)
+        return d_ifaces
