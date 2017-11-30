@@ -7,10 +7,26 @@
 
 . /usr/lib/nagios/plugins/utils.sh
 
+check_ret_value() {
+    RET=$1
+    if [[ $RET -ne 0 ]];then
+        echo "CRIT: $2"
+        exit $STATE_CRIT
+    fi
+}
+
+check_netns_create() {
+    RET_VAL=$(ip netns add nrpe-check 2>&1)
+    check_ret_value $? "$RET_VAL"
+    RET_VAL=$(ip netns delete nrpe-check 2>&1)
+    check_ret_value $? "$RET_VAL"
+}
+
+
 netnsok=()
 netnscrit=()
 
-for ns in $(ip netns list); do
+for ns in $(ip netns list | egrep -v '^nrpe-check$'); do
     output=$(ip netns exec $ns ip a 2>/dev/null)
     err=$?
     if [ $err -eq 0 ]; then
@@ -22,6 +38,7 @@ done
 
 if [ ${#netnscrit[@]} -eq 0 ]; then
     if [ ${#netnsok[@]} -eq 0 ]; then
+        check_netns_create
         echo "OK: no namespaces defined"
         exit $STATE_OK
     else
