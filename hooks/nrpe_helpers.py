@@ -1,7 +1,7 @@
 import glob
 import socket
-import yaml
 import subprocess
+import yaml
 
 from charmhelpers.core.services import helpers
 from charmhelpers.core import hookenv
@@ -206,17 +206,22 @@ class NagiosInfo(dict):
                                hookenv.config('nagios_master'))
         self['nagios_hostname'] = self.principal_relation.nagios_hostname()
 
-        # Try work out the correct IP address using the more prefered
-        # network-get. For public addresses, there doesn't seem to be a way via
-        # network-get yet so continue to use 'unit-get public-address'
-        # (LP: #1736050).
+        address = None
         if hookenv.config('nagios_address_type').lower() == 'public':
             address = hookenv.unit_get('public-address')
-        else:
-            try:
-                address = hookenv.network_get_primary_address('nrpe-external-master')
-            except NotImplementedError:
-                address = hookenv.unit_get('private-address')
+        elif hookenv.config('nagios_master') != 'None':
+            # Try to work out the correct interface/IP. We can't use both
+            # network-get nor 'unit-get private-address' because both can
+            # return the wrong IP on systems with more than one interface
+            # (LP: #1736050).
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect((hookenv.config('nagios_master'), 80))
+            address = s.getsockname()[0]
+            s.close()
+        # Fallback to unit-get private-address
+        if not address:
+            address = hookenv.unit_get('private-address')
+
         self['nagios_ipaddress'] = address
 
         self['dont_blame_nrpe'] = '1' if hookenv.config('dont_blame_nrpe') else '0'
