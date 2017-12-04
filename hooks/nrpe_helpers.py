@@ -205,8 +205,19 @@ class NagiosInfo(dict):
                 "{},{}".format(self['external_nagios_master'],
                                hookenv.config('nagios_master'))
         self['nagios_hostname'] = self.principal_relation.nagios_hostname()
-        ip_key = hookenv.config('nagios_address_type') + '-address'
-        self['nagios_ipaddress'] = hookenv.unit_get(ip_key)
+
+        # Try work out the correct IP address using the more prefered
+        # network-get. For public addresses, there doesn't seem to be a way via
+        # network-get yet so continue to use 'unit-get public-address'
+        # (LP: #1736050).
+        if hookenv.config('nagios_address_type').lower() == 'public':
+            address = hookenv.unit_get('public-address')
+        else:
+            try:
+                address = hookenv.network_get_primary_address('nrpe-external-master')
+            except NotImplementedError:
+                address = hookenv.unit_get('private-address')
+        self['nagios_ipaddress'] = address
 
         self['dont_blame_nrpe'] = '1' if hookenv.config('dont_blame_nrpe') else '0'
         self['debug'] = '1' if hookenv.config('debug') else '0'
