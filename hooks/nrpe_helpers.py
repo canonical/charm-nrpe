@@ -370,8 +370,9 @@ class SubordinateCheckDefinitions(dict):
             if md and md.pop('name', None) == 'nagios':
                 sub_postfix = '_sub'
         for check in checks:
-            # This can be used to clean up old files before rendering the new ones
-            check['matching_files'] = glob.glob('/etc/nagios/nrpe.d/{}*.cfg'.format(check['cmd_name']))
+            # This can be used to clean up old files before rendering the new ones.
+            check['matching_files'] = glob.glob('/etc/nagios/nrpe.d/{}_*.cfg'.format(check['cmd_name']))
+            check['matching_files'].extend(glob.glob('/etc/nagios/nrpe.d/{}.cfg'.format(check['cmd_name'])))
             check['description'] += " (sub)"
             check['cmd_name'] += sub_postfix
             self['checks'].append(check)
