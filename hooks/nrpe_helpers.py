@@ -215,7 +215,7 @@ class NagiosInfo(dict):
             # return the wrong IP on systems with more than one interface
             # (LP: #1736050).
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect((hookenv.config('nagios_master'), 80))
+            s.connect((hookenv.config('nagios_master').split(',')[0], 80))
             address = s.getsockname()[0]
             s.close()
         # Fallback to unit-get private-address
