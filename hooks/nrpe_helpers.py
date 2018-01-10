@@ -400,7 +400,7 @@ class SubordinateCheckDefinitions(dict):
             if md and md.pop('name', None) == 'nagios':
                 sub_postfix = '_sub'
         NRPE_CONFIG_SUB_TMPL = '/etc/nagios/nrpe.d/{}_*.cfg'
-        NRPE_CONFIG_TMPL = '/etc/nagios/nrpe.d/{}*.cfg'
+        NRPE_CONFIG_TMPL = '/etc/nagios/nrpe.d/{}.cfg'
         for check in checks:
             # This can be used to clean up old files before rendering the new
             # ones
