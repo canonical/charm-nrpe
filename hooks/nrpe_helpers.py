@@ -1,11 +1,15 @@
 import glob
+import os
 import socket
 import subprocess
 import yaml
 
 from charmhelpers.core.services import helpers
 from charmhelpers.core import hookenv
-import os
+
+
+class InvalidCustomCheckException(Exception):
+    pass
 
 
 class Monitors(dict):
@@ -51,13 +55,19 @@ class Monitors(dict):
         mons = {}
         for checktype in monitors.keys():
             for checkname in monitors[checktype]:
-                check_def = NRPECheckCtxt(
-                    checktype,
-                    monitors[checktype][checkname],
-                    monitor_src,
-                )
-                mons[check_def['cmd_name']] = \
-                    {'command': check_def['cmd_name']}
+                try:
+                    check_def = NRPECheckCtxt(
+                        checktype,
+                        monitors[checktype][checkname],
+                        monitor_src,
+                    )
+                    mons[check_def['cmd_name']] = \
+                        {'command': check_def['cmd_name']}
+                except InvalidCustomCheckException as e:
+                    hookenv.log('Error encountered configuring local check '
+                                '"{check}": {err}'.format(check=checkname,
+                                                          err=str(e)),
+                                hookenv.ERROR)
         return mons
 
 
@@ -263,9 +273,22 @@ class NRPECheckCtxt(dict):
         elif checktype == 'disk':
             self['cmd_exec'] = plugin_path + '/check_disk'
             self['description'] = 'Check disk usage ' + \
-                check_opts['path'].replace('/', '_'),
+                check_opts['path'].replace('/', '_')
             self['cmd_name'] = 'check_disk_principal'
             self['cmd_params'] = '-w 20 -c 10 -p ' + check_opts['path']
+        elif checktype == 'custom':
+            custom_path = check_opts.get('plugin_path', plugin_path)
+            if not custom_path.startswith(os.path.sep):
+                custom_path = os.path.join(os.path.sep, custom_path)
+            if not os.path.isdir(custom_path):
+                raise InvalidCustomCheckException(
+                    'Specified plugin_path "{}" does not exist or is not a '
+                    'directory.'.format(custom_path))
+            check = check_opts['check']
+            self['cmd_exec'] = os.path.join(custom_path, check)
+            self['description'] = check_opts.get('desc', 'Check %s' % check)
+            self['cmd_name'] = check
+            self['cmd_params'] = check_opts.get('params', '') or ''
         self['description'] += ' ({})'.format(monitor_src)
         self['cmd_name'] += '_' + monitor_src
 

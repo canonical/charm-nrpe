@@ -186,16 +186,23 @@ Local check types
 -----------------
 
 Supported nrpe checks are:
+
     procrunning:
       min: Minimum number of 'executable' processes
       max: Maximum number of 'executable' processes
       executable: Name of executable to look for in process list
-    processcount
+    processcount:
       min: Minimum total number processes
       max: Maximum total number processes
       executable: Name of executable to look for in process list
-    disk
+    disk:
       path: Directory to monitor space usage of
+    custom:
+      check: the name of the check to execute
+      plugin_path: (optional) Absolute path to the directory containing the 
+                   custom plugin. Default value is /var/lib/nagios/plugins
+      description: (optional) Description of the check
+      params: (optional) Parameters to pass to the check on invocation
 
 Remote check types
 ------------------
