@@ -31,7 +31,7 @@ test:
 	# coreycb note: The -v should only be temporary until Amulet sends
 	# raise_status() messages to stderr:
 	#   https://bugs.launchpad.net/amulet/+bug/1320357
-	@juju test -v -p AMULET_HTTP_PROXY --timeout 900 \
+	@juju test -v -p AMULET_HTTP_PROXY --timeout 900 --upload-tools \
         00-setup 10-tests
 
 check-status:

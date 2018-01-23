@@ -63,6 +63,10 @@ def install_charm_files(service_name):
         pkg_plugin_dir + '/nagios_plugin.py'
     )
     shutil.copy2(
+        os.path.join(charm_file_dir, 'nagios_plugin3.py'),
+        pkg_plugin_dir + '/nagios_plugin3.py'
+    )
+    shutil.copy2(
         os.path.join(charm_file_dir, 'default_rsync'),
         '/etc/default/rsync'
     )
@@ -75,9 +79,10 @@ def install_charm_files(service_name):
         '/usr/local/lib/nagios/',
         options=['--executability']
     )
-    if not os.path.exists(local_plugin_dir + 'nagios_plugin.py'):
-        os.symlink(pkg_plugin_dir + 'nagios_plugin.py',
-                   local_plugin_dir + 'nagios_plugin.py')
+    for nagios_plugin in ('nagios_plugin.py', 'nagios_plugin3.py'):
+        if not os.path.exists(local_plugin_dir + nagios_plugin):
+            os.symlink(pkg_plugin_dir + nagios_plugin,
+                       local_plugin_dir + nagios_plugin)
 
 
 def render_nrpe_check_config(checkctxt):

@@ -356,6 +356,36 @@ class TestDeployment(unittest.TestCase):
         }
         self.check_nrpe_setting(**test_config)
 
+    def test_custom_lacp_bonds(self):
+        chk_key = ('command[check_lacp_bond0]=/usr/local/lib/nagios/plugins/'
+                   'check_lacp_bond.py -i bond0')
+        test_config = {
+            'filename': '/etc/nagios/nrpe.d/check_lacp_bond0.cfg',
+            'expected_settings': {chk_key: 'bond0'},
+            'juju_kv': {'lacp_bonds': 'bond0'}
+        }
+        self.check_nrpe_setting(**test_config)
+
+    def test_custom_netlinks_string(self):
+        chk_key = ('command[check_netlinks_eth0]=/usr/local/lib/nagios/plugins/'
+                   'check_netlinks.py -i eth0 -m 1500 -s 10000')
+        test_config = {
+            'filename': '/etc/nagios/nrpe.d/check_netlinks_eth0.cfg',
+            'expected_settings': {chk_key: 'eth0 mtu:1500 speed:10000'},
+            'juju_kv': {'netlinks': 'eth0 mtu:1500 speed:10000'}
+        }
+        self.check_nrpe_setting(**test_config)
+
+    def test_custom_netlinks_yaml_list(self):
+        chk_key = ('command[check_netlinks_eth0]=/usr/local/lib/nagios/plugins/'
+                   'check_netlinks.py -i eth0 -m 1500 -s 10000')
+        test_config = {
+            'filename': '/etc/nagios/nrpe.d/check_netlinks_eth0.cfg',
+            'expected_settings': {chk_key: ['eth0 mtu:1500 speed:10000']},
+            'juju_kv': {'netlinks': "['eth0 mtu:1500 speed:10000']"}
+        }
+        self.check_nrpe_setting(**test_config)
+
 
 if __name__ == '__main__':
     unittest.main()
