@@ -41,6 +41,7 @@ class TestBasicNRPEExternalMasterDeployment(unittest.TestCase):
         nagios_hostname = "mygroup-{}".format(
             mysql.info["unit_name"].replace('/', '-'))
         expected = {
+            'ingress-address': autils.valid_ip,
             'private-address': autils.valid_ip,
             'nagios_hostname': nagios_hostname,
             'nagios_host_context': 'mygroup'}
