@@ -18,6 +18,8 @@ def manage():
                 nrpe_utils.install_packages,
                 nrpe_utils.install_charm_files,
             ],
+            'start': [],
+            'stop': [],
         },
         {
             'service': 'nrpe-config',
@@ -40,6 +42,7 @@ def manage():
             'provided_data': [nrpe_helpers.PrincipalRelation()],
             'ports': [hookenv.config('server_port'), 'ICMP'],
             'start': [open_ports, nrpe_utils.restart_nrpe],
+            'stop': [],
         },
         {
             'service': 'nrpe-rsync',
@@ -58,6 +61,7 @@ def manage():
                 nrpe_utils.create_host_export_fragment,
             ],
             'start': [nrpe_utils.restart_rsync],
+            'stop': [],
         },
     ])
     manager.manage()
