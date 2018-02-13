@@ -81,7 +81,7 @@ def get_local_ingress_address(binding='monitors'):
             hostname = network_info['ingress-addresses'][0]
             hookenv.log(hostname)
             return hostname
-    except NotImplementedError:
+    except (NotImplementedError, FileNotFoundError) as e:
         # We'll fallthrough to the Pre 2.3 code below.
         pass
 
@@ -91,8 +91,8 @@ def get_local_ingress_address(binding='monitors'):
         hookenv.log('Using primary-addresses')
     except NotImplementedError:
         # pre Juju 2.0
-        hostname = hookenv.unit_get('private_address')
-        hookenv.log('Using unit_get private address')
+        hostname = hookenv.unit_private_ip()
+        hookenv.log('Using unit_private_ip')
     hookenv.log(hostname)
     return hostname
 
