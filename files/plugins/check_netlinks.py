@@ -40,6 +40,15 @@ def check_iface(iface, skiperror, crit_thr):
                 raise WarnError('WARNING: {} iface does not '
                                 'exist'.format(iface))
             return
+        except OSError as e:
+            if metric_key == 'speed' and 'Invalid argument' in str(e) \
+              and crit_thr['operstate'] == 'down':
+                FILTER = [f for f in FILTER if f != 'speed']
+                continue
+            else:
+                raise CriticalError('CRITICAL: {} ({} returns '
+                                    'invalid argument)'.format(iface,
+                                                               metric_key))
 
         if metric_key == 'operstate' and metric_value != 'up':
             if metric_value != crit_thr['operstate']:
