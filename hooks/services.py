@@ -1,6 +1,5 @@
 from charmhelpers.core import hookenv
 from charmhelpers.core.services.base import ServiceManager
-from charmhelpers.core.services.base import open_ports
 from charmhelpers.core.services import helpers
 from charmhelpers.core.hookenv import status_set
 
@@ -41,7 +40,7 @@ def manage():
             ],
             'provided_data': [nrpe_helpers.PrincipalRelation()],
             'ports': [hookenv.config('server_port'), 'ICMP'],
-            'start': [open_ports, nrpe_utils.restart_nrpe],
+            'start': [nrpe_utils.maybe_open_ports, nrpe_utils.restart_nrpe],
             'stop': [],
         },
         {

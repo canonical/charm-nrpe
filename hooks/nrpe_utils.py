@@ -1,12 +1,16 @@
 import os
 import shutil
 import glob
+import subprocess
 
 from charmhelpers import fetch
 from charmhelpers.core import host
 from charmhelpers.core import hookenv
 from charmhelpers.core.services import helpers
-from charmhelpers.core.services.base import ManagerCallback
+from charmhelpers.core.services.base import (
+    ManagerCallback,
+    PortManagerCallback,
+    )
 from charmhelpers.core.templating import render
 
 import nrpe_helpers
@@ -150,6 +154,52 @@ def update_monitor_relation(service_name):
             relation_id=rid,
             relation_settings=monitor_relation.provide_data()
         )
+
+
+class TolerantPortManagerCallback(PortManagerCallback):
+    """
+    Specialization of the PortManagerCallback. It will open or close
+    ports as its superclass, but will not raise an error on conflicts
+    for opening ports
+
+    For context, see:
+    https://bugs.launchpad.net/juju/+bug/1750079 and 
+    https://github.com/juju/charm-helpers/pull/152
+    """
+    def __call__(self, manager, service_name, event_name):
+        service = manager.get_service(service_name)
+        new_ports = service.get('ports', [])
+        port_file = os.path.join(
+            hookenv.charm_dir(), '.{}.ports'.format(service_name))
+        if os.path.exists(port_file):
+            with open(port_file) as fp:
+                old_ports = fp.read().split(',')
+            for old_port in old_ports:
+                if bool(old_port) and not self.ports_contains(
+                        old_port, new_ports):
+                    hookenv.close_port(old_port)
+        with open(port_file, 'w') as fp:
+            fp.write(','.join(str(port) for port in new_ports))
+        for port in new_ports:
+            # A port is either a number or 'ICMP'
+            protocol = 'TCP'
+            if str(port).upper() == 'ICMP':
+                protocol = 'ICMP'
+            if event_name == 'start':
+                try:
+                    hookenv.open_port(port, protocol)
+                except subprocess.CalledProcessError as err:
+                    if err.returncode == 1:
+                        hookenv.log(
+                            "open_port returns: {}, ignoring".format(err),
+                            level=hookenv.INFO)
+                    else:
+                        raise
+            elif event_name == 'stop':
+                hookenv.close_port(port, protocol)
+
+
+maybe_open_ports = TolerantPortManagerCallback()
 
 
 class ExportManagerCallback(ManagerCallback):
