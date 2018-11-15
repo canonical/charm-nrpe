@@ -111,10 +111,12 @@ options:
         .
         Set to '' in order to disable this check.
   mem:
-    default: "-C -u -w 85 -c 90"
+    default: "-C -h -u -w 85 -c 90"
     type: string
     description: |
         Check memory % used.
+        By default, thresholds are applied to the non-hugepages portion of the
+        memory.
         .
         Set to '' in order to disable this check.
   lacp_bonds:
