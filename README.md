@@ -8,7 +8,7 @@ will pass a monitors yaml to nagios informing it of what checks to monitor.
 Principal Relations
 ===================
 
-This charm can be attatched to any principal charm (via the juju-info relation)
+This charm can be attached to any principal charm (via the juju-info relation)
 regardless of whether it has implemented the local-monitors or
 nrpe-external-master relations. For example,
 
@@ -60,7 +60,7 @@ check\_load, check\_users, check\_disk\_root. All of the options for these are
 configurable but sensible defaults have been set in config.yaml.
 For example to increase the alert threshold for number of processes:
 
-juju set nrpe load="-w 10,10,10 -c 25,25,25"
+juju config nrpe load="-w 10,10,10 -c 25,25,25"
 
 Default checks maybe disabled by setting them to the empty string.
 
@@ -78,9 +78,9 @@ User Requested Checks
 
 This works in the same way as the Principal requested except the monitors yaml
 is set by the user via the monitors config option. For example to add a monitor
-for the rsylog process:
+for the rsyslog process:
 
-    juju set nrpe monitors="
+    juju config nrpe monitors="
     monitors:
         local:
             procrunning:
@@ -170,7 +170,7 @@ out which contains:
     # Check process nagios3 is running (user)
     command[check_proc_nagios3_user]=/usr/lib/nagios/plugins/check_procs -w 1 -c 1 -C nagios3
 
-and the monitors yaml passed to nagios would include:
+And the monitors yaml passed to nagios would include:
 
     monitors:
         nrpe:
@@ -225,4 +225,3 @@ The charm defines 2 actions, 'list-nrpe-checks' that gives a list of all the
 nrpe checks defined for this unit and what commands they use.  The other is
 run-nrpe-check, which allows you to run a specified nrpe check and get the
 output.  This is useful to confirm if an alert is actually resolved.
-
