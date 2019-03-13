@@ -4,6 +4,7 @@ import socket
 import subprocess
 import yaml
 
+from charmhelpers.core.host import is_container
 from charmhelpers.core.services import helpers
 from charmhelpers.core import hookenv
 
@@ -412,6 +413,15 @@ class SubordinateCheckDefinitions(dict):
                 'cmd_params': hookenv.config('xfs_errors'),
             },
         ]
+
+        if not is_container():
+            arp_check = {
+                'description': 'ARP cache entries',
+                'cmd_name': 'check_arp_cache',
+                'cmd_exec': os.path.join(local_plugin_dir, 'check_arp_cache.py'),
+                'cmd_params': '-w 60 -c 80',  # Specify params here to enable the check, not required otherwise.
+            }
+            checks.append(arp_check)
 
         if hookenv.config('lacp_bonds').strip():
             for bond_iface in hookenv.config('lacp_bonds').strip().split():
