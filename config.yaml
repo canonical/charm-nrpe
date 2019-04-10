@@ -106,7 +106,7 @@ options:
         .
         Set to '' in order to disable this check.
   swap_activity:
-    default: "-i 5 -w 100 -c 500"
+    default: "-i 5 -w 10240 -c 40960"
     type: string
     description: |
         Swapout activity check. Thresholds are expressed in kB, interval in
