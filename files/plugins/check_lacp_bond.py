@@ -57,7 +57,7 @@ def check_lacp_bond(iface):
                 msg += '({0}:{1} - {2}:{3})'
                 msg = msg.format(iface, bond_aggr_value,
                                  slave, slave_aggr_value)
-                raise CriticalError(msg)
+                raise WarnError(msg)
 
     else:
         msg = 'CRITICAL: {} is not a bonding interface'.format(iface)
