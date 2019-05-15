@@ -52,11 +52,12 @@ def check_lacp_bond(iface):
             d_bond[slave] = slave_aggr_value
 
             if slave_aggr_value != bond_aggr_value:
-                msg = 'CRITICAL: aggregator_id mismatch '
+                # If we can report then only 1/2 the bond is down
+                msg = 'WARNING: aggregator_id mismatch '
                 msg += '({0}:{1} - {2}:{3})'
                 msg = msg.format(iface, bond_aggr_value,
                                  slave, slave_aggr_value)
-                raise CriticalError(msg)
+                raise WarnError(msg)
 
     else:
         msg = 'CRITICAL: {} is not a bonding interface'.format(iface)
