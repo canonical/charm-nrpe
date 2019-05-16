@@ -9,7 +9,7 @@
 
 import sys
 import re
-import datetime
+from datetime import datetime, timedelta
 import subprocess
 
 # error messages commonly seen in dmesg on xfs errors
@@ -31,11 +31,9 @@ err_results = [line for line in log_lines for rgx in xfs_regex if
 check_delta = int(sys.argv[1])
 
 # dmesg -T formatted timestamps are inside [], so we need to add them
-datetime_delta = '['+(datetime.datetime.now() -
-                      datetime.timedelta(minutes=check_delta)
-                      ).strftime('%c')+']'
+datetime_delta = datetime.now() - timedelta(minutes=check_delta)
 
-recent_logs = [i for i in err_results if i >= datetime_delta]
+recent_logs = [i for i in err_results if datetime.strptime(i[1:25], '%c') >= datetime_delta]
 
 if recent_logs:
     print('CRITCAL: Recent XFS errors in kern.log.'+'\n'+'{}'.format(
@@ -44,3 +42,4 @@ if recent_logs:
 else:
     print('OK')
     sys.exit(0)
+
