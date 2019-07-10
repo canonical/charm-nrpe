@@ -10,13 +10,13 @@ Principal Relations
 
 This charm can be attached to any principal charm (via the juju-info relation)
 regardless of whether it has implemented the local-monitors or
-nrpe-external-master relations. For example,
+nrpe-external-master relations. For example:
 
-juju deploy ubuntu
-juju deploy nrpe
-juju deploy nagios
-juju add-relation ubuntu nrpe
-juju add-relation nrpe:monitors nagios:monitors
+    juju deploy ubuntu
+    juju deploy nrpe
+    juju deploy nagios
+    juju add-relation ubuntu nrpe
+    juju add-relation nrpe:monitors nagios:monitors
 
 If joined via the juju-info relation the default checks are configured and
 additional checks can be added via the monitors config option (see below).
@@ -32,17 +32,17 @@ Other Subordinate Charms
 
 If another subordinate charm deployed to the same principal has a
 local-monitors or nrpe-external-master relation then it can also be related to
-the local nrpe charm. For example,
+the local nrpe charm. For example:
 
-echo -e "glance:\n  vip: 10.5.106.1" > glance.yaml
-juju deploy -n3 --config glance.yaml glance
-juju deploy hacluster glance-hacluster
-juju deploy nrpe glance-nrpe
-juju deploy nagios
-juju add-relation glance glance-hacluster
-juju add-relation glance-nrpe:monitors nagios:monitors
-juju add-relation glance glance-nrpe
-juju add-relation glance-hacluster glance-nrpe
+    echo -e "glance:\n  vip: 10.5.106.1" > glance.yaml
+    juju deploy -n3 --config glance.yaml glance
+    juju deploy hacluster glance-hacluster
+    juju deploy nrpe glance-nrpe
+    juju deploy nagios
+    juju add-relation glance glance-hacluster
+    juju add-relation glance-nrpe:monitors nagios:monitors
+    juju add-relation glance glance-nrpe
+    juju add-relation glance-hacluster glance-nrpe
 
 The glance-hacluster charm will pass monitoring information to glance-nrpe
 which will amalgamate all monitor definitions before passing them to nagios.
@@ -60,7 +60,7 @@ check\_load, check\_users, check\_disk\_root. All of the options for these are
 configurable but sensible defaults have been set in config.yaml.
 For example to increase the alert threshold for number of processes:
 
-juju config nrpe load="-w 10,10,10 -c 25,25,25"
+    juju config nrpe load="-w 10,10,10 -c 25,25,25"
 
 Default checks maybe disabled by setting them to the empty string.
 
@@ -158,8 +158,6 @@ If it is this charm needs to convert it into an nrpe checks. Only a small
 number of check types are currently supported (see below) .These checks can
 then be called by the nagios charm via the nrpe service. So for each check
 listed in the local section:
-
-
 
 1.  The definition is read and a check definition it written /etc/nagios/nrpe.d
 2.  The check is defined as a remote nrpe check in the yaml passed to nagios
