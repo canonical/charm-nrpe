@@ -29,5 +29,5 @@ requires:
 series:
   - xenial
   - trusty
-  - artful
+  - disco
   - bionic
