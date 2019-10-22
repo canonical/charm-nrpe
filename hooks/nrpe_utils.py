@@ -35,6 +35,8 @@ def determine_packages():
     ]
     if hookenv.config('export_nagios_definitions'):
         pkgs.append('rsync')
+    if hookenv.config('nagios_master') and hookenv.config('nagios_master') != 'None':
+        pkgs.append('rsync')
     return pkgs
 
 
@@ -163,7 +165,7 @@ class TolerantPortManagerCallback(PortManagerCallback):
     for opening ports
 
     For context, see:
-    https://bugs.launchpad.net/juju/+bug/1750079 and 
+    https://bugs.launchpad.net/juju/+bug/1750079 and
     https://github.com/juju/charm-helpers/pull/152
     """
     def __call__(self, manager, service_name, event_name):

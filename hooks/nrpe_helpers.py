@@ -273,6 +273,8 @@ class RsyncEnabled(helpers.RelationContext):
     def __init__(self):
         self['export_nagios_definitions'] = \
             hookenv.config('export_nagios_definitions')
+        if hookenv.config('nagios_master') and hookenv.config('nagios_master') != 'None':
+            self['export_nagios_definitions'] = True
 
     def is_ready(self):
         return self['export_nagios_definitions']
