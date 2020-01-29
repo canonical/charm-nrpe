@@ -151,7 +151,13 @@ class MonitorsRelation(helpers.RelationContext):
             all_monitors.add_monitors(mon)
         return all_monitors
 
-    def ingress_address(self, relation_data):
+    def egress_subnets(self, relation_data):
+        """ This behaves the same as charmhelpers.core.hookenv.egress_subnets().
+            If it can't determine the egress subnets it will fall back to
+            ingress-address or finally private-address.
+        """
+        if 'egress-subnets' in relation_data:
+            return relation_data['egress-subnets']
         if 'ingress-address' in relation_data:
             return relation_data['ingress-address']
         return relation_data['private-address']
@@ -160,8 +166,11 @@ class MonitorsRelation(helpers.RelationContext):
         super(MonitorsRelation, self).get_data()
         if not hookenv.relation_ids(self.name):
             return
-        addresses = [self.ingress_address(info) for info in self['monitors']]
-        self['monitor_allowed_hosts'] = ','.join(addresses)
+        # self['monitors'] comes from the superclass helpers.RelationContext
+        # and contains relation data for each 'monitors' relation (to/from
+        # Nagios).
+        subnets = [self.egress_subnets(info) for info in self['monitors']]
+        self['monitor_allowed_hosts'] = ','.join(subnets)
 
     def provide_data(self):
         address = get_local_ingress_address('monitors')
