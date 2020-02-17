@@ -234,7 +234,7 @@ class PrincipalRelation(helpers.RelationContext):
         monitors = Monitors()
         for rel in self[self.name]:
             if rel.get('monitors'):
-                monitors.add_monitors(yaml.load(rel['monitors'], Loader=yaml.FullLoader), 'principal')
+                monitors.add_monitors(yaml.load(rel['monitors']), 'principal')
         return monitors
 
     def provide_data(self):
