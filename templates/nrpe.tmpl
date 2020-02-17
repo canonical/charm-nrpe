@@ -2,6 +2,8 @@
 # This file is managed by Juju
 #--------------------------------------------------------
 
+# See https://github.com/stockholmuniversity/Nagios-NRPE/blob/2.0.10/share/nrpe.cfg
+server_address={{ nrpe_ipaddress or '0.0.0.0' }}
 server_port={{ server_port }}
 allowed_hosts={{ external_nagios_master }},{{ monitor_allowed_hosts }}
 nrpe_user=nagios

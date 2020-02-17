@@ -4,9 +4,9 @@ import socket
 import subprocess
 import yaml
 
+from charmhelpers.core import hookenv
 from charmhelpers.core.host import is_container
 from charmhelpers.core.services import helpers
-from charmhelpers.core import hookenv
 
 
 class InvalidCustomCheckException(Exception):
@@ -72,30 +72,33 @@ class Monitors(dict):
         return mons
 
 
-def get_local_ingress_address(binding='monitors'):
+def get_local_ingress_address(binding):
+    """
+    binding - e.g. 'monitors'
+    """
     # using network-get to retrieve the address details if available.
-    hookenv.log('Getting hostname for binding %s' % binding)
+    hookenv.log('Getting ingress IP address for binding %s' % binding)
     try:
         network_info = hookenv.network_get(binding)
         if network_info is not None and 'ingress-addresses' in network_info:
             hookenv.log('Using ingress-addresses')
-            hostname = network_info['ingress-addresses'][0]
-            hookenv.log(hostname)
-            return hostname
+            ip_address = network_info['ingress-addresses'][0]
+            hookenv.log(ip_address)
+            return ip_address
     except (NotImplementedError, FileNotFoundError) as e:
         # We'll fallthrough to the Pre 2.3 code below.
         pass
 
     # Pre 2.3 output
     try:
-        hostname = hookenv.network_get_primary_address(binding)
+        ip_address = hookenv.network_get_primary_address(binding)
         hookenv.log('Using primary-addresses')
     except NotImplementedError:
         # pre Juju 2.0
-        hostname = hookenv.unit_private_ip()
+        ip_address = hookenv.unit_private_ip()
         hookenv.log('Using unit_private_ip')
-    hookenv.log(hostname)
-    return hostname
+    hookenv.log(ip_address)
+    return ip_address
 
 
 class MonitorsRelation(helpers.RelationContext):
@@ -272,6 +275,7 @@ class NagiosInfo(dict):
             address = hookenv.unit_get('private-address')
 
         self['nagios_ipaddress'] = address
+        self['nrpe_ipaddress'] = get_local_ingress_address('monitors')
 
         self['dont_blame_nrpe'] = '1' if hookenv.config('dont_blame_nrpe') else '0'
         self['debug'] = '1' if hookenv.config('debug') else '0'
