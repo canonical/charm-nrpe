@@ -13,23 +13,23 @@
 # limitations under the License.
 
 from collections import OrderedDict
-import os
 import platform
 import re
 import six
-import time
 import subprocess
-from tempfile import NamedTemporaryFile
+import sys
+import time
 
-from charmhelpers.core.host import (
-    lsb_release
-)
+from charmhelpers.core.host import get_distrib_codename, get_system_env
+
 from charmhelpers.core.hookenv import (
     log,
     DEBUG,
     WARNING,
+    env_proxy_settings,
 )
 from charmhelpers.fetch import SourceConfigError, GPGKeyError
+from charmhelpers.fetch import ubuntu_apt_pkg
 
 PROPOSED_POCKET = (
     "# Proposed\n"
@@ -44,6 +44,7 @@ ARCH_TO_PROPOSED_POCKET = {
     'x86_64': PROPOSED_POCKET,
     'ppc64le': PROPOSED_PORTS_POCKET,
     'aarch64': PROPOSED_PORTS_POCKET,
+    's390x': PROPOSED_PORTS_POCKET,
 }
 CLOUD_ARCHIVE_URL = "http://ubuntu-cloud.archive.canonical.com/ubuntu"
 CLOUD_ARCHIVE_KEY_ID = '5EDB1B62EC4926EA'
@@ -157,6 +158,38 @@ CLOUD_ARCHIVE_POCKETS = {
     'queens/proposed': 'xenial-proposed/queens',
     'xenial-queens/proposed': 'xenial-proposed/queens',
     'xenial-proposed/queens': 'xenial-proposed/queens',
+    # Rocky
+    'rocky': 'bionic-updates/rocky',
+    'bionic-rocky': 'bionic-updates/rocky',
+    'bionic-rocky/updates': 'bionic-updates/rocky',
+    'bionic-updates/rocky': 'bionic-updates/rocky',
+    'rocky/proposed': 'bionic-proposed/rocky',
+    'bionic-rocky/proposed': 'bionic-proposed/rocky',
+    'bionic-proposed/rocky': 'bionic-proposed/rocky',
+    # Stein
+    'stein': 'bionic-updates/stein',
+    'bionic-stein': 'bionic-updates/stein',
+    'bionic-stein/updates': 'bionic-updates/stein',
+    'bionic-updates/stein': 'bionic-updates/stein',
+    'stein/proposed': 'bionic-proposed/stein',
+    'bionic-stein/proposed': 'bionic-proposed/stein',
+    'bionic-proposed/stein': 'bionic-proposed/stein',
+    # Train
+    'train': 'bionic-updates/train',
+    'bionic-train': 'bionic-updates/train',
+    'bionic-train/updates': 'bionic-updates/train',
+    'bionic-updates/train': 'bionic-updates/train',
+    'train/proposed': 'bionic-proposed/train',
+    'bionic-train/proposed': 'bionic-proposed/train',
+    'bionic-proposed/train': 'bionic-proposed/train',
+    # Ussuri
+    'ussuri': 'bionic-updates/ussuri',
+    'bionic-ussuri': 'bionic-updates/ussuri',
+    'bionic-ussuri/updates': 'bionic-updates/ussuri',
+    'bionic-updates/ussuri': 'bionic-updates/ussuri',
+    'ussuri/proposed': 'bionic-proposed/ussuri',
+    'bionic-ussuri/proposed': 'bionic-proposed/ussuri',
+    'bionic-proposed/ussuri': 'bionic-proposed/ussuri',
 }
 
 
@@ -180,18 +213,54 @@ def filter_installed_packages(packages):
     return _pkgs
 
 
-def apt_cache(in_memory=True, progress=None):
-    """Build and return an apt cache."""
-    from apt import apt_pkg
-    apt_pkg.init()
-    if in_memory:
-        apt_pkg.config.set("Dir::Cache::pkgcache", "")
-        apt_pkg.config.set("Dir::Cache::srcpkgcache", "")
-    return apt_pkg.Cache(progress)
+def filter_missing_packages(packages):
+    """Return a list of packages that are installed.
+
+    :param packages: list of packages to evaluate.
+    :returns list: Packages that are installed.
+    """
+    return list(
+        set(packages) -
+        set(filter_installed_packages(packages))
+    )
+
+
+def apt_cache(*_, **__):
+    """Shim returning an object simulating the apt_pkg Cache.
+
+    :param _: Accept arguments for compability, not used.
+    :type _: any
+    :param __: Accept keyword arguments for compability, not used.
+    :type __: any
+    :returns:Object used to interrogate the system apt and dpkg databases.
+    :rtype:ubuntu_apt_pkg.Cache
+    """
+    if 'apt_pkg' in sys.modules:
+        # NOTE(fnordahl): When our consumer use the upstream ``apt_pkg`` module
+        # in conjunction with the apt_cache helper function, they may expect us
+        # to call ``apt_pkg.init()`` for them.
+        #
+        # Detect this situation, log a warning and make the call to
+        # ``apt_pkg.init()`` to avoid the consumer Python interpreter from
+        # crashing with a segmentation fault.
+        log('Support for use of upstream ``apt_pkg`` module in conjunction'
+            'with charm-helpers is deprecated since 2019-06-25', level=WARNING)
+        sys.modules['apt_pkg'].init()
+    return ubuntu_apt_pkg.Cache()
 
 
 def apt_install(packages, options=None, fatal=False):
-    """Install one or more packages."""
+    """Install one or more packages.
+
+    :param packages: Package(s) to install
+    :type packages: Option[str, List[str]]
+    :param options: Options to pass on to apt-get
+    :type options: Option[None, List[str]]
+    :param fatal: Whether the command's output should be checked and
+                  retried.
+    :type fatal: bool
+    :raises: subprocess.CalledProcessError
+    """
     if options is None:
         options = ['--option=Dpkg::Options::=--force-confold']
 
@@ -208,7 +277,17 @@ def apt_install(packages, options=None, fatal=False):
 
 
 def apt_upgrade(options=None, fatal=False, dist=False):
-    """Upgrade all packages."""
+    """Upgrade all packages.
+
+    :param options: Options to pass on to apt-get
+    :type options: Option[None, List[str]]
+    :param fatal: Whether the command's output should be checked and
+                  retried.
+    :type fatal: bool
+    :param dist: Whether ``dist-upgrade`` should be used over ``upgrade``
+    :type dist: bool
+    :raises: subprocess.CalledProcessError
+    """
     if options is None:
         options = ['--option=Dpkg::Options::=--force-confold']
 
@@ -229,13 +308,36 @@ def apt_update(fatal=False):
 
 
 def apt_purge(packages, fatal=False):
-    """Purge one or more packages."""
+    """Purge one or more packages.
+
+    :param packages: Package(s) to install
+    :type packages: Option[str, List[str]]
+    :param fatal: Whether the command's output should be checked and
+                  retried.
+    :type fatal: bool
+    :raises: subprocess.CalledProcessError
+    """
     cmd = ['apt-get', '--assume-yes', 'purge']
     if isinstance(packages, six.string_types):
         cmd.append(packages)
     else:
         cmd.extend(packages)
     log("Purging {}".format(packages))
+    _run_apt_command(cmd, fatal)
+
+
+def apt_autoremove(purge=True, fatal=False):
+    """Purge one or more packages.
+    :param purge: Whether the ``--purge`` option should be passed on or not.
+    :type purge: bool
+    :param fatal: Whether the command's output should be checked and
+                  retried.
+    :type fatal: bool
+    :raises: subprocess.CalledProcessError
+    """
+    cmd = ['apt-get', '--assume-yes', 'autoremove']
+    if purge:
+        cmd.append('--purge')
     _run_apt_command(cmd, fatal)
 
 
@@ -265,13 +367,18 @@ def apt_unhold(packages, fatal=False):
 def import_key(key):
     """Import an ASCII Armor key.
 
-    /!\ A Radix64 format keyid is also supported for backwards
-    compatibility, but should never be used; the key retrieval
-    mechanism is insecure and subject to man-in-the-middle attacks
-    voiding all signature checks using that key.
+    A Radix64 format keyid is also supported for backwards
+    compatibility. In this case Ubuntu keyserver will be
+    queried for a key via HTTPS by its keyid. This method
+    is less preferrable because https proxy servers may
+    require traffic decryption which is equivalent to a
+    man-in-the-middle attack (a proxy server impersonates
+    keyserver TLS certificates and has to be explicitly
+    trusted by the system).
 
-    :param keyid: The key in ASCII armor format,
-                  including BEGIN and END markers.
+    :param key: A GPG key in ASCII armor format,
+                  including BEGIN and END markers or a keyid.
+    :type key: (bytes, str)
     :raises: GPGKeyError if the key could not be imported
     """
     key = key.strip()
@@ -282,35 +389,131 @@ def import_key(key):
         log("PGP key found (looks like ASCII Armor format)", level=DEBUG)
         if ('-----BEGIN PGP PUBLIC KEY BLOCK-----' in key and
                 '-----END PGP PUBLIC KEY BLOCK-----' in key):
-            log("Importing ASCII Armor PGP key", level=DEBUG)
-            with NamedTemporaryFile() as keyfile:
-                with open(keyfile.name, 'w') as fd:
-                    fd.write(key)
-                    fd.write("\n")
-                cmd = ['apt-key', 'add', keyfile.name]
-                try:
-                    subprocess.check_call(cmd)
-                except subprocess.CalledProcessError:
-                    error = "Error importing PGP key '{}'".format(key)
-                    log(error)
-                    raise GPGKeyError(error)
+            log("Writing provided PGP key in the binary format", level=DEBUG)
+            if six.PY3:
+                key_bytes = key.encode('utf-8')
+            else:
+                key_bytes = key
+            key_name = _get_keyid_by_gpg_key(key_bytes)
+            key_gpg = _dearmor_gpg_key(key_bytes)
+            _write_apt_gpg_keyfile(key_name=key_name, key_material=key_gpg)
         else:
             raise GPGKeyError("ASCII armor markers missing from GPG key")
     else:
-        # We should only send things obviously not a keyid offsite
-        # via this unsecured protocol, as it may be a secret or part
-        # of one.
         log("PGP key found (looks like Radix64 format)", level=WARNING)
-        log("INSECURLY importing PGP key from keyserver; "
+        log("SECURELY importing PGP key from keyserver; "
             "full key not provided.", level=WARNING)
-        cmd = ['apt-key', 'adv', '--keyserver',
-               'hkp://keyserver.ubuntu.com:80', '--recv-keys', key]
-        try:
-            subprocess.check_call(cmd)
-        except subprocess.CalledProcessError:
-            error = "Error importing PGP key '{}'".format(key)
-            log(error)
-            raise GPGKeyError(error)
+        # as of bionic add-apt-repository uses curl with an HTTPS keyserver URL
+        # to retrieve GPG keys. `apt-key adv` command is deprecated as is
+        # apt-key in general as noted in its manpage. See lp:1433761 for more
+        # history. Instead, /etc/apt/trusted.gpg.d is used directly to drop
+        # gpg
+        key_asc = _get_key_by_keyid(key)
+        # write the key in GPG format so that apt-key list shows it
+        key_gpg = _dearmor_gpg_key(key_asc)
+        _write_apt_gpg_keyfile(key_name=key, key_material=key_gpg)
+
+
+def _get_keyid_by_gpg_key(key_material):
+    """Get a GPG key fingerprint by GPG key material.
+    Gets a GPG key fingerprint (40-digit, 160-bit) by the ASCII armor-encoded
+    or binary GPG key material. Can be used, for example, to generate file
+    names for keys passed via charm options.
+
+    :param key_material: ASCII armor-encoded or binary GPG key material
+    :type key_material: bytes
+    :raises: GPGKeyError if invalid key material has been provided
+    :returns: A GPG key fingerprint
+    :rtype: str
+    """
+    # Use the same gpg command for both Xenial and Bionic
+    cmd = 'gpg --with-colons --with-fingerprint'
+    ps = subprocess.Popen(cmd.split(),
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE,
+                          stdin=subprocess.PIPE)
+    out, err = ps.communicate(input=key_material)
+    if six.PY3:
+        out = out.decode('utf-8')
+        err = err.decode('utf-8')
+    if 'gpg: no valid OpenPGP data found.' in err:
+        raise GPGKeyError('Invalid GPG key material provided')
+    # from gnupg2 docs: fpr :: Fingerprint (fingerprint is in field 10)
+    return re.search(r"^fpr:{9}([0-9A-F]{40}):$", out, re.MULTILINE).group(1)
+
+
+def _get_key_by_keyid(keyid):
+    """Get a key via HTTPS from the Ubuntu keyserver.
+    Different key ID formats are supported by SKS keyservers (the longer ones
+    are more secure, see "dead beef attack" and https://evil32.com/). Since
+    HTTPS is used, if SSLBump-like HTTPS proxies are in place, they will
+    impersonate keyserver.ubuntu.com and generate a certificate with
+    keyserver.ubuntu.com in the CN field or in SubjAltName fields of a
+    certificate. If such proxy behavior is expected it is necessary to add the
+    CA certificate chain containing the intermediate CA of the SSLBump proxy to
+    every machine that this code runs on via ca-certs cloud-init directive (via
+    cloudinit-userdata model-config) or via other means (such as through a
+    custom charm option). Also note that DNS resolution for the hostname in a
+    URL is done at a proxy server - not at the client side.
+
+    8-digit (32 bit) key ID
+    https://keyserver.ubuntu.com/pks/lookup?search=0x4652B4E6
+    16-digit (64 bit) key ID
+    https://keyserver.ubuntu.com/pks/lookup?search=0x6E85A86E4652B4E6
+    40-digit key ID:
+    https://keyserver.ubuntu.com/pks/lookup?search=0x35F77D63B5CEC106C577ED856E85A86E4652B4E6
+
+    :param keyid: An 8, 16 or 40 hex digit keyid to find a key for
+    :type keyid: (bytes, str)
+    :returns: A key material for the specified GPG key id
+    :rtype: (str, bytes)
+    :raises: subprocess.CalledProcessError
+    """
+    # options=mr - machine-readable output (disables html wrappers)
+    keyserver_url = ('https://keyserver.ubuntu.com'
+                     '/pks/lookup?op=get&options=mr&exact=on&search=0x{}')
+    curl_cmd = ['curl', keyserver_url.format(keyid)]
+    # use proxy server settings in order to retrieve the key
+    return subprocess.check_output(curl_cmd,
+                                   env=env_proxy_settings(['https']))
+
+
+def _dearmor_gpg_key(key_asc):
+    """Converts a GPG key in the ASCII armor format to the binary format.
+
+    :param key_asc: A GPG key in ASCII armor format.
+    :type key_asc: (str, bytes)
+    :returns: A GPG key in binary format
+    :rtype: (str, bytes)
+    :raises: GPGKeyError
+    """
+    ps = subprocess.Popen(['gpg', '--dearmor'],
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE,
+                          stdin=subprocess.PIPE)
+    out, err = ps.communicate(input=key_asc)
+    # no need to decode output as it is binary (invalid utf-8), only error
+    if six.PY3:
+        err = err.decode('utf-8')
+    if 'gpg: no valid OpenPGP data found.' in err:
+        raise GPGKeyError('Invalid GPG key material. Check your network setup'
+                          ' (MTU, routing, DNS) and/or proxy server settings'
+                          ' as well as destination keyserver status.')
+    else:
+        return out
+
+
+def _write_apt_gpg_keyfile(key_name, key_material):
+    """Writes GPG key material into a file at a provided path.
+
+    :param key_name: A key name to use for a key file (could be a fingerprint)
+    :type key_name: str
+    :param key_material: A GPG key material (binary)
+    :type key_material: (str, bytes)
+    """
+    with open('/etc/apt/trusted.gpg.d/{}.gpg'.format(key_name),
+              'wb') as keyf:
+        keyf.write(key_material)
 
 
 def add_source(source, key=None, fail_invalid=False):
@@ -385,14 +588,16 @@ def add_source(source, key=None, fail_invalid=False):
     for r, fn in six.iteritems(_mapping):
         m = re.match(r, source)
         if m:
-            # call the assoicated function with the captured groups
-            # raises SourceConfigError on error.
-            fn(*m.groups())
             if key:
+                # Import key before adding the source which depends on it,
+                # as refreshing packages could fail otherwise.
                 try:
                     import_key(key)
                 except GPGKeyError as e:
                     raise SourceConfigError(str(e))
+            # call the associated function with the captured groups
+            # raises SourceConfigError on error.
+            fn(*m.groups())
             break
     else:
         # nothing matched.  log an error and maybe sys.exit
@@ -405,13 +610,13 @@ def add_source(source, key=None, fail_invalid=False):
 def _add_proposed():
     """Add the PROPOSED_POCKET as /etc/apt/source.list.d/proposed.list
 
-    Uses lsb_release()['DISTRIB_CODENAME'] to determine the correct staza for
+    Uses get_distrib_codename to determine the correct stanza for
     the deb line.
 
     For intel architecutres PROPOSED_POCKET is used for the release, but for
     other architectures PROPOSED_PORTS_POCKET is used for the release.
     """
-    release = lsb_release()['DISTRIB_CODENAME']
+    release = get_distrib_codename()
     arch = platform.machine()
     if arch not in six.iterkeys(ARCH_TO_PROPOSED_POCKET):
         raise SourceConfigError("Arch {} not supported for (distro-)proposed"
@@ -424,8 +629,16 @@ def _add_apt_repository(spec):
     """Add the spec using add_apt_repository
 
     :param spec: the parameter to pass to add_apt_repository
+    :type spec: str
     """
-    _run_with_retries(['add-apt-repository', '--yes', spec])
+    if '{series}' in spec:
+        series = get_distrib_codename()
+        spec = spec.replace('{series}', series)
+    # software-properties package for bionic properly reacts to proxy settings
+    # passed as environment variables (See lp:1433761). This is not the case
+    # LTS and non-LTS releases below bionic.
+    _run_with_retries(['add-apt-repository', '--yes', spec],
+                      cmd_env=env_proxy_settings(['https']))
 
 
 def _add_cloud_pocket(pocket):
@@ -494,7 +707,7 @@ def _verify_is_ubuntu_rel(release, os_release):
     :raises: SourceConfigError if the release is not the same as the ubuntu
         release.
     """
-    ubuntu_rel = lsb_release()['DISTRIB_CODENAME']
+    ubuntu_rel = get_distrib_codename()
     if release != ubuntu_rel:
         raise SourceConfigError(
             'Invalid Cloud Archive release specified: {}-{} on this Ubuntu'
@@ -505,21 +718,22 @@ def _run_with_retries(cmd, max_retries=CMD_RETRY_COUNT, retry_exitcodes=(1,),
                       retry_message="", cmd_env=None):
     """Run a command and retry until success or max_retries is reached.
 
-    :param: cmd: str: The apt command to run.
-    :param: max_retries: int: The number of retries to attempt on a fatal
-        command. Defaults to CMD_RETRY_COUNT.
-    :param: retry_exitcodes: tuple: Optional additional exit codes to retry.
-        Defaults to retry on exit code 1.
-    :param: retry_message: str: Optional log prefix emitted during retries.
-    :param: cmd_env: dict: Environment variables to add to the command run.
+    :param cmd: The apt command to run.
+    :type cmd: str
+    :param max_retries: The number of retries to attempt on a fatal
+                        command. Defaults to CMD_RETRY_COUNT.
+    :type max_retries: int
+    :param retry_exitcodes: Optional additional exit codes to retry.
+                            Defaults to retry on exit code 1.
+    :type retry_exitcodes: tuple
+    :param retry_message: Optional log prefix emitted during retries.
+    :type retry_message: str
+    :param: cmd_env: Environment variables to add to the command run.
+    :type cmd_env: Option[None, Dict[str, str]]
     """
-
-    env = None
-    kwargs = {}
+    env = get_apt_dpkg_env()
     if cmd_env:
-        env = os.environ.copy()
         env.update(cmd_env)
-        kwargs['env'] = env
 
     if not retry_message:
         retry_message = "Failed executing '{}'".format(" ".join(cmd))
@@ -531,8 +745,7 @@ def _run_with_retries(cmd, max_retries=CMD_RETRY_COUNT, retry_exitcodes=(1,),
     retry_results = (None,) + retry_exitcodes
     while result in retry_results:
         try:
-            # result = subprocess.check_call(cmd, env=env)
-            result = subprocess.check_call(cmd, **kwargs)
+            result = subprocess.check_call(cmd, env=env)
         except subprocess.CalledProcessError as e:
             retry_count = retry_count + 1
             if retry_count > max_retries:
@@ -545,22 +758,18 @@ def _run_with_retries(cmd, max_retries=CMD_RETRY_COUNT, retry_exitcodes=(1,),
 def _run_apt_command(cmd, fatal=False):
     """Run an apt command with optional retries.
 
-    :param: cmd: str: The apt command to run.
-    :param: fatal: bool: Whether the command's output should be checked and
-        retried.
+    :param cmd: The apt command to run.
+    :type cmd: str
+    :param fatal: Whether the command's output should be checked and
+                  retried.
+    :type fatal: bool
     """
-    # Provide DEBIAN_FRONTEND=noninteractive if not present in the environment.
-    cmd_env = {
-        'DEBIAN_FRONTEND': os.environ.get('DEBIAN_FRONTEND', 'noninteractive')}
-
     if fatal:
         _run_with_retries(
-            cmd, cmd_env=cmd_env, retry_exitcodes=(1, APT_NO_LOCK,),
+            cmd, retry_exitcodes=(1, APT_NO_LOCK,),
             retry_message="Couldn't acquire DPKG lock")
     else:
-        env = os.environ.copy()
-        env.update(cmd_env)
-        subprocess.call(cmd, env=env)
+        subprocess.call(cmd, env=get_apt_dpkg_env())
 
 
 def get_upstream_version(package):
@@ -568,7 +777,6 @@ def get_upstream_version(package):
 
     @returns None (if not installed) or the upstream version
     """
-    import apt_pkg
     cache = apt_cache()
     try:
         pkg = cache[package]
@@ -580,4 +788,18 @@ def get_upstream_version(package):
         # package is known, but no version is currently installed.
         return None
 
-    return apt_pkg.upstream_version(pkg.current_ver.ver_str)
+    return ubuntu_apt_pkg.upstream_version(pkg.current_ver.ver_str)
+
+
+def get_apt_dpkg_env():
+    """Get environment suitable for execution of APT and DPKG tools.
+
+    We keep this in a helper function instead of in a global constant to
+    avoid execution on import of the library.
+    :returns: Environment suitable for execution of APT and DPKG tools.
+    :rtype: Dict[str, str]
+    """
+    # The fallback is used in the event of ``/etc/environment`` not containing
+    # avalid PATH variable.
+    return {'DEBIAN_FRONTEND': 'noninteractive',
+            'PATH': get_system_env('PATH', '/usr/sbin:/usr/bin:/sbin:/bin')}
