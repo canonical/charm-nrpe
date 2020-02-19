@@ -34,21 +34,23 @@ import six
 
 from contextlib import contextmanager
 from collections import OrderedDict
-from .hookenv import log, DEBUG, local_unit
+from .hookenv import log, INFO, DEBUG, local_unit, charm_name
 from .fstab import Fstab
 from charmhelpers.osplatform import get_platform
 
 __platform__ = get_platform()
 if __platform__ == "ubuntu":
-    from charmhelpers.core.host_factory.ubuntu import (
+    from charmhelpers.core.host_factory.ubuntu import (  # NOQA:F401
         service_available,
         add_new_group,
         lsb_release,
         cmp_pkgrevno,
         CompareHostReleases,
+        get_distrib_codename,
+        arch
     )  # flake8: noqa -- ignore F401 for this import
 elif __platform__ == "centos":
-    from charmhelpers.core.host_factory.centos import (
+    from charmhelpers.core.host_factory.centos import (  # NOQA:F401
         service_available,
         add_new_group,
         lsb_release,
@@ -57,6 +59,7 @@ elif __platform__ == "centos":
     )  # flake8: noqa -- ignore F401 for this import
 
 UPDATEDB_PATH = '/etc/updatedb.conf'
+
 
 def service_start(service_name, **kwargs):
     """Start a system service.
@@ -287,8 +290,8 @@ def service_running(service_name, **kwargs):
                 for key, value in six.iteritems(kwargs):
                     parameter = '%s=%s' % (key, value)
                     cmd.append(parameter)
-                output = subprocess.check_output(cmd,
-                    stderr=subprocess.STDOUT).decode('UTF-8')
+                output = subprocess.check_output(
+                    cmd, stderr=subprocess.STDOUT).decode('UTF-8')
             except subprocess.CalledProcessError:
                 return False
             else:
@@ -442,7 +445,7 @@ def add_user_to_group(username, group):
 
 
 def chage(username, lastday=None, expiredate=None, inactive=None,
-           mindays=None, maxdays=None, root=None, warndays=None):
+          mindays=None, maxdays=None, root=None, warndays=None):
     """Change user password expiry information
 
     :param str username: User to update
@@ -482,7 +485,9 @@ def chage(username, lastday=None, expiredate=None, inactive=None,
     cmd.append(username)
     subprocess.check_call(cmd)
 
+
 remove_password_expiry = functools.partial(chage, expiredate='-1', inactive='-1', mindays='0', maxdays='-1')
+
 
 def rsync(from_path, to_path, flags='-r', options=None, timeout=None):
     """Replicate the contents of a path"""
@@ -535,13 +540,15 @@ def write_file(path, content, owner='root', group='root', perms=0o444):
     # lets see if we can grab the file and compare the context, to avoid doing
     # a write.
     existing_content = None
-    existing_uid, existing_gid = None, None
+    existing_uid, existing_gid, existing_perms = None, None, None
     try:
         with open(path, 'rb') as target:
             existing_content = target.read()
         stat = os.stat(path)
-        existing_uid, existing_gid = stat.st_uid, stat.st_gid
-    except:
+        existing_uid, existing_gid, existing_perms = (
+            stat.st_uid, stat.st_gid, stat.st_mode
+        )
+    except Exception:
         pass
     if content != existing_content:
         log("Writing file {} {}:{} {:o}".format(path, owner, group, perms),
@@ -554,7 +561,7 @@ def write_file(path, content, owner='root', group='root', perms=0o444):
             target.write(content)
         return
     # the contents were the same, but we might still need to change the
-    # ownership.
+    # ownership or permissions.
     if existing_uid != uid:
         log("Changing uid on already existing content: {} -> {}"
             .format(existing_uid, uid), level=DEBUG)
@@ -563,6 +570,10 @@ def write_file(path, content, owner='root', group='root', perms=0o444):
         log("Changing gid on already existing content: {} -> {}"
             .format(existing_gid, gid), level=DEBUG)
         os.chown(path, -1, gid)
+    if existing_perms != perms:
+        log("Changing permissions on existing content: {} -> {}"
+            .format(existing_perms, perms), level=DEBUG)
+        os.chmod(path, perms)
 
 
 def fstab_remove(mp):
@@ -827,7 +838,7 @@ def list_nics(nic_type=None):
         ip_output = subprocess.check_output(cmd).decode('UTF-8').split('\n')
         ip_output = (line.strip() for line in ip_output if line)
 
-        key = re.compile('^[0-9]+:\s+(.+):')
+        key = re.compile(r'^[0-9]+:\s+(.+):')
         for line in ip_output:
             matched = re.search(key, line)
             if matched:
@@ -972,6 +983,20 @@ def is_container():
 
 
 def add_to_updatedb_prunepath(path, updatedb_path=UPDATEDB_PATH):
+    """Adds the specified path to the mlocate's udpatedb.conf PRUNEPATH list.
+
+    This method has no effect if the path specified by updatedb_path does not
+    exist or is not a file.
+
+    @param path: string the path to add to the updatedb.conf PRUNEPATHS value
+    @param updatedb_path: the path the updatedb.conf file
+    """
+    if not os.path.exists(updatedb_path) or os.path.isdir(updatedb_path):
+        # If the updatedb.conf file doesn't exist then don't attempt to update
+        # the file as the package providing mlocate may not be installed on
+        # the local system
+        return
+
     with open(updatedb_path, 'r+') as f_id:
         updatedb_text = f_id.read()
         output = updatedb(updatedb_text, path)
@@ -993,7 +1018,7 @@ def updatedb(updatedb_text, new_path):
     return output
 
 
-def modulo_distribution(modulo=3, wait=30):
+def modulo_distribution(modulo=3, wait=30, non_zero_wait=False):
     """ Modulo distribution
 
     This helper uses the unit number, a modulo value and a constant wait time
@@ -1015,7 +1040,65 @@ def modulo_distribution(modulo=3, wait=30):
 
     @param modulo: int The modulo number creates the group distribution
     @param wait: int The constant time wait value
+    @param non_zero_wait: boolean Override unit % modulo == 0,
+                          return modulo * wait. Used to avoid collisions with
+                          leader nodes which are often given priority.
     @return: int Calculated time to wait for unit operation
     """
     unit_number = int(local_unit().split('/')[1])
-    return (unit_number % modulo) * wait
+    calculated_wait_time = (unit_number % modulo) * wait
+    if non_zero_wait and calculated_wait_time == 0:
+        return modulo * wait
+    else:
+        return calculated_wait_time
+
+
+def install_ca_cert(ca_cert, name=None):
+    """
+    Install the given cert as a trusted CA.
+
+    The ``name`` is the stem of the filename where the cert is written, and if
+    not provided, it will default to ``juju-{charm_name}``.
+
+    If the cert is empty or None, or is unchanged, nothing is done.
+    """
+    if not ca_cert:
+        return
+    if not isinstance(ca_cert, bytes):
+        ca_cert = ca_cert.encode('utf8')
+    if not name:
+        name = 'juju-{}'.format(charm_name())
+    cert_file = '/usr/local/share/ca-certificates/{}.crt'.format(name)
+    new_hash = hashlib.md5(ca_cert).hexdigest()
+    if file_hash(cert_file) == new_hash:
+        return
+    log("Installing new CA cert at: {}".format(cert_file), level=INFO)
+    write_file(cert_file, ca_cert)
+    subprocess.check_call(['update-ca-certificates', '--fresh'])
+
+
+def get_system_env(key, default=None):
+    """Get data from system environment as represented in ``/etc/environment``.
+
+    :param key: Key to look up
+    :type key: str
+    :param default: Value to return if key is not found
+    :type default: any
+    :returns: Value for key if found or contents of default parameter
+    :rtype: any
+    :raises: subprocess.CalledProcessError
+    """
+    env_file = '/etc/environment'
+    # use the shell and env(1) to parse the global environments file.  This is
+    # done to get the correct result even if the user has shell variable
+    # substitutions or other shell logic in that file.
+    output = subprocess.check_output(
+        ['env', '-i', '/bin/bash', '-c',
+         'set -a && source {} && env'.format(env_file)],
+        universal_newlines=True)
+    for k, v in (line.split('=', 1)
+                 for line in output.splitlines() if '=' in line):
+        if k == key:
+            return v
+    else:
+        return default

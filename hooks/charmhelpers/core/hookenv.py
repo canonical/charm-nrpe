@@ -34,6 +34,8 @@ import errno
 import tempfile
 from subprocess import CalledProcessError
 
+from charmhelpers import deprecate
+
 import six
 if not six.PY3:
     from UserDict import UserDict
@@ -48,6 +50,12 @@ INFO = "INFO"
 DEBUG = "DEBUG"
 TRACE = "TRACE"
 MARKER = object()
+SH_MAX_ARG = 131071
+
+
+RANGE_WARNING = ('Passing NO_PROXY string that includes a cidr. '
+                 'This may not be compatible with software you are '
+                 'running in your shell.')
 
 cache = {}
 
@@ -98,7 +106,7 @@ def log(message, level=None):
         command += ['-l', level]
     if not isinstance(message, six.string_types):
         message = repr(message)
-    command += [message]
+    command += [message[:SH_MAX_ARG]]
     # Missing juju-log should not cause failures in unit tests
     # Send log output to stderr
     try:
@@ -108,6 +116,24 @@ def log(message, level=None):
             if level:
                 message = "{}: {}".format(level, message)
             message = "juju-log: {}".format(message)
+            print(message, file=sys.stderr)
+        else:
+            raise
+
+
+def function_log(message):
+    """Write a function progress message"""
+    command = ['function-log']
+    if not isinstance(message, six.string_types):
+        message = repr(message)
+    command += [message[:SH_MAX_ARG]]
+    # Missing function-log should not cause failures in unit tests
+    # Send function_log output to stderr
+    try:
+        subprocess.call(command)
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            message = "function-log: {}".format(message)
             print(message, file=sys.stderr)
         else:
             raise
@@ -201,9 +227,33 @@ def remote_unit():
     return os.environ.get('JUJU_REMOTE_UNIT', None)
 
 
-def service_name():
-    """The name service group this unit belongs to"""
+def application_name():
+    """
+    The name of the deployed application this unit belongs to.
+    """
     return local_unit().split('/')[0]
+
+
+def service_name():
+    """
+    .. deprecated:: 0.19.1
+       Alias for :func:`application_name`.
+    """
+    return application_name()
+
+
+def model_name():
+    """
+    Name of the model that this unit is deployed in.
+    """
+    return os.environ['JUJU_MODEL_NAME']
+
+
+def model_uuid():
+    """
+    UUID of the model that this unit is deployed in.
+    """
+    return os.environ['JUJU_MODEL_UUID']
 
 
 def principal_unit():
@@ -290,7 +340,7 @@ class Config(dict):
         self.implicit_save = True
         self._prev_dict = None
         self.path = os.path.join(charm_dir(), Config.CONFIG_FILE_NAME)
-        if os.path.exists(self.path):
+        if os.path.exists(self.path) and os.stat(self.path).st_size:
             self.load_previous()
         atexit(self._implicit_save)
 
@@ -310,7 +360,11 @@ class Config(dict):
         """
         self.path = path or self.path
         with open(self.path) as f:
-            self._prev_dict = json.load(f)
+            try:
+                self._prev_dict = json.load(f)
+            except ValueError as e:
+                log('Unable to parse previous config data - {}'.format(str(e)),
+                    level=ERROR)
         for k, v in copy.deepcopy(self._prev_dict).items():
             if k not in self:
                 self[k] = v
@@ -354,22 +408,40 @@ class Config(dict):
             self.save()
 
 
-@cached
+_cache_config = None
+
+
 def config(scope=None):
-    """Juju charm configuration"""
-    config_cmd_line = ['config-get']
-    if scope is not None:
-        config_cmd_line.append(scope)
-    else:
-        config_cmd_line.append('--all')
-    config_cmd_line.append('--format=json')
+    """
+    Get the juju charm configuration (scope==None) or individual key,
+    (scope=str).  The returned value is a Python data structure loaded as
+    JSON from the Juju config command.
+
+    :param scope: If set, return the value for the specified key.
+    :type scope: Optional[str]
+    :returns: Either the whole config as a Config, or a key from it.
+    :rtype: Any
+    """
+    global _cache_config
+    config_cmd_line = ['config-get', '--all', '--format=json']
     try:
-        config_data = json.loads(
-            subprocess.check_output(config_cmd_line).decode('UTF-8'))
+        # JSON Decode Exception for Python3.5+
+        exc_json = json.decoder.JSONDecodeError
+    except AttributeError:
+        # JSON Decode Exception for Python2.7 through Python3.4
+        exc_json = ValueError
+    try:
+        if _cache_config is None:
+            config_data = json.loads(
+                subprocess.check_output(config_cmd_line).decode('UTF-8'))
+            _cache_config = Config(config_data)
         if scope is not None:
-            return config_data
-        return Config(config_data)
-    except ValueError:
+            return _cache_config.get(scope)
+        return _cache_config
+    except (exc_json, UnicodeDecodeError) as e:
+        log('Unable to parse output from config-get: config_cmd_line="{}" '
+            'message="{}"'
+            .format(config_cmd_line, str(e)), level=ERROR)
         return None
 
 
@@ -461,6 +533,67 @@ def related_units(relid=None):
         units_cmd_line.extend(('-r', relid))
     return json.loads(
         subprocess.check_output(units_cmd_line).decode('UTF-8')) or []
+
+
+def expected_peer_units():
+    """Get a generator for units we expect to join peer relation based on
+    goal-state.
+
+    The local unit is excluded from the result to make it easy to gauge
+    completion of all peers joining the relation with existing hook tools.
+
+    Example usage:
+    log('peer {} of {} joined peer relation'
+        .format(len(related_units()),
+                len(list(expected_peer_units()))))
+
+    This function will raise NotImplementedError if used with juju versions
+    without goal-state support.
+
+    :returns: iterator
+    :rtype: types.GeneratorType
+    :raises: NotImplementedError
+    """
+    if not has_juju_version("2.4.0"):
+        # goal-state first appeared in 2.4.0.
+        raise NotImplementedError("goal-state")
+    _goal_state = goal_state()
+    return (key for key in _goal_state['units']
+            if '/' in key and key != local_unit())
+
+
+def expected_related_units(reltype=None):
+    """Get a generator for units we expect to join relation based on
+    goal-state.
+
+    Note that you can not use this function for the peer relation, take a look
+    at expected_peer_units() for that.
+
+    This function will raise KeyError if you request information for a
+    relation type for which juju goal-state does not have information.  It will
+    raise NotImplementedError if used with juju versions without goal-state
+    support.
+
+    Example usage:
+    log('participant {} of {} joined relation {}'
+        .format(len(related_units()),
+                len(list(expected_related_units())),
+                relation_type()))
+
+    :param reltype: Relation type to list data for, default is to list data for
+                    the realtion type we are currently executing a hook for.
+    :type reltype: str
+    :returns: iterator
+    :rtype: types.GeneratorType
+    :raises: KeyError, NotImplementedError
+    """
+    if not has_juju_version("2.4.4"):
+        # goal-state existed in 2.4.0, but did not list individual units to
+        # join a relation in 2.4.1 through 2.4.3. (LP: #1794739)
+        raise NotImplementedError("goal-state relation unit count")
+    reltype = reltype or relation_type()
+    _goal_state = goal_state()
+    return (key for key in _goal_state['relations'][reltype] if '/' in key)
 
 
 @cached
@@ -833,9 +966,23 @@ def charm_dir():
     return os.environ.get('CHARM_DIR')
 
 
+def cmd_exists(cmd):
+    """Return True if the specified cmd exists in the path"""
+    return any(
+        os.access(os.path.join(path, cmd), os.X_OK)
+        for path in os.environ["PATH"].split(os.pathsep)
+    )
+
+
 @cached
+@deprecate("moved to function_get()", log=log)
 def action_get(key=None):
-    """Gets the value of an action parameter, or all key/value param pairs"""
+    """
+    .. deprecated:: 0.20.7
+       Alias for :func:`function_get`.
+
+    Gets the value of an action parameter, or all key/value param pairs.
+    """
     cmd = ['action-get']
     if key is not None:
         cmd.append(key)
@@ -844,19 +991,71 @@ def action_get(key=None):
     return action_data
 
 
+@cached
+def function_get(key=None):
+    """Gets the value of an action parameter, or all key/value param pairs"""
+    cmd = ['function-get']
+    # Fallback for older charms.
+    if not cmd_exists('function-get'):
+        cmd = ['action-get']
+
+    if key is not None:
+        cmd.append(key)
+    cmd.append('--format=json')
+    function_data = json.loads(subprocess.check_output(cmd).decode('UTF-8'))
+    return function_data
+
+
+@deprecate("moved to function_set()", log=log)
 def action_set(values):
-    """Sets the values to be returned after the action finishes"""
+    """
+    .. deprecated:: 0.20.7
+       Alias for :func:`function_set`.
+
+    Sets the values to be returned after the action finishes.
+    """
     cmd = ['action-set']
     for k, v in list(values.items()):
         cmd.append('{}={}'.format(k, v))
     subprocess.check_call(cmd)
 
 
-def action_fail(message):
-    """Sets the action status to failed and sets the error message.
+def function_set(values):
+    """Sets the values to be returned after the function finishes"""
+    cmd = ['function-set']
+    # Fallback for older charms.
+    if not cmd_exists('function-get'):
+        cmd = ['action-set']
 
-    The results set by action_set are preserved."""
+    for k, v in list(values.items()):
+        cmd.append('{}={}'.format(k, v))
+    subprocess.check_call(cmd)
+
+
+@deprecate("moved to function_fail()", log=log)
+def action_fail(message):
+    """
+    .. deprecated:: 0.20.7
+       Alias for :func:`function_fail`.
+
+    Sets the action status to failed and sets the error message.
+
+    The results set by action_set are preserved.
+    """
     subprocess.check_call(['action-fail', message])
+
+
+def function_fail(message):
+    """Sets the function status to failed and sets the error message.
+
+    The results set by function_set are preserved."""
+    cmd = ['function-fail']
+    # Fallback for older charms.
+    if not cmd_exists('function-fail'):
+        cmd = ['action-fail']
+    cmd.append(message)
+
+    subprocess.check_call(cmd)
 
 
 def action_name():
@@ -864,14 +1063,29 @@ def action_name():
     return os.environ.get('JUJU_ACTION_NAME')
 
 
+def function_name():
+    """Get the name of the currently executing function."""
+    return os.environ.get('JUJU_FUNCTION_NAME') or action_name()
+
+
 def action_uuid():
     """Get the UUID of the currently executing action."""
     return os.environ.get('JUJU_ACTION_UUID')
 
 
+def function_id():
+    """Get the ID of the currently executing function."""
+    return os.environ.get('JUJU_FUNCTION_ID') or action_uuid()
+
+
 def action_tag():
     """Get the tag for the currently executing action."""
     return os.environ.get('JUJU_ACTION_TAG')
+
+
+def function_tag():
+    """Get the tag for the currently executing function."""
+    return os.environ.get('JUJU_FUNCTION_TAG') or action_tag()
 
 
 def status_set(workload_state, message):
@@ -948,6 +1162,14 @@ def application_version_set(version):
         subprocess.check_call(cmd)
     except OSError:
         log("Application Version: {}".format(version))
+
+
+@translate_exc(from_exc=OSError, to_exc=NotImplementedError)
+@cached
+def goal_state():
+    """Juju goal state values"""
+    cmd = ['goal-state', '--format=json']
+    return json.loads(subprocess.check_output(cmd).decode('UTF-8'))
 
 
 @translate_exc(from_exc=OSError, to_exc=NotImplementedError)
@@ -1268,3 +1490,102 @@ def egress_subnets(rid=None, unit=None):
     if 'private-address' in settings:
         return [_to_range(settings['private-address'])]
     return []  # Should never happen
+
+
+def unit_doomed(unit=None):
+    """Determines if the unit is being removed from the model
+
+    Requires Juju 2.4.1.
+
+    :param unit: string unit name, defaults to local_unit
+    :side effect: calls goal_state
+    :side effect: calls local_unit
+    :side effect: calls has_juju_version
+    :return: True if the unit is being removed, already gone, or never existed
+    """
+    if not has_juju_version("2.4.1"):
+        # We cannot risk blindly returning False for 'we don't know',
+        # because that could cause data loss; if call sites don't
+        # need an accurate answer, they likely don't need this helper
+        # at all.
+        # goal-state existed in 2.4.0, but did not handle removals
+        # correctly until 2.4.1.
+        raise NotImplementedError("is_doomed")
+    if unit is None:
+        unit = local_unit()
+    gs = goal_state()
+    units = gs.get('units', {})
+    if unit not in units:
+        return True
+    # I don't think 'dead' units ever show up in the goal-state, but
+    # check anyway in addition to 'dying'.
+    return units[unit]['status'] in ('dying', 'dead')
+
+
+def env_proxy_settings(selected_settings=None):
+    """Get proxy settings from process environment variables.
+
+    Get charm proxy settings from environment variables that correspond to
+    juju-http-proxy, juju-https-proxy and juju-no-proxy (available as of 2.4.2,
+    see lp:1782236) in a format suitable for passing to an application that
+    reacts to proxy settings passed as environment variables. Some applications
+    support lowercase or uppercase notation (e.g. curl), some support only
+    lowercase (e.g. wget), there are also subjectively rare cases of only
+    uppercase notation support. no_proxy CIDR and wildcard support also varies
+    between runtimes and applications as there is no enforced standard.
+
+    Some applications may connect to multiple destinations and expose config
+    options that would affect only proxy settings for a specific destination
+    these should be handled in charms in an application-specific manner.
+
+    :param selected_settings: format only a subset of possible settings
+    :type selected_settings: list
+    :rtype: Option(None, dict[str, str])
+    """
+    SUPPORTED_SETTINGS = {
+        'http': 'HTTP_PROXY',
+        'https': 'HTTPS_PROXY',
+        'no_proxy': 'NO_PROXY',
+        'ftp': 'FTP_PROXY'
+    }
+    if selected_settings is None:
+        selected_settings = SUPPORTED_SETTINGS
+
+    selected_vars = [v for k, v in SUPPORTED_SETTINGS.items()
+                     if k in selected_settings]
+    proxy_settings = {}
+    for var in selected_vars:
+        var_val = os.getenv(var)
+        if var_val:
+            proxy_settings[var] = var_val
+            proxy_settings[var.lower()] = var_val
+        # Now handle juju-prefixed environment variables. The legacy vs new
+        # environment variable usage is mutually exclusive
+        charm_var_val = os.getenv('JUJU_CHARM_{}'.format(var))
+        if charm_var_val:
+            proxy_settings[var] = charm_var_val
+            proxy_settings[var.lower()] = charm_var_val
+    if 'no_proxy' in proxy_settings:
+        if _contains_range(proxy_settings['no_proxy']):
+            log(RANGE_WARNING, level=WARNING)
+    return proxy_settings if proxy_settings else None
+
+
+def _contains_range(addresses):
+    """Check for cidr or wildcard domain in a string.
+
+    Given a string comprising a comma seperated list of ip addresses
+    and domain names, determine whether the string contains IP ranges
+    or wildcard domains.
+
+    :param addresses: comma seperated list of domains and ip addresses.
+    :type addresses: str
+    """
+    return (
+        # Test for cidr (e.g. 10.20.20.0/24)
+        "/" in addresses or
+        # Test for wildcard domains (*.foo.com or .foo.com)
+        "*" in addresses or
+        addresses.startswith(".") or
+        ",." in addresses or
+        " ." in addresses)
