@@ -1,7 +1,7 @@
 name: nrpe
 format: 2
 summary: Nagios Remote Plugin Executor Server
-maintainer: NRPE Charmers <nrpe-charmers@lists.launchpad.net>
+maintainer: LMA Charmers <llama-charmers@lists.ubuntu.com>
 subordinate: true
 description: |
   Nagios is a host/service/network monitoring and management system.  The
@@ -27,8 +27,7 @@ requires:
     interface: local-monitors
     scope: container
 series:
-  - xenial
-  - trusty
-  - disco
   - bionic
   - focal
+  - xenial
+  - trusty
