@@ -2,6 +2,7 @@ import os
 import shutil
 import glob
 import subprocess
+import yaml
 
 from charmhelpers import fetch
 from charmhelpers.core import host
@@ -114,6 +115,26 @@ def render_nrped_files(service_name):
                 pass
         render_nrpe_check_config(checkctxt)
     process_local_monitors()
+    process_user_monitors()
+
+
+def process_user_monitors():
+    """Collect the user defined local monitors from config"""
+    if hookenv.config('monitors'):
+        monitors = yaml.safe_load(hookenv.config('monitors'))
+    else:
+        return
+    try:
+        local_user_checks = monitors['monitors']['local'].keys()
+    except KeyError as e:
+        hookenv.log('no local monitors found in monitors config: {}'.format(e))
+        return
+    for checktype in local_user_checks:
+        for check in monitors['monitors']['local'][checktype].keys():
+            check_def = nrpe_helpers.NRPECheckCtxt(checktype,
+                                                   monitors['monitors']['local'][checktype][check],
+                                                   'user')
+            render_nrpe_check_config(check_def)
 
 
 def process_local_monitors():
