@@ -179,3 +179,12 @@ options:
         dmesg history length to check for xfs errors, in minutes
         .
         Defaults to disabled, set the time to enable.
+  ro_filesystem_excludes:
+    default: "/snap/,/sys/fs/cgroup"
+    type: string
+    description: |
+      Comma separated list of mount points to exclude from checks for readonly filesystem.
+      Can be a substring rather than the entire mount point, e.g. /sys will match all filesystems
+      beginning with the string /sys.
+      The check is disabled on all LXD units, and also for non-container units if this parameter is
+      set to ''.

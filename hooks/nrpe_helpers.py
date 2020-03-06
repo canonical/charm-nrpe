@@ -437,6 +437,23 @@ class SubordinateCheckDefinitions(dict):
                 'cmd_params': '-w 60 -c 80',  # Specify params here to enable the check, not required otherwise.
             }
             checks.append(arp_check)
+            ro_filesystem_excludes = hookenv.config('ro_filesystem_excludes')
+            if ro_filesystem_excludes == '':
+                # specify cmd_params = '' to disable/remove the check from nrpe
+                check_ro_filesystem = {
+                    'description': 'Readonly filesystems',
+                    'cmd_name': 'check_ro_filesystem',
+                    'cmd_exec': os.path.join(local_plugin_dir, 'check_ro_filesystem.py'),
+                    'cmd_params': '',
+                }
+            else:
+                check_ro_filesystem = {
+                    'description': 'Readonly filesystems',
+                    'cmd_name': 'check_ro_filesystem',
+                    'cmd_exec': os.path.join(local_plugin_dir, 'check_ro_filesystem.py'),
+                    'cmd_params': '-e {}'.format(hookenv.config('ro_filesystem_excludes')),
+                }
+            checks.append(check_ro_filesystem)
 
         if hookenv.config('lacp_bonds').strip():
             for bond_iface in hookenv.config('lacp_bonds').strip().split():

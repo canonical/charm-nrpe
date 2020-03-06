@@ -31,7 +31,8 @@ def determine_packages():
     pkgs = [
         'nagios-nrpe-server',
         'nagios-plugins-basic',
-        'nagios-plugins-standard'
+        'nagios-plugins-standard',
+        'python3',
     ]
     if hookenv.config('export_nagios_definitions'):
         pkgs.append('rsync')
