@@ -25,6 +25,8 @@ def check_lacp_bond(iface):
     BOND_SLAVES_TEMPLATE = '/sys/class/net/{0}/bonding/slaves'
     BOND_MODE_TEMPLATE = '/sys/class/net/{0}/bonding/mode'
     SLAVE_TEMPLATE = '/sys/class/net/{0}/bonding_slave/ad_aggregator_id'
+    ACTOR_PORT_STATE = '/sys/class/net/{0}/bonding_slave/ad_actor_oper_port_state'
+    PARTNET_PORT_STATE = '/sys/class/net/{0}/bonding_slave/ad_partner_oper_port_state'
 
     bond_aggr = BOND_AGGR_TEMPLATE.format(iface)
     bond_slaves = BOND_SLAVES_TEMPLATE.format(iface)
@@ -57,6 +59,19 @@ def check_lacp_bond(iface):
                 msg += '({0}:{1} - {2}:{3})'
                 msg = msg.format(iface, bond_aggr_value,
                                  slave, slave_aggr_value)
+                raise WarnError(msg)
+
+            with open(ACTOR_PORT_STATE.format(slave)) as fd:
+                actor_port_value = fd.readline().strip()
+
+            with open(PARTNET_PORT_STATE.format(slave)) as fd:
+                partner_port_value = fd.readline().strip()
+            
+            if actor_port_value != partner_port_value:
+                msg = 'WARNING: LACPDU port state mismatch'
+                msg += '({0} actor port state:{1} - {0} partner port state:{2})'
+                msg = msg.format(slave, actor_port_value,
+                                 partner_port_value)
                 raise WarnError(msg)
 
     else:
