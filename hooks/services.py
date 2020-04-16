@@ -15,7 +15,6 @@ def manage():
             'service': 'nrpe-install',
             'data_ready': [
                 nrpe_utils.install_packages,
-                nrpe_utils.remove_rpcbind,
                 nrpe_utils.install_charm_files,
             ],
             'start': [],

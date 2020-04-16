@@ -45,12 +45,11 @@ def determine_packages():
 def install_packages(service_name):
     """ Install packages """
     fetch.apt_update()
-    fetch.apt_install(determine_packages(), fatal=True)
-
-
-def remove_rpcbind(service_name):
-    """ Remove rpcbind LP#1873171 """
-    fetch.apt_purge('rpcbind')
+    apt_options = [
+        '--option=Dpkg::Options::=--force-confold',
+        '--option=Dpkg::Options::=--no-install-recommends',
+    ]
+    fetch.apt_install(determine_packages(), options=apt_options, fatal=True)
 
 
 def remove_host_export_fragments(service_name):
