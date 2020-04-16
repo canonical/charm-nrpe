@@ -46,8 +46,10 @@ def install_packages(service_name):
     """ Install packages """
     fetch.apt_update()
     apt_options = [
+        # avoid installing rpcbind LP#1873171
+        '--no-install-recommends',
+        # and retain the default option too
         '--option=Dpkg::Options::=--force-confold',
-        '--option=Dpkg::Options::=--no-install-recommends',
     ]
     fetch.apt_install(determine_packages(), options=apt_options, fatal=True)
 
