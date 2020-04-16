@@ -48,6 +48,11 @@ def install_packages(service_name):
     fetch.apt_install(determine_packages(), fatal=True)
 
 
+def remove_rpcbind(service_name):
+    """ Remove rpcbind LP#1873171 """
+    fetch.apt_purge('rpcbind')
+
+
 def remove_host_export_fragments(service_name):
     """ Remove nagios host config fragment """
     for fname in glob.glob('/var/lib/nagios/export/host__*'):
