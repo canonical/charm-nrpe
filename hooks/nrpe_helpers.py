@@ -508,7 +508,7 @@ class SubordinateCheckDefinitions(dict):
 
     def proc_count(self):
         """ Return number number of processing units """
-        return int(subprocess.check_output('nproc --all'))
+        return int(subprocess.check_output(['nproc', '--all']))
 
     def parse_netlinks(self, ifaces):
         """Parses a list of strings, or a single string
