@@ -88,6 +88,7 @@ def install_charm_files(service_name):
         os.path.join(charm_file_dir, 'rsyncd.conf'),
         '/etc/rsyncd.conf'
     )
+    host.mkdir('/etc/rsync-juju.d', perms=0o755)
     host.rsync(
         charm_plugin_dir,
         '/usr/local/lib/nagios/',
