@@ -178,6 +178,14 @@ def update_monitor_relation(service_name):
         )
 
 
+def has_master():
+    """
+    Checks for the monitor relation, or external monitor config.
+    """
+    return (hookenv.config('nagios_master') != 'None' or
+        bool(hookenv.relation_ids('monitors')))
+
+
 class TolerantPortManagerCallback(PortManagerCallback):
     """Manage unit ports.
 
