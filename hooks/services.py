@@ -72,4 +72,4 @@ def manage():
     if nrpe_utils.has_master():
         status_set('active', 'ready')
     else:
-        status_set('blocked', 'Nagios master not configured.')
+        status_set('blocked', 'Nagios master not configured and no relation to Nagios found')
