@@ -1,6 +1,29 @@
-*~
-.idea
-*.pyc
-__pycache__/
-.venv/
+# Build
 builds/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Log files
+*.log
+
+# Tests
+.tox/
+.coverage
+
+# vi
+.*.swp
+
+# pycharm
+.idea/
+
+# version data
+repo-info
+
+# reports
+report/*
+
+# virtualenv
+.venv/
