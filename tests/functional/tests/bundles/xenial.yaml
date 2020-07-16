@@ -8,6 +8,6 @@ applications:
     num_units: 1
 relations:
   - - mysql:nrpe-external-master
-    - nrpe-container:nrpe-external-master
+    - nrpe:nrpe-external-master
   - - nrpe:monitors
     - nagios:monitors
