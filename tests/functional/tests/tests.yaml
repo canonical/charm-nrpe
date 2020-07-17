@@ -1,3 +1,5 @@
 charm_name: nrpe
 gate_bundles:
+  - trusty
   - xenial
+  - bionic
