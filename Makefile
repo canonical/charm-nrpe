@@ -65,7 +65,7 @@ proof:
 unittests:
 	@echo "There are no unit tests to run"
 
-functional: build
+functional: submodules build
 	@echo "Executing functional tests in ${CHARM_BUILD_DIR}"
 	@CHARM_BUILD_DIR=${CHARM_BUILD_DIR} tox -e func
 
