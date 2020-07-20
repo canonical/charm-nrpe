@@ -1,6 +1,7 @@
 import unittest
 import yaml
 import zaza.model as model
+from zaza.utilities import juju as juju_utils
 import logging
 
 
@@ -27,6 +28,13 @@ class TestNrpe(TestBase):
             "Verify the nrpe checks are created and have the required content..."
         )
 
+        check_mysql_content = "command[check_mysql]=/usr/local/lib/nagios/plugins/check_systemd.py mysql"
+        machine = list(juju_utils.get_machines_for_application("mysql"))[0]
+        machine_series = juju_utils.get_machine_series(machine)
+
+        if machine_series == "trusty":
+            check_mysql_content = "command[check_mysql]=/usr/lib/nagios/plugins/check_mysql -u nagios"
+
         nrpe_checks = {
             "check_conntrack.cfg":
                 "command[check_conntrack]=/usr/local/lib/nagios/plugins/check_conntrack.sh -w 80 -c 90",
@@ -37,7 +45,7 @@ class TestNrpe(TestBase):
             "check_mem.cfg":
                 "command[check_mem]=/usr/local/lib/nagios/plugins/check_mem.pl -C -h -u -w 85 -c 90",
             "check_mysql.cfg":
-                "command[check_mysql]=/usr/local/lib/nagios/plugins/check_systemd.py mysql",
+                check_mysql_content,
             "check_mysql_proc.cfg":
                 "command[check_mysql_proc]=/usr/lib/nagios/plugins/check_procs -c 1:1 -C mysqld",
             "check_swap_activity.cfg":

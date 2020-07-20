@@ -3,3 +3,5 @@ gate_bundles:
   - trusty
   - xenial
   - bionic
+tests:
+  - tests.nrpe_tests.TestNrpe
