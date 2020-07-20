@@ -55,10 +55,15 @@ class TestNrpe(TestBase):
         }
 
         for nrpe_check in nrpe_checks:
+            logging.info("Checking content of '{}' nrpe check".format(nrpe_check))
             cmd = "cat /etc/nagios/nrpe.d/" + nrpe_check
             result = model.run_on_unit(self.lead_unit_name, cmd)
             code = result.get("Code")
             if code != "0":
+                logging.warning(
+                    "Unable to find nrpe check {} at /etc/nagios/nrpe.d/".format(nrpe_check)
+                )
+
                 raise model.CommandRunFailed(cmd, result)
             content = result.get("Stdout")
             self.assertTrue(nrpe_checks[nrpe_check] in content)
@@ -120,10 +125,14 @@ class TestNrpe(TestBase):
         }
 
         for nrpe_check in local_nrpe_checks:
+            logging.info("Checking content of '{}' nrpe check".format(nrpe_check))
             cmd = "cat /etc/nagios/nrpe.d/" + nrpe_check
             result = model.run_on_unit(self.lead_unit_name, cmd)
             code = result.get("Code")
             if code != "0":
+                logging.warning(
+                    "Unable to find nrpe check {} at /etc/nagios/nrpe.d/".format(nrpe_check)
+                )
                 raise model.CommandRunFailed(cmd, result)
             content = result.get("Stdout")
             self.assertTrue(local_nrpe_checks[nrpe_check] in content)
@@ -133,6 +142,7 @@ class TestNrpe(TestBase):
                 "/usr/lib/nagios/plugins/check_tcp -H $HOSTADDRESS$ -E -p 22 -s 'SSH.*' -e None -w 2 -c 10 -t 12 -t 10"
         }
         for nrpe_check in remote_nrpe_checks:
+            logging.info("Checking content of '{}' nrpe command in nagios unit".format(nrpe_check))
             cmd = "cat /etc/nagios3/conf.d/commands/" + nrpe_check
             nagios_lead_unit_name = model.get_lead_unit_name(
                 "nagios", model_name=self.model_name
@@ -140,6 +150,9 @@ class TestNrpe(TestBase):
             result = model.run_on_unit(nagios_lead_unit_name, cmd)
             code = result.get("Code")
             if code != "0":
+                logging.warning(
+                    "Unable to find nrpe command {} at/etc/nagios3/conf.d/commands/ in nagios unit".format(nrpe_check)
+                )
                 raise model.CommandRunFailed(cmd, result)
             content = result.get("Stdout")
             self.assertTrue(remote_nrpe_checks[nrpe_check] in content)
@@ -151,6 +164,9 @@ class TestNrpe(TestBase):
         result = model.run_on_unit(self.lead_unit_name, cmd)
         code = result.get("Code")
         if code != "0":
+            logging.warning(
+                "Unable to find nrpe config file at /etc/nagios/nrpe.cfg"
+            )
             raise model.CommandRunFailed(cmd, result)
         content = result.get("Stdout")
         self.assertTrue(line in content)
@@ -166,6 +182,9 @@ class TestNrpe(TestBase):
         result = model.run_on_unit(self.lead_unit_name, cmd)
         code = result.get("Code")
         if code != "0":
+            logging.warning(
+                "Unable to find nrpe check at /etc/nagios/nrpe.d/check_netlinks_eth0.cfg"
+            )
             raise model.CommandRunFailed(cmd, result)
         content = result.get("Stdout")
         self.assertTrue(line in content)
