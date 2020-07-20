@@ -37,21 +37,21 @@ class TestNrpe(TestBase):
 
         nrpe_checks = {
             "check_conntrack.cfg":
-                "command[check_conntrack]=/usr/local/lib/nagios/plugins/check_conntrack.sh -w 80 -c 90",
+                "command[check_conntrack]=/usr/local/lib/nagios/plugins/check_conntrack.sh",
             "check_disk_root.cfg":
-                "command[check_disk_root]=/usr/lib/nagios/plugins/check_disk -u GB -w 25% -c 20% -K 5% -p /",
+                "command[check_disk_root]=/usr/lib/nagios/plugins/check_disk",
             "check_load.cfg":
-                "command[check_load]=/usr/lib/nagios/plugins/check_load -w 96,48,24 -c 192,96,48",
+                "command[check_load]=/usr/lib/nagios/plugins/check_load",
             "check_mem.cfg":
-                "command[check_mem]=/usr/local/lib/nagios/plugins/check_mem.pl -C -h -u -w 85 -c 90",
+                "command[check_mem]=/usr/local/lib/nagios/plugins/check_mem.pl",
             "check_mysql.cfg":
                 check_mysql_content,
             "check_mysql_proc.cfg":
                 "command[check_mysql_proc]=/usr/lib/nagios/plugins/check_procs -c 1:1 -C mysqld",
             "check_swap_activity.cfg":
-                "command[check_swap_activity]=/usr/local/lib/nagios/plugins/check_swap_activity -i 5 -w 10240 -c 40960",
+                "command[check_swap_activity]=/usr/local/lib/nagios/plugins/check_swap_activity",
             "check_swap.cfg":
-                "command[check_swap]=/usr/lib/nagios/plugins/check_swap -w 40% -c 25%"
+                "command[check_swap]=/usr/lib/nagios/plugins/check_swap"
         }
 
         for nrpe_check in nrpe_checks:
