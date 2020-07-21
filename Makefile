@@ -1,10 +1,7 @@
 PYTHON := /usr/bin/python3
 
-ifndef CHARM_BUILD_DIR
-	CHARM_BUILD_DIR=/tmp/charm-builds
-endif
-
 PROJECTPATH=$(dir $(realpath $(MAKEFILE_LIST)))
+CHARM_BUILD_DIR=${PROJECTPATH}/.builds
 METADATA_FILE="metadata.yaml"
 CHARM_NAME=$(shell cat ${PROJECTPATH}/${METADATA_FILE} | grep -E '^name:' | awk '{print $$2}')
 
