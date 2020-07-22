@@ -54,7 +54,7 @@ functional: build
 	@echo "Executing functional tests in ${CHARM_BUILD_DIR}"
 	@CHARM_BUILD_DIR=${CHARM_BUILD_DIR} tox -e func
 
-test: proof unittests functional
+test: lint proof unittests functional
 	@echo "Charm ${CHARM_NAME} has been tested"
 
 # The targets below don't depend on a file
