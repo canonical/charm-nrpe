@@ -28,7 +28,7 @@ clean:
 
 submodules:
 	@echo "Cloning submodules"
-	@git submodule update --init --recursive
+	@git submodule update --init --recursive --remote --merge
 
 build: submodules
 	@echo "Building charm to base directory ${CHARM_BUILD_DIR}/${CHARM_NAME}"
@@ -54,7 +54,7 @@ functional: build
 	@echo "Executing functional tests in ${CHARM_BUILD_DIR}"
 	@CHARM_BUILD_DIR=${CHARM_BUILD_DIR} tox -e func
 
-test: lint proof unittests functional
+test: proof unittests functional
 	@echo "Charm ${CHARM_NAME} has been tested"
 
 # The targets below don't depend on a file
