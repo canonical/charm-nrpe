@@ -1,0 +1,13 @@
+series: trusty
+applications:
+  mysql:
+    charm: cs:mysql
+    num_units: 1
+  nagios:
+    charm: cs:~llama-charmers-next/nagios
+    num_units: 1
+relations:
+  - - mysql:nrpe-external-master
+    - nrpe:nrpe-external-master
+  - - nrpe:monitors
+    - nagios:monitors

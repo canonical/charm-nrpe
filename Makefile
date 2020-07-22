@@ -1,53 +1,61 @@
-#!/usr/bin/make
 PYTHON := /usr/bin/python3
-export PYTHONPATH := hooks
 
-CHARM_STORE_URL := cs:~nrpe-charmers/nrpe
-REPO := git+ssh://git.launchpad.net/nrpe-charm
+PROJECTPATH=$(dir $(realpath $(MAKEFILE_LIST)))
+CHARM_BUILD_DIR=${PROJECTPATH}/.builds
+METADATA_FILE="metadata.yaml"
+CHARM_NAME=$(shell cat ${PROJECTPATH}/${METADATA_FILE} | grep -E '^name:' | awk '{print $$2}')
 
-SHELL := /bin/bash
-export SHELLOPTS:=errexit:pipefail
+help:
+	@echo "This project supports the following targets"
+	@echo ""
+	@echo " make help - show this text"
+	@echo " make clean - remove unneeded files"
+	@echo " make submodules - make sure that the submodules are up-to-date"
+	@echo " make build - build the charm"
+	@echo " make release - run clean, submodules and build targets"
+	@echo " make lint - run flake8 and black"
+	@echo " make proof - run charm proof"
+	@echo " make unittests - run the tests defined in the unittest subdirectory"
+	@echo " make functional - run the tests defined in the functional subdirectory"
+	@echo " make test - run lint, proof, unittests and functional targets"
+	@echo ""
 
-
-virtualenv:
-	virtualenv -p $(PYTHON) .venv
-	.venv/bin/pip install flake8 nose mock six
-
-lint: virtualenv
-	.venv/bin/flake8 --exclude hooks/charmhelpers hooks tests/10-tests
-	@charm proof
+clean:
+	@echo "Cleaning files"
+	@git clean -fXd
+	@echo "Cleaning existing build"
+	@rm -rf ${CHARM_BUILD_DIR}/${CHARM_NAME}
 
 submodules:
 	@echo "Cloning submodules"
-	@git submodule update --init --recursive
+	@git submodule update --init --recursive --remote --merge
 
-test:
-	@echo Starting Amulet tests...
-	# coreycb note: The -v should only be temporary until Amulet sends
-	# raise_status() messages to stderr:
-	#   https://bugs.launchpad.net/amulet/+bug/1320357
-	@juju test -v -p AMULET_HTTP_PROXY --timeout 900 --upload-tools \
-        00-setup 10-tests
+build: submodules
+	@echo "Building charm to base directory ${CHARM_BUILD_DIR}/${CHARM_NAME}"
+	@-git describe --tags > ./repo-info
+	@mkdir -p ${CHARM_BUILD_DIR}/${CHARM_NAME}
+	@cp -r ./* ${CHARM_BUILD_DIR}/${CHARM_NAME}
 
-check-status:
-	@if [ -n "`git status --porcelain`" ]; then \
-	    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'; \
-	    echo '!!! There are uncommitted changes !!!'; \
-	    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'; \
-	    false; \
-	fi
-	git clean -fdx
+release: clean build
+	@echo "Charm is built at ${CHARM_BUILD_DIR}/${CHARM_NAME}"
 
-publish-stable: check-status
-	export rev=`charm push . $(CHARM_STORE_URL) 2>&1 \
-                | tee /dev/tty | grep url: | cut -f 2 -d ' '` \
-	&& git tag -f -m "$$rev" `echo $$rev | tr -s '~:/' -` \
-	&& git push --tags $(REPO) \
-	&& charm release -c stable $$rev
+lint:
+	@echo "Running lint checks"
+	@tox -e lint
 
-publish-candidate: check-status
-	export rev=`charm push . $(CHARM_STORE_URL) 2>&1 \
-                | tee /dev/tty | grep url: | cut -f 2 -d ' '` \
-	&& git tag -f -m "$$rev" `echo $$rev | tr -s '~:/' -` \
-	&& git push --tags $(REPO) \
-	&& charm release -c candidate $$rev
+proof:
+	@echo "Running charm proof"
+	@charm proof
+
+unittests:
+	@echo "There are no unit tests to run"
+
+functional: build
+	@echo "Executing functional tests in ${CHARM_BUILD_DIR}"
+	@CHARM_BUILD_DIR=${CHARM_BUILD_DIR} tox -e func
+
+test: proof unittests functional
+	@echo "Charm ${CHARM_NAME} has been tested"
+
+# The targets below don't depend on a file
+.PHONY: help submodules clean build release lint proof unittests functional test
