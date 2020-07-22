@@ -17,14 +17,9 @@ lint: virtualenv
 	.venv/bin/flake8 --exclude hooks/charmhelpers hooks tests/10-tests
 	@charm proof
 
-bin/charm_helpers_sync.py:
-	@mkdir -p bin
-	@bzr cat lp:charm-helpers/tools/charm_helpers_sync/charm_helpers_sync.py \
-        > bin/charm_helpers_sync.py
-
-sync: bin/charm_helpers_sync.py
-	@$(PYTHON) bin/charm_helpers_sync.py -c charm-helpers-hooks.yaml
-	@$(PYTHON) bin/charm_helpers_sync.py -c charm-helpers-tests.yaml
+submodules:
+	@echo "Cloning submodules"
+	@git submodule update --init --recursive
 
 test:
 	@echo Starting Amulet tests...

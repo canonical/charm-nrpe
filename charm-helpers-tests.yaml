@@ -1,4 +1,0 @@
-branch: https://github.com/juju/charm-helpers
-destination: tests/charmhelpers
-include:
-    - contrib.amulet
