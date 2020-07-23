@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Check readonly filesystems and alert."""
 # -*- coding: us-ascii -*-
 
 # Copyright (C) 2020 Canonical
@@ -17,7 +18,7 @@ EXCLUDE = {"/snap/", "/sys/fs/cgroup"}
 
 
 def check_ro_filesystem(excludes=""):
-    """Loops /proc/mounts looking for readonly mounts.
+    """Loop /proc/mounts looking for readonly mounts.
 
     :param excludes: list of mount points to exclude from checks
     """
@@ -41,18 +42,21 @@ def check_ro_filesystem(excludes=""):
         # for each line in the list, split by space to a new list
         split_mount = mount.split()
         # if mount[1] matches EXCLUDE_FS then next, else check it's not readonly
-        if not any(split_mount[1].startswith(exclusion.strip()) for exclusion in exclude_mounts):
+        if not any(
+            split_mount[1].startswith(exclusion.strip()) for exclusion in exclude_mounts
+        ):
             mount_options = split_mount[3].split(",")
             if "ro" in mount_options:
                 ro_filesystems.append(split_mount[1])
     if len(ro_filesystems) > 0:
-        msg = "CRITICAL: filesystem(s) {} readonly".format(','.join(ro_filesystems))
+        msg = "CRITICAL: filesystem(s) {} readonly".format(",".join(ro_filesystems))
         raise CriticalError(msg)
 
     print("OK: no readonly filesystems found")
 
 
 def parse_args():
+    """Parse command-line options."""
     parser = argparse.ArgumentParser(description="Check for readonly filesystems")
     parser.add_argument(
         "--exclude",
@@ -60,13 +64,14 @@ def parse_args():
         type=str,
         help="""Comma separated list of mount points to exclude from checks for readonly filesystem.
                 Can be just a substring of the whole mount point.""",
-        default='',
+        default="",
     )
     args = parser.parse_args()
     return args
 
 
 def main():
+    """Parse args and check the readonly filesystem."""
     args = parse_args()
     try_check(check_ro_filesystem, args.exclude)
 
