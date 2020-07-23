@@ -36,7 +36,7 @@ def check_iface(iface, skiperror, crit_thr):
                 metric_value = fd.readline().strip()
         except FileNotFoundError:
             if not skiperror:
-                raise WarnError("WARNING: {} iface does not " "exist".format(iface))
+                raise WarnError("WARNING: {} iface does not exist".format(iface))
             return
         except OSError as e:
             if (
@@ -55,7 +55,7 @@ def check_iface(iface, skiperror, crit_thr):
         if metric_key == "operstate" and metric_value != "up":
             if metric_value != crit_thr["operstate"]:
                 raise CriticalError(
-                    "CRITICAL: {}" " link state is " "{}".format(iface, metric_value)
+                    "CRITICAL: {} link state is {}".format(iface, metric_value)
                 )
 
         if metric_value != crit_thr[metric_key]:
@@ -81,14 +81,14 @@ def parse_args():
         "--iface",
         "-i",
         type=str,
-        help="interface to monitor; listed " "in /sys/class/net/*)",
+        help="interface to monitor; listed in /sys/class/net/*)",
     )
     parser.add_argument(
         "--skip-unfound-ifaces",
         "-q",
         default=False,
         action="store_true",
-        help="ignores unfound ifaces;" " otherwise, alert will be triggered",
+        help="ignores unfound ifaces; otherwise, alert will be triggered",
     )
     parser.add_argument(
         "--operstate",

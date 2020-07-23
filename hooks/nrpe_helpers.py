@@ -464,8 +464,8 @@ class SubordinateCheckDefinitions(dict):
                 "description": "ARP cache entries",
                 "cmd_name": "check_arp_cache",
                 "cmd_exec": os.path.join(local_plugin_dir, "check_arp_cache.py"),
-                "cmd_params": "-w 60 -c 80",  # Specify params here to enable the check
-                # , not required otherwise.
+                # Specify params here to enable the check, not required otherwise.
+                "cmd_params": "-w 60 -c 80",
             }
             checks.append(arp_check)
             ro_filesystem_excludes = hookenv.config("ro_filesystem_excludes")

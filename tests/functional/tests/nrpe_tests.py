@@ -33,15 +33,14 @@ class TestNrpe(TestBase):
         )
 
         check_mysql_content = (
-            "command[check_mysql]=/usr/local/lib/nagios/plugins/"
-            "check_systemd.py mysql"
+            "command[check_mysql]=/usr/local/lib/nagios/plugins/check_systemd.py mysql"
         )
         machine = list(juju_utils.get_machines_for_application("mysql"))[0]
         machine_series = juju_utils.get_machine_series(machine)
 
         if machine_series == "trusty":
             check_mysql_content = (
-                "command[check_mysql]=/usr/lib/nagios/plugins/" "check_mysql -u nagios"
+                "command[check_mysql]=/usr/lib/nagios/plugins/check_mysql -u nagios"
             )
 
         nrpe_checks = {
@@ -57,8 +56,8 @@ class TestNrpe(TestBase):
             "check_mysql_proc.cfg": "command[check_mysql_proc]=/usr/lib/nagios/plugins/"
             "check_procs -c 1:1 -C mysqld",
             "check_swap_activity.cfg":
-                "command[check_swap_activity]=/usr/local/lib/nagios/plugins/"
-            "check_swap_activity",
+                "command[check_swap_activity]="
+                "/usr/local/lib/nagios/plugins/check_swap_activity",
             "check_swap.cfg": "command[check_swap]=/usr/lib/nagios/plugins/check_swap",
         }
 
