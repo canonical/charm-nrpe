@@ -40,7 +40,7 @@ recent_logs = [
 ]
 
 if recent_logs:
-    print("CRITCAL: Recent XFS errors in kern.log." + "\n" + "{}".format(recent_logs))
+    print("CRITICAL: Recent XFS errors in kern.log." + "\n" + "{}".format(recent_logs))
     sys.exit(2)
 else:
     print("OK")
