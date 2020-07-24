@@ -178,7 +178,7 @@ def update_monitor_relation(service_name):
         )
 
 
-def has_master():
+def has_consumer():
     """
     Checks for the monitor relation, or external monitor config.
     """
