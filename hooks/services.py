@@ -73,5 +73,5 @@ def manage():
         status_set("active", "ready")
     else:
         status_set(
-            "blocked", "Config for nagios_master empty, and no relation to Nagios found"
+            "blocked", "Nagios server not configured or related"
         )
