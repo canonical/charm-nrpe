@@ -39,7 +39,7 @@ def determine_packages():
     ]
     if hookenv.config("export_nagios_definitions"):
         pkgs.append("rsync")
-    if hookenv.config("nagios_master") and hookenv.config("nagios_master") != "None":
+    if hookenv.config("nagios_master") not in ["None", "", None]:
         pkgs.append("rsync")
     return pkgs
 
@@ -176,6 +176,16 @@ def update_monitor_relation(service_name):
         hookenv.relation_set(
             relation_id=rid, relation_settings=monitor_relation.provide_data()
         )
+
+
+def has_consumer():
+    """
+    Checks for the monitor relation, or external monitor config.
+    """
+    return (
+        hookenv.config('nagios_master') not in ["None", "", None] or
+        bool(hookenv.relation_ids('monitors'))
+    )
 
 
 class TolerantPortManagerCallback(PortManagerCallback):
