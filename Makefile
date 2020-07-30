@@ -30,7 +30,7 @@ submodules:
 	@echo "Cloning submodules"
 	@git submodule update --init --recursive
 
-build:
+build: submodules
 	@echo "Building charm to base directory ${CHARM_BUILD_DIR}/${CHARM_NAME}"
 	@-git describe --tags > ./repo-info
 	@mkdir -p ${CHARM_BUILD_DIR}/${CHARM_NAME}
