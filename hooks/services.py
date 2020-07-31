@@ -72,6 +72,4 @@ def manage():
     if nrpe_utils.has_consumer():
         status_set("active", "ready")
     else:
-        status_set(
-            "blocked", "Nagios server not configured or related"
-        )
+        status_set("blocked", "Nagios server not configured or related")

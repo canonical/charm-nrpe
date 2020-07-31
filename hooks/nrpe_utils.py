@@ -179,12 +179,9 @@ def update_monitor_relation(service_name):
 
 
 def has_consumer():
-    """
-    Checks for the monitor relation, or external monitor config.
-    """
-    return (
-        hookenv.config('nagios_master') not in ["None", "", None] or
-        bool(hookenv.relation_ids('monitors'))
+    """Check for the monitor relation or external monitor config."""
+    return hookenv.config("nagios_master") not in ["None", "", None] or bool(
+        hookenv.relation_ids("monitors")
     )
 
 

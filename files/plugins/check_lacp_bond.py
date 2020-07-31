@@ -25,6 +25,7 @@ LACPDU_EXPIRED = 0b10000000  # In an expired state
 
 
 def check_lacpdu_port(actor_port, partner_port):
+    """Return message for LACPDU port state mismatch."""
     diff = int(actor_port) ^ int(partner_port)
     msg = []
     if diff & LACPDU_RATE:
