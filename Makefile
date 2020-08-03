@@ -61,7 +61,7 @@ proof:
 	@-charm proof
 
 unittests:
-	@echo "There are not unit tests. Skipping."
+	@echo "No unit tests. Skipping."
 
 functional: build
 	@echo "Executing functional tests in ${CHARM_BUILD_DIR}"
