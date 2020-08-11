@@ -7,4 +7,5 @@
   comment = External Nagios Node configs
   list = false
   read only = true
+  lock file = /var/run/rsyncd.external-nagios.lock
   hosts allow = {{ external_nagios_master }}
