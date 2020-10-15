@@ -151,7 +151,9 @@ def process_local_monitors():
             for check in monitors[checktype]:
                 render_nrpe_check_config(
                     nrpe_helpers.NRPECheckCtxt(
-                        checktype, monitors[checktype][check], monitor_src,
+                        checktype,
+                        monitors[checktype][check],
+                        monitor_src,
                     )
                 )
 
@@ -248,7 +250,9 @@ class ExportManagerCallback(ManagerCallback):
         nag_hostname = nrpe_helpers.PrincipalRelation().nagios_hostname()
         target = "/var/lib/nagios/export/host__{}.cfg".format(nag_hostname)
         renderer = helpers.render_template(
-            source="export_host.cfg.tmpl", target=target, perms=0o644,
+            source="export_host.cfg.tmpl",
+            target=target,
+            perms=0o644,
         )
         renderer(manager, service_name, event_name)
 

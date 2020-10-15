@@ -39,7 +39,8 @@ class Monitors(dict):
 
         for checktype in mdict["monitors"].get("local", []):
             check_details = self.convert_local_checks(
-                mdict["monitors"]["local"], monitor_label,
+                mdict["monitors"]["local"],
+                monitor_label,
             )
             self["monitors"]["remote"]["nrpe"].update(check_details)
 
@@ -58,7 +59,9 @@ class Monitors(dict):
             for checkname in monitors[checktype]:
                 try:
                     check_def = NRPECheckCtxt(
-                        checktype, monitors[checktype][checkname], monitor_src,
+                        checktype,
+                        monitors[checktype][checkname],
+                        monitor_src,
                     )
                     mons[check_def["cmd_name"]] = {"command": check_def["cmd_name"]}
                 except InvalidCustomCheckException as e:
