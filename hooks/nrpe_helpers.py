@@ -84,7 +84,14 @@ def get_local_ingress_address(binding):
         network_info = hookenv.network_get(binding)
         if network_info is not None and "ingress-addresses" in network_info:
             hookenv.log("Using ingress-addresses")
-            ip_address = network_info["ingress-addresses"][0]
+            # workaround lp#1897261
+            try:
+                ip_address = network_info["bind-addresses"][0]["addresses"][0]["address"]
+            except KeyError:
+                # ignore KeyError and populate ip_address per old method
+                ip_address = None
+            if ip_address not in network_info["ingress-addresses"]:
+                ip_address = network_info["ingress-addresses"][0]
             hookenv.log(ip_address)
             return ip_address
     except (NotImplementedError, FileNotFoundError):
