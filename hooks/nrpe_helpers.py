@@ -86,7 +86,9 @@ def get_local_ingress_address(binding):
             hookenv.log("Using ingress-addresses")
             # workaround lp#1897261
             try:
-                ip_address = network_info["bind-addresses"][0]["addresses"][0]["address"]
+                ip_address = network_info["bind-addresses"][0]["addresses"][0][
+                    "address"
+                ]
             except KeyError:
                 # ignore KeyError and populate ip_address per old method
                 ip_address = None
