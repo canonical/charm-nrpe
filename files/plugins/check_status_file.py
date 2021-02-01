@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 """Read file and return nagios status based on its content."""
 # --------------------------------------------------------
 # This file is managed by Juju
