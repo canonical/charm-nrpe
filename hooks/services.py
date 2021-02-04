@@ -1,5 +1,7 @@
 """Nrpe service definifition."""
 
+import os
+
 from charmhelpers.core import hookenv
 from charmhelpers.core.hookenv import status_set
 from charmhelpers.core.services import helpers
@@ -70,6 +72,16 @@ def manage():
     )
     manager.manage()
     if nrpe_utils.has_consumer():
-        status_set("active", "ready")
+        revision = ''
+        if os.path.exists('version'):
+            with open('version') as f:
+                line = f.readline().strip()
+            # We only want the first 8 characters, that's enough to tell
+            # which version of the charm we're using.
+            if len(line) > 8:
+                revision = ' (source version/commit {}…)'.format(line[:8])
+            else:
+                revision = ' (source version/commit {})'.format(line)
+        status_set("active", "Ready{}".format(revision))
     else:
         status_set("blocked", "Nagios server not configured or related")
