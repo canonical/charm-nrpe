@@ -64,6 +64,20 @@ def remove_host_export_fragments(service_name):
 
 def install_charm_files(service_name):
     """Install files shipped with charm."""
+    # The preinst script of nagios-nrpe-server deb package will add nagios user
+    # and create this dir as home
+    # ref: https://git.launchpad.net/ubuntu/+source/nagios-nrpe/tree/debian/nagios-nrpe-server.preinst#n28  # NOQA: E501
+    nagios_home = "/var/lib/nagios"
+
+    # it's possible dir owner be changed to root by other process, e.g.: LP1866382
+    # here we ensure owner is nagios, but didn't apply it resursively intentionally.
+    shutil.chown(nagios_home, user="nagios", group="nagios")
+
+    # the `2` in mode will setgid for group, set dir permission to `drwxr-sr-x`.
+    # the `s` (setgid) will ensure any file created in this dir inherits parent dir
+    # group `nagios`, regardless of the effective user, such as root.
+    os.chmod(nagios_home, 0o2755)  # 2 will set the s flag for group
+
     nag_dirs = [
         "/etc/nagios/nrpe.d/",
         "/usr/local/lib/nagios/plugins",
