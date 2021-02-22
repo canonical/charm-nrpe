@@ -521,11 +521,13 @@ class SubordinateCheckDefinitions(dict):
 
         if hookenv.config("netlinks"):
             ifaces = yaml.safe_load(hookenv.config("netlinks"))
+            cmd_exec = local_plugin_dir + "check_netlinks.py"
+            if hookenv.config("netlinks_skip_unfound_ifaces"):
+                cmd_exec += " --skip-unfound-ifaces"
             d_ifaces = self.parse_netlinks(ifaces)
             for iface in d_ifaces:
                 description = "Netlinks status ({})".format(iface)
                 cmd_name = "check_netlinks_{}".format(iface)
-                cmd_exec = local_plugin_dir + "check_netlinks.py"
                 cmd_params = d_ifaces[iface]
                 netlink_check = {
                     "description": description,

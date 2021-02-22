@@ -146,6 +146,11 @@ options:
         - bond0.25 mtu:1500 speed:50000
         - ens3 mtu:1500 speed:-1 desc:openstack_iface
         - ...
+  netlinks_skip_unfound_ifaces:
+    default: False
+    type: boolean
+    description: |
+        add --skip-unfound-ifaces to check_netlinks.py.
   monitors:
     default: ''
     type: string
