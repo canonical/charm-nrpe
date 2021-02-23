@@ -98,11 +98,11 @@ options:
         to enable, manually provide arguments for check_user, for example:
         "-w 20 -c 25"
   swap:
-    default: "-w 40% -c 25%"
+    default: ''
     type: string
     description: |
         Check swap utilisation.  See the nagios check_swap plugin help for
-        further details.
+        further details. The format looks like "-w 40% -c 25%"
         .
         Set to '' in order to disable this check.
   swap_activity:

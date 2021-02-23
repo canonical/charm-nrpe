@@ -58,7 +58,6 @@ class TestNrpe(TestBase):
             "check_swap_activity.cfg":
                 "command[check_swap_activity]="
                 "/usr/local/lib/nagios/plugins/check_swap_activity",
-            "check_swap.cfg": "command[check_swap]=/usr/lib/nagios/plugins/check_swap",
         }
 
         for nrpe_check in nrpe_checks:
@@ -76,6 +75,22 @@ class TestNrpe(TestBase):
                 raise model.CommandRunFailed(cmd, result)
             content = result.get("Stdout")
             self.assertTrue(nrpe_checks[nrpe_check] in content)
+
+    def test_02_enable_swap(self):
+        """Check swap checks are applied."""
+        swap = "-w 40% -c 25%"
+        model.set_application_config(self.application_name, {"swap": swap})
+        model.block_until_all_units_idle()
+        cmd = "cat /etc/nagios/nrpe.d/check_swap.cfg"
+        result = model.run_on_unit(self.lead_unit_name, cmd)
+        code = result.get("Code")
+        if code != "0":
+            logging.warning(
+                "Unable to find nrpe check check_swap.cfg at /etc/nagios/nrpe.d/"
+            )
+            raise model.CommandRunFailed(cmd, result)
+        content = result.get("Stdout")
+        self.assertTrue(swap in content)
 
     def test_02_remove_check(self):
         """Verify swap check is removed."""
