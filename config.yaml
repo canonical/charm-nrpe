@@ -185,7 +185,7 @@ options:
         .
         Defaults to disabled, set the time to enable.
   ro_filesystem_excludes:
-    default: "/snap/,/sys/fs/cgroup"
+    default: "/snap/,/sys/fs/cgroup,/run/containerd"
     type: string
     description: |
       Comma separated list of mount points to exclude from checks for readonly filesystem.
