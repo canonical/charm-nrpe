@@ -11,7 +11,8 @@
 #
 
 import re
-import nagios_plugin
+
+import nagios_plugin3 as nagios_plugin
 
 
 def parse_args():
@@ -62,7 +63,7 @@ def check_status(args):
         elif re.search(args.unknown_text, line):
             raise nagios_plugin.UnknownError(line)
         else:
-            print line  # noqa: E999
+            print(line)
 
 
 if __name__ == "__main__":
