@@ -26,7 +26,7 @@ check_netns_create() {
 netnsok=()
 netnscrit=()
 
-for ns in $(ip netns list | egrep -v '^nrpe-check$'); do
+for ns in $(ip netns list |awk '!/^nrpe-check$/ {print $1}'); do
     output=$(ip netns exec $ns ip a 2>/dev/null)
     err=$?
     if [ $err -eq 0 ]; then
