@@ -440,12 +440,6 @@ class SubordinateCheckDefinitions(dict):
                 "cmd_params": hookenv.config("users"),
             },
             {
-                "description": "Swap",
-                "cmd_name": "check_swap",
-                "cmd_exec": pkg_plugin_dir + "check_swap",
-                "cmd_params": hookenv.config("swap"),
-            },
-            {
                 "description": "Swap Activity",
                 "cmd_name": "check_swap_activity",
                 "cmd_exec": local_plugin_dir + "check_swap_activity",
@@ -470,6 +464,15 @@ class SubordinateCheckDefinitions(dict):
                 "cmd_params": hookenv.config("xfs_errors"),
             },
         ]
+
+        if hookenv.config("swap").strip():
+            check_swap = {
+                "description": "Swap",
+                "cmd_name": "check_swap",
+                "cmd_exec": pkg_plugin_dir + "check_swap",
+                "cmd_params": hookenv.config("swap").strip(),
+            }
+            checks.append(check_swap)
 
         if not is_container():
             arp_check = {
