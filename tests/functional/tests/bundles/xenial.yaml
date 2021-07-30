@@ -1,13 +1,13 @@
 series: xenial
 applications:
-  mysql:
-    charm: cs:percona-cluster
+  rabbitmq-server:
+    charm: cs:rabbitmq-server
     num_units: 1
   nagios:
     charm: cs:nagios
     num_units: 1
 relations:
-  - - mysql:nrpe-external-master
+  - - rabbitmq-server:nrpe-external-master
     - nrpe:nrpe-external-master
   - - nrpe:monitors
     - nagios:monitors

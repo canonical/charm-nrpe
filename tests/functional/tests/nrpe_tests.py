@@ -5,7 +5,6 @@ import unittest
 import yaml
 
 import zaza.model as model
-from zaza.utilities import juju as juju_utils
 
 
 class TestBase(unittest.TestCase):
@@ -32,17 +31,6 @@ class TestNrpe(TestBase):
             "Verify the nrpe checks are created and have the required content..."
         )
 
-        check_mysql_content = (
-            "command[check_mysql]=/usr/local/lib/nagios/plugins/check_systemd.py mysql"
-        )
-        machine = list(juju_utils.get_machines_for_application("mysql"))[0]
-        machine_series = juju_utils.get_machine_series(machine)
-
-        if machine_series == "trusty":
-            check_mysql_content = (
-                "command[check_mysql]=/usr/lib/nagios/plugins/check_mysql -u nagios"
-            )
-
         nrpe_checks = {
             "check_conntrack.cfg":
                 "command[check_conntrack]=/usr/local/lib/nagios/plugins/"
@@ -52,9 +40,9 @@ class TestNrpe(TestBase):
             "check_load.cfg": "command[check_load]=/usr/lib/nagios/plugins/check_load",
             "check_mem.cfg":
                 "command[check_mem]=/usr/local/lib/nagios/plugins/check_mem.pl",
-            "check_mysql.cfg": check_mysql_content,
-            "check_mysql_proc.cfg": "command[check_mysql_proc]=/usr/lib/nagios/plugins/"
-            "check_procs -c 1:1 -C mysqld",
+            "check_rabbitmq.cfg":
+                "command[check_rabbitmq]="
+                "/usr/local/lib/nagios/plugins/check_rabbitmq.py",
             "check_swap_activity.cfg":
                 "command[check_swap_activity]="
                 "/usr/local/lib/nagios/plugins/check_swap_activity",
@@ -206,20 +194,20 @@ class TestNrpe(TestBase):
 
     def test_05_netlinks(self):
         """Check netlinks checks are applied."""
-        netlinks = "- eth0 mtu:9000 speed:10000"
+        netlinks = "- ens3 mtu:9000 speed:10000"
         model.set_application_config(self.application_name, {"netlinks": netlinks})
         model.block_until_all_units_idle()
-        cmd = "cat /etc/nagios/nrpe.d/check_netlinks_eth0.cfg"
+        cmd = "cat /etc/nagios/nrpe.d/check_netlinks_ens3.cfg"
         line = (
-            "command[check_netlinks_eth0]=/usr/local/lib/nagios/plugins/"
-            "check_netlinks.py -i eth0 -m 9000 -s 1000"
+            "command[check_netlinks_ens3]=/usr/local/lib/nagios/plugins/"
+            "check_netlinks.py -i ens3 -m 9000 -s 1000"
         )
         result = model.run_on_unit(self.lead_unit_name, cmd)
         code = result.get("Code")
         if code != "0":
             logging.warning(
                 "Unable to find nrpe check at "
-                "/etc/nagios/nrpe.d/check_netlinks_eth0.cfg"
+                "/etc/nagios/nrpe.d/check_netlinks_ens3.cfg"
             )
             raise model.CommandRunFailed(cmd, result)
         content = result.get("Stdout")
