@@ -1,4 +1,4 @@
-series: bionic
+series: focal
 applications:
   rabbitmq-server:
     charm: cs:rabbitmq-server
@@ -6,6 +6,7 @@ applications:
   nagios:
     charm: cs:nagios
     num_units: 1
+    series: bionic
 relations:
   - - rabbitmq-server:nrpe-external-master
     - nrpe:nrpe-external-master

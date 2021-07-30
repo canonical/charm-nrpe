@@ -381,30 +381,10 @@ class SubordinateCheckDefinitions(dict):
 
     def __init__(self):
         """Set dict values."""
-        procs = self.proc_count()
-
-        if hookenv.config("procs") == "auto":
-            proc_thresholds = "-k -w {} -c {}".format(
-                25 * procs + 100, 50 * procs + 100
-            )
-        else:
-            proc_thresholds = hookenv.config("procs")
-
-        if hookenv.config("load") == "auto":
-            # Give 1min load alerts higher thresholds than 15 min load alerts
-            warn_multipliers = (4, 2, 1)
-            crit_multipliers = (8, 4, 2)
-            load_thresholds = ("-w %s -c %s") % (
-                ",".join([str(m * procs) for m in warn_multipliers]),
-                ",".join([str(m * procs) for m in crit_multipliers]),
-            )
-        else:
-            load_thresholds = hookenv.config("load")
-
-        if hookenv.config("disk_root"):
-            disk_root_thresholds = hookenv.config("disk_root") + " -p / "
-        else:
-            disk_root_thresholds = ""
+        self.procs = self.proc_count()
+        load_thresholds = self._get_load_thresholds()
+        proc_thresholds = self._get_proc_thresholds()
+        disk_root_thresholds = self._get_disk_root_thresholds()
 
         pkg_plugin_dir = "/usr/lib/nagios/plugins/"
         local_plugin_dir = "/usr/local/lib/nagios/plugins/"
@@ -561,6 +541,38 @@ class SubordinateCheckDefinitions(dict):
             check["description"] += " (sub)"
             check["cmd_name"] += sub_postfix
             self["checks"].append(check)
+
+    def _get_proc_thresholds(self):
+        """Return suitable processor thresholds."""
+        if hookenv.config("procs") == "auto":
+            proc_thresholds = "-k -w {} -c {}".format(
+                25 * self.procs + 100, 50 * self.procs + 100
+            )
+        else:
+            proc_thresholds = hookenv.config("procs")
+        return proc_thresholds
+
+    def _get_load_thresholds(self):
+        """Return suitable load thresholds."""
+        if hookenv.config("load") == "auto":
+            # Give 1min load alerts higher thresholds than 15 min load alerts
+            warn_multipliers = (4, 2, 1)
+            crit_multipliers = (8, 4, 2)
+            load_thresholds = ("-w %s -c %s") % (
+                ",".join([str(m * self.procs) for m in warn_multipliers]),
+                ",".join([str(m * self.procs) for m in crit_multipliers]),
+            )
+        else:
+            load_thresholds = hookenv.config("load")
+        return load_thresholds
+
+    def _get_disk_root_thresholds(self):
+        """Return suitable disk thresholds."""
+        if hookenv.config("disk_root"):
+            disk_root_thresholds = hookenv.config("disk_root") + " -p / "
+        else:
+            disk_root_thresholds = ""
+        return disk_root_thresholds
 
     def proc_count(self):
         """Return number number of processing units."""

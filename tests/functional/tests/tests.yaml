@@ -1,7 +1,7 @@
 charm_name: nrpe
 gate_bundles:
-  - trusty
   - xenial
   - bionic
+  - focal
 tests:
   - tests.nrpe_tests.TestNrpe
