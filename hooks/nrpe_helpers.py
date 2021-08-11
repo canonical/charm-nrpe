@@ -236,6 +236,15 @@ class PrincipalRelation(helpers.RelationContext):
         if host_context:
             host_context += "-"
         hostname_type = hookenv.config("nagios_hostname_type")
+
+        # Detect bare metal hosts
+        if hostname_type == "auto":
+            is_metal = "none" in subprocess.getoutput("/usr/bin/systemd-detect-virt")
+            if is_metal:
+                hostname_type = "host"
+            else:
+                hostname_type = "unit"
+
         if hostname_type == "host" or not self.is_ready():
             nagios_hostname = "{}{}".format(host_context, socket.gethostname())
             return nagios_hostname
