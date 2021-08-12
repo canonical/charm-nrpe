@@ -25,12 +25,14 @@ options:
         If you're running multiple environments with the same services in them
         this allows you to differentiate between them.
   nagios_hostname_type:
-    default: "unit"
+    default: "auto"
     type: string
     description: |
         Determines whether a server is identified by its unit name or
         host name.  If you're in a virtual environment, "unit" is
         probably best.  If you're using MaaS, you may prefer "host".
+        Use "auto" to have nrpe automatically distinguish between 
+        metal and non-metal hosts.
   dont_blame_nrpe:
     default: False
     type: boolean
