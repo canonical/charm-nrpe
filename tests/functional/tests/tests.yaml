@@ -5,3 +5,7 @@ gate_bundles:
   - focal
 tests:
   - tests.nrpe_tests.TestNrpe
+target_deploy_status:
+  container:
+    workload-status: active
+    workload-status-message-prefix: ""

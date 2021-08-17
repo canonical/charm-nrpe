@@ -1,5 +1,6 @@
 """Zaza functional tests."""
 import logging
+import pprint
 import unittest
 
 import yaml
@@ -212,3 +213,70 @@ class TestNrpe(TestBase):
             raise model.CommandRunFailed(cmd, result)
         content = result.get("Stdout")
         self.assertTrue(line in content)
+
+    def test_06_container_checks(self):
+        """Check that certain checks are enabled on hosts but disabled on containers."""
+        # Enable appropriate config to enable various checks for testing whether they
+        # get created on containers versus hosts.
+        model.set_application_config(self.application_name, {
+            "disk_root": "-u GB -w 25% -c 20% -K 5%",
+            "zombies": "-w 3 -c 6 -s Z",
+            "procs": "-k -w 250 -c 300",
+            "load": "auto",
+            "conntrack": "-w 80 -c 90",
+            "users": "-w 20 -c 25",
+            "swap": "-w 40% -c 25%",
+            "swap_activity": "-i 5 -w 10240 -c 40960",
+            "mem": "-C -h -u -w 85 -c 90",
+            "lacp_bonds": "lo",  # Enable a bogus lacp check on the loopback interface
+            "netlinks": "- ens3 mtu:9000 speed:10000",  # Copied from test_05_netlinks
+            "xfs_errors": "5",
+        })
+        model.block_until_all_units_idle()
+
+        host_checks = self._get_unit_check_files("rabbitmq-server/0")
+        container_checks = self._get_unit_check_files("container/0")
+        expected_shared_checks = set([
+            "check_conntrack.cfg",  # I think this should be host-only, but am not sure.
+            "check_total_procs.cfg",
+            "check_users.cfg",
+            "check_zombie_procs.cfg",  # This also feels host-only to me; thoughts?
+        ])
+        expected_host_only_checks = set([
+            "check_arp_cache.cfg",
+            "check_disk_root.cfg",
+            "check_lacp_lo.cfg",
+            "check_load.cfg",
+            "check_mem.cfg",
+            "check_netlinks_ens3.cfg",
+            "check_ro_filesystem.cfg",
+            "check_swap.cfg",
+            "check_swap_activity.cfg",
+            "check_xfs_errors.cfg",
+        ])
+        self.assertTrue(expected_shared_checks.issubset(host_checks),
+                        pprint.pformat({
+                            'Expected:': expected_shared_checks,
+                            'Actual:': host_checks,
+                        }))
+        self.assertTrue(expected_shared_checks.issubset(container_checks),
+                        pprint.pformat({
+                            'Expected:': expected_shared_checks,
+                            'Actual:': container_checks,
+                        }))
+        self.assertTrue(expected_host_only_checks.issubset(host_checks),
+                        pprint.pformat({
+                            'Expected:': expected_host_only_checks,
+                            'Actual:': host_checks,
+                        }))
+        self.assertTrue(expected_host_only_checks.isdisjoint(container_checks),
+                        pprint.pformat({
+                            'Expected:': expected_host_only_checks,
+                            'Actual:': container_checks,
+                        }))
+
+    def _get_unit_check_files(self, unit):
+        cmdline = "ls /etc/nagios/nrpe.d/"
+        result = model.run_on_unit(unit, cmdline)
+        self.assertEqual(result["Code"], "0")
+        return set(result["Stdout"].splitlines())

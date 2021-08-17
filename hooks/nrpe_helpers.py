@@ -400,12 +400,6 @@ class SubordinateCheckDefinitions(dict):
         local_plugin_dir = "/usr/local/lib/nagios/plugins/"
         checks = [
             {
-                "description": "Root disk",
-                "cmd_name": "check_disk_root",
-                "cmd_exec": pkg_plugin_dir + "check_disk",
-                "cmd_params": disk_root_thresholds,
-            },
-            {
                 "description": "Number of Zombie processes",
                 "cmd_name": "check_zombie_procs",
                 "cmd_exec": pkg_plugin_dir + "check_procs",
@@ -418,28 +412,10 @@ class SubordinateCheckDefinitions(dict):
                 "cmd_params": proc_thresholds,
             },
             {
-                "description": "System Load",
-                "cmd_name": "check_load",
-                "cmd_exec": pkg_plugin_dir + "check_load",
-                "cmd_params": load_thresholds,
-            },
-            {
                 "description": "Number of Users",
                 "cmd_name": "check_users",
                 "cmd_exec": pkg_plugin_dir + "check_users",
                 "cmd_params": hookenv.config("users"),
-            },
-            {
-                "description": "Swap Activity",
-                "cmd_name": "check_swap_activity",
-                "cmd_exec": local_plugin_dir + "check_swap_activity",
-                "cmd_params": hookenv.config("swap_activity"),
-            },
-            {
-                "description": "Memory",
-                "cmd_name": "check_mem",
-                "cmd_exec": local_plugin_dir + "check_mem.pl",
-                "cmd_params": hookenv.config("mem"),
             },
             {
                 "description": "Connnection tracking table",
@@ -447,32 +423,61 @@ class SubordinateCheckDefinitions(dict):
                 "cmd_exec": local_plugin_dir + "check_conntrack.sh",
                 "cmd_params": hookenv.config("conntrack"),
             },
-            {
-                "description": "XFS Errors",
-                "cmd_name": "check_xfs_errors",
-                "cmd_exec": local_plugin_dir + "check_xfs_errors.py",
-                "cmd_params": hookenv.config("xfs_errors"),
-            },
         ]
 
-        if hookenv.config("swap").strip():
-            check_swap = {
-                "description": "Swap",
-                "cmd_name": "check_swap",
-                "cmd_exec": pkg_plugin_dir + "check_swap",
-                "cmd_params": hookenv.config("swap").strip(),
-            }
-            checks.append(check_swap)
-
         if not is_container():
-            arp_check = {
-                "description": "ARP cache entries",
-                "cmd_name": "check_arp_cache",
-                "cmd_exec": os.path.join(local_plugin_dir, "check_arp_cache.py"),
-                # Specify params here to enable the check, not required otherwise.
-                "cmd_params": "-w 60 -c 80",
-            }
-            checks.append(arp_check)
+            checks.extend(
+                [
+                    {
+                        "description": "Root disk",
+                        "cmd_name": "check_disk_root",
+                        "cmd_exec": pkg_plugin_dir + "check_disk",
+                        "cmd_params": disk_root_thresholds,
+                    },
+                    {
+                        "description": "System Load",
+                        "cmd_name": "check_load",
+                        "cmd_exec": pkg_plugin_dir + "check_load",
+                        "cmd_params": load_thresholds,
+                    },
+                    {
+                        "description": "Swap",
+                        "cmd_name": "check_swap",
+                        "cmd_exec": pkg_plugin_dir + "check_swap",
+                        "cmd_params": hookenv.config("swap").strip(),
+                    },
+                    # Note: check_swap_activity *must* be listed after check_swap, else
+                    # check_swap_activity will be removed during installation of
+                    # check_swap.
+                    {
+                        "description": "Swap Activity",
+                        "cmd_name": "check_swap_activity",
+                        "cmd_exec": local_plugin_dir + "check_swap_activity",
+                        "cmd_params": hookenv.config("swap_activity"),
+                    },
+                    {
+                        "description": "Memory",
+                        "cmd_name": "check_mem",
+                        "cmd_exec": local_plugin_dir + "check_mem.pl",
+                        "cmd_params": hookenv.config("mem"),
+                    },
+                    {
+                        "description": "XFS Errors",
+                        "cmd_name": "check_xfs_errors",
+                        "cmd_exec": local_plugin_dir + "check_xfs_errors.py",
+                        "cmd_params": hookenv.config("xfs_errors"),
+                    },
+                    {
+                        "description": "ARP cache entries",
+                        "cmd_name": "check_arp_cache",
+                        "cmd_exec": os.path.join(
+                            local_plugin_dir, "check_arp_cache.py"
+                        ),
+                        "cmd_params": "-w 60 -c 80",
+                    },
+                ]
+            )
+
             ro_filesystem_excludes = hookenv.config("ro_filesystem_excludes")
             if ro_filesystem_excludes == "":
                 # specify cmd_params = '' to disable/remove the check from nrpe
@@ -497,38 +502,38 @@ class SubordinateCheckDefinitions(dict):
                 }
             checks.append(check_ro_filesystem)
 
-        if hookenv.config("lacp_bonds").strip():
-            for bond_iface in hookenv.config("lacp_bonds").strip().split():
-                if os.path.exists("/sys/class/net/{}".format(bond_iface)):
-                    description = "LACP Check {}".format(bond_iface)
-                    cmd_name = "check_lacp_{}".format(bond_iface)
-                    cmd_exec = local_plugin_dir + "check_lacp_bond.py"
-                    cmd_params = "-i {}".format(bond_iface)
-                    lacp_check = {
+            if hookenv.config("lacp_bonds").strip():
+                for bond_iface in hookenv.config("lacp_bonds").strip().split():
+                    if os.path.exists("/sys/class/net/{}".format(bond_iface)):
+                        description = "LACP Check {}".format(bond_iface)
+                        cmd_name = "check_lacp_{}".format(bond_iface)
+                        cmd_exec = local_plugin_dir + "check_lacp_bond.py"
+                        cmd_params = "-i {}".format(bond_iface)
+                        lacp_check = {
+                            "description": description,
+                            "cmd_name": cmd_name,
+                            "cmd_exec": cmd_exec,
+                            "cmd_params": cmd_params,
+                        }
+                        checks.append(lacp_check)
+
+            if hookenv.config("netlinks"):
+                ifaces = yaml.safe_load(hookenv.config("netlinks"))
+                cmd_exec = local_plugin_dir + "check_netlinks.py"
+                if hookenv.config("netlinks_skip_unfound_ifaces"):
+                    cmd_exec += " --skip-unfound-ifaces"
+                d_ifaces = self.parse_netlinks(ifaces)
+                for iface in d_ifaces:
+                    description = "Netlinks status ({})".format(iface)
+                    cmd_name = "check_netlinks_{}".format(iface)
+                    cmd_params = d_ifaces[iface]
+                    netlink_check = {
                         "description": description,
                         "cmd_name": cmd_name,
                         "cmd_exec": cmd_exec,
                         "cmd_params": cmd_params,
                     }
-                    checks.append(lacp_check)
-
-        if hookenv.config("netlinks"):
-            ifaces = yaml.safe_load(hookenv.config("netlinks"))
-            cmd_exec = local_plugin_dir + "check_netlinks.py"
-            if hookenv.config("netlinks_skip_unfound_ifaces"):
-                cmd_exec += " --skip-unfound-ifaces"
-            d_ifaces = self.parse_netlinks(ifaces)
-            for iface in d_ifaces:
-                description = "Netlinks status ({})".format(iface)
-                cmd_name = "check_netlinks_{}".format(iface)
-                cmd_params = d_ifaces[iface]
-                netlink_check = {
-                    "description": description,
-                    "cmd_name": cmd_name,
-                    "cmd_exec": cmd_exec,
-                    "cmd_params": cmd_params,
-                }
-                checks.append(netlink_check)
+                    checks.append(netlink_check)
 
         self["checks"] = []
         sub_postfix = str(hookenv.config("sub_postfix"))
