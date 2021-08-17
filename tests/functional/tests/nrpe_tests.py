@@ -255,28 +255,26 @@ class TestNrpe(TestBase):
             "check_xfs_errors.cfg",
         ])
         self.assertTrue(expected_shared_checks.issubset(host_checks),
-                        pprint.pformat({
-                            'Expected:': expected_shared_checks,
-                            'Actual:': host_checks,
-                        }))
+                        self._get_set_comparison(expected_shared_checks,
+                                                 host_checks))
         self.assertTrue(expected_shared_checks.issubset(container_checks),
-                        pprint.pformat({
-                            'Expected:': expected_shared_checks,
-                            'Actual:': container_checks,
-                        }))
+                        self._get_set_comparison(expected_shared_checks,
+                                                 container_checks))
         self.assertTrue(expected_host_only_checks.issubset(host_checks),
-                        pprint.pformat({
-                            'Expected:': expected_host_only_checks,
-                            'Actual:': host_checks,
-                        }))
+                        self._get_set_comparison(expected_host_only_checks,
+                                                 host_checks))
         self.assertTrue(expected_host_only_checks.isdisjoint(container_checks),
-                        pprint.pformat({
-                            'Expected:': expected_host_only_checks,
-                            'Actual:': container_checks,
-                        }))
+                        self._get_set_comparison(expected_host_only_checks,
+                                                 container_checks))
 
     def _get_unit_check_files(self, unit):
         cmdline = "ls /etc/nagios/nrpe.d/"
         result = model.run_on_unit(unit, cmdline)
         self.assertEqual(result["Code"], "0")
         return set(result["Stdout"].splitlines())
+
+    def _get_set_comparison(self, expected_checks, actual_checks):
+        return pprint.pformat({
+            'Expected:': expected_checks,
+            'Actual:': actual_checks,
+        })
