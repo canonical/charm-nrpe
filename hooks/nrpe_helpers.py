@@ -14,6 +14,9 @@ import netifaces
 import yaml
 
 
+NETLINKS_ERROR = False
+
+
 class InvalidCustomCheckException(Exception):
     """Custom exception for Invalid nrpe check."""
 
@@ -618,12 +621,14 @@ class SubordinateCheckDefinitions(dict):
             try:
                 matches = match_cidr_to_ifaces(target)
             except Exception as e:
-                # Log likely unintentional errors
+                # Log likely unintentional errors and set flag for blocked status,
+                # if appropriate.
                 if isinstance(e, ValueError) and "has host bits set" in e.args[0]:
                     hookenv.log(
                         "Error parsing netlinks: {}".format(e.args[0]),
                         level=hookenv.ERROR,
                     )
+                    set_netlinks_error()
                 # Treat target as explicit interface name
                 matches = [target]
 
@@ -671,3 +676,12 @@ def match_cidr_to_ifaces(cidr):
         if any(addr in network for addr in addrs):
             matches.append(adapter)
     return matches
+
+
+def has_netlinks_error():
+    return NETLINKS_ERROR
+
+
+def set_netlinks_error():
+    global NETLINKS_ERROR
+    NETLINKS_ERROR = True
