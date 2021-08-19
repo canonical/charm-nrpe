@@ -1,5 +1,6 @@
 """Nrpe helpers module."""
 import glob
+import ipaddress
 import os
 import socket
 import subprocess
@@ -7,6 +8,8 @@ import subprocess
 from charmhelpers.core import hookenv
 from charmhelpers.core.host import is_container
 from charmhelpers.core.services import helpers
+
+import netifaces
 
 import yaml
 
@@ -611,9 +614,27 @@ class SubordinateCheckDefinitions(dict):
             if len(iface_props) == 0:
                 continue
 
-            # non-existing iface; SKIP
-            iface_dev = iface_props[0]
-            if not os.path.exists(iface_path.format(iface_dev)):
+            target = iface_props[0]
+            try:
+                # Handle CIDR expression
+                network = ipaddress.IPv4Network(target)
+                matches = []
+                for adapter in netifaces.interfaces():
+                    ipv4_addr_structs = netifaces.ifaddresses(adapter).get(netifaces.AF_INET, [])
+                    addrs = [ipaddress.IPv4Address(addr_struct["addr"]) for addr_struct in ipv4_addr_structs]
+                    if any(addr in network for addr in addrs):
+                        matches.append(adapter)
+            except Exception:
+                # Treat target as explicit adapter name
+                matches = [target]
+
+            iface_devs = [
+                target
+                for target in matches
+                if os.path.exists(iface_path.format(target))
+            ]
+            # no ifaces found; SKIP
+            if not iface_devs:
                 continue
 
             # parse extra parameters (properties)
@@ -630,5 +651,6 @@ class SubordinateCheckDefinitions(dict):
                     extra_params += " "
                     extra_params += props_dict[kv[0].lower()].format(kv[1])
 
-            d_ifaces[iface_dev] = "-i {}{}".format(iface_dev, extra_params)
+            for iface_dev in iface_devs:
+                d_ifaces[iface_dev] = "-i {}{}".format(iface_dev, extra_params)
         return d_ifaces
