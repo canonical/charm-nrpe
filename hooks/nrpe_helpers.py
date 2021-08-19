@@ -9,8 +9,6 @@ from charmhelpers.core import hookenv
 from charmhelpers.core.host import is_container
 from charmhelpers.core.services import helpers
 
-import netifaces
-
 import yaml
 
 
@@ -665,6 +663,7 @@ def match_cidr_to_ifaces(cidr):
 
     Returns a list of adapter names.
     """
+    import netifaces  # Avoid import error before this dependency gets installed
     network = ipaddress.IPv4Network(cidr)
     matches = []
     for adapter in netifaces.interfaces():
