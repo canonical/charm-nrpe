@@ -1,0 +1,4 @@
+coverage
+six
+PyYAML
+netifaces

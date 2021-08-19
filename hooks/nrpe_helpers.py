@@ -616,7 +616,7 @@ class SubordinateCheckDefinitions(dict):
 
             target = iface_props[0]
             try:
-                matches = self.match_cidr_to_ifaces(target)
+                matches = match_cidr_to_ifaces(target)
             except Exception:
                 # Treat target as explicit adapter name
                 matches = [target]
@@ -648,21 +648,20 @@ class SubordinateCheckDefinitions(dict):
                 d_ifaces[iface_dev] = "-i {}{}".format(iface_dev, extra_params)
         return d_ifaces
 
-    def match_cidr_to_ifaces(self, cidr):
-        """Use CIDR expression to search for matching network adapters.
 
-        Returns a list of adapter names.
-        """
-        network = ipaddress.IPv4Network(cidr)
-        matches = []
-        for adapter in netifaces.interfaces():
-            ipv4_addr_structs = netifaces.ifaddresses(adapter).get(
-                netifaces.AF_INET, []
-            )
-            addrs = [
-                ipaddress.IPv4Address(addr_struct["addr"])
-                for addr_struct in ipv4_addr_structs
-            ]
-            if any(addr in network for addr in addrs):
-                matches.append(adapter)
-        return matches
+def match_cidr_to_ifaces(cidr):
+    """Use CIDR expression to search for matching network adapters.
+
+    Returns a list of adapter names.
+    """
+    network = ipaddress.IPv4Network(cidr)
+    matches = []
+    for adapter in netifaces.interfaces():
+        ipv4_addr_structs = netifaces.ifaddresses(adapter).get(netifaces.AF_INET, [])
+        addrs = [
+            ipaddress.IPv4Address(addr_struct["addr"])
+            for addr_struct in ipv4_addr_structs
+        ]
+        if any(addr in network for addr in addrs):
+            matches.append(adapter)
+    return matches
