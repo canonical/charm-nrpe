@@ -664,6 +664,7 @@ def match_cidr_to_ifaces(cidr):
     Returns a list of adapter names.
     """
     import netifaces  # Avoid import error before this dependency gets installed
+
     network = ipaddress.IPv4Network(cidr)
     matches = []
     for adapter in netifaces.interfaces():
@@ -678,9 +679,11 @@ def match_cidr_to_ifaces(cidr):
 
 
 def has_netlinks_error():
+    """Return True in case of netlinks related errors."""
     return NETLINKS_ERROR
 
 
 def set_netlinks_error():
+    """Set the flag indicating a netlinks related error."""
     global NETLINKS_ERROR
     NETLINKS_ERROR = True
