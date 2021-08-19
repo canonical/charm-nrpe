@@ -134,8 +134,8 @@ options:
     type: string
     description: |
         Network interfaces to monitor for correct link state, MTU size
-        and speed negotiated. The first argument is either an adapter name or
-        a CIDR expression.  Parsed keywords are mtu, speed, op.  Other
+        and speed negotiated. The first argument is either an interface name or
+        a CIDR expression. Parsed keywords are "mtu", "speed", and "op". Other
         keywords are ignored.
         .
         Note that CIDR expressions can match multiple devices.
