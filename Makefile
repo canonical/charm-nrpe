@@ -60,7 +60,7 @@ proof:
 	@echo "Running charm proof"
 	@-charm proof
 
-unittests:
+unittests: submodules-update
 	@echo "Running unit tests"
 	@tox -e unit
 
