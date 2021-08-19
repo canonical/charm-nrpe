@@ -617,8 +617,14 @@ class SubordinateCheckDefinitions(dict):
             target = iface_props[0]
             try:
                 matches = match_cidr_to_ifaces(target)
-            except Exception:
-                # Treat target as explicit adapter name
+            except Exception as e:
+                # Log likely unintentional errors
+                if isinstance(e, ValueError) and "has host bits set" in e.args[0]:
+                    hookenv.log(
+                        "Error parsing netlinks: {}".format(e.args[0]),
+                        level=hookenv.ERROR,
+                    )
+                # Treat target as explicit interface name
                 matches = [target]
 
             iface_devs = [

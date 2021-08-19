@@ -29,7 +29,12 @@ class TestMatchCidrToIfaces(unittest.TestCase):
         """Test no interface match."""
         self._run_mocked_test('192.168.0.0/16', [])
 
-    def test_bad_cidr(self):
+    def test_cidr_with_host_bits_set(self):
+        """Test invalid CIDR input (e.g. "eno1")."""
+        with self.assertRaises(Exception):
+            match_cidr_to_ifaces('10.1.2.3/8')  # Should be 10.0.0.0/8
+
+    def test_iface_passed_in_as_cidr(self):
         """Test invalid CIDR input (e.g. "eno1")."""
         with self.assertRaises(Exception):
             match_cidr_to_ifaces('eno1')
