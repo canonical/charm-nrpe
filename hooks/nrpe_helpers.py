@@ -1,5 +1,6 @@
 """Nrpe helpers module."""
 import glob
+import ipaddress
 import os
 import socket
 import subprocess
@@ -9,6 +10,9 @@ from charmhelpers.core.host import is_container
 from charmhelpers.core.services import helpers
 
 import yaml
+
+
+NETLINKS_ERROR = False
 
 
 class InvalidCustomCheckException(Exception):
@@ -611,9 +615,28 @@ class SubordinateCheckDefinitions(dict):
             if len(iface_props) == 0:
                 continue
 
-            # non-existing iface; SKIP
-            iface_dev = iface_props[0]
-            if not os.path.exists(iface_path.format(iface_dev)):
+            target = iface_props[0]
+            try:
+                matches = match_cidr_to_ifaces(target)
+            except Exception as e:
+                # Log likely unintentional errors and set flag for blocked status,
+                # if appropriate.
+                if isinstance(e, ValueError) and "has host bits set" in e.args[0]:
+                    hookenv.log(
+                        "Error parsing netlinks: {}".format(e.args[0]),
+                        level=hookenv.ERROR,
+                    )
+                    set_netlinks_error()
+                # Treat target as explicit interface name
+                matches = [target]
+
+            iface_devs = [
+                target
+                for target in matches
+                if os.path.exists(iface_path.format(target))
+            ]
+            # no ifaces found; SKIP
+            if not iface_devs:
                 continue
 
             # parse extra parameters (properties)
@@ -630,5 +653,37 @@ class SubordinateCheckDefinitions(dict):
                     extra_params += " "
                     extra_params += props_dict[kv[0].lower()].format(kv[1])
 
-            d_ifaces[iface_dev] = "-i {}{}".format(iface_dev, extra_params)
+            for iface_dev in iface_devs:
+                d_ifaces[iface_dev] = "-i {}{}".format(iface_dev, extra_params)
         return d_ifaces
+
+
+def match_cidr_to_ifaces(cidr):
+    """Use CIDR expression to search for matching network adapters.
+
+    Returns a list of adapter names.
+    """
+    import netifaces  # Avoid import error before this dependency gets installed
+
+    network = ipaddress.IPv4Network(cidr)
+    matches = []
+    for adapter in netifaces.interfaces():
+        ipv4_addr_structs = netifaces.ifaddresses(adapter).get(netifaces.AF_INET, [])
+        addrs = [
+            ipaddress.IPv4Address(addr_struct["addr"])
+            for addr_struct in ipv4_addr_structs
+        ]
+        if any(addr in network for addr in addrs):
+            matches.append(adapter)
+    return matches
+
+
+def has_netlinks_error():
+    """Return True in case of netlinks related errors."""
+    return NETLINKS_ERROR
+
+
+def set_netlinks_error():
+    """Set the flag indicating a netlinks related error."""
+    global NETLINKS_ERROR
+    NETLINKS_ERROR = True

@@ -36,6 +36,7 @@ def determine_packages():
         "nagios-plugins-basic",
         "nagios-plugins-standard",
         "python3",
+        "python3-netifaces",
     ]
     if hookenv.config("export_nagios_definitions"):
         pkgs.append("rsync")

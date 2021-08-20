@@ -60,8 +60,9 @@ proof:
 	@echo "Running charm proof"
 	@-charm proof
 
-unittests:
-	@echo "No unit tests. Skipping."
+unittests: submodules-update
+	@echo "Running unit tests"
+	@tox -e unit
 
 functional: build
 	@echo "Executing functional tests in ${CHARM_BUILD_DIR}"

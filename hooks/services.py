@@ -71,7 +71,11 @@ def manage():
         ]
     )
     manager.manage()
-    if nrpe_utils.has_consumer():
+    if not nrpe_utils.has_consumer():
+        status_set("blocked", "Nagios server not configured or related")
+    elif nrpe_helpers.has_netlinks_error():
+        status_set("blocked", "Netlinks parsing encountered failure; see logs")
+    else:
         revision = ""
         if os.path.exists("version"):
             with open("version") as f:
@@ -83,5 +87,3 @@ def manage():
             else:
                 revision = " (source version/commit {})".format(line)
         status_set("active", "Ready{}".format(revision))
-    else:
-        status_set("blocked", "Nagios server not configured or related")

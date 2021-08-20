@@ -134,10 +134,14 @@ options:
     type: string
     description: |
         Network interfaces to monitor for correct link state, MTU size
-        and speed negotiated. Parsed keywords are mtu, speed, op.
-        Other keywords are ignored.
+        and speed negotiated. The first argument is either an interface name or
+        a CIDR expression. Parsed keywords are "mtu", "speed", and "op". Other
+        keywords are ignored.
+        .
+        Note that CIDR expressions can match multiple devices.
         .
         For example (multi-line starts with pipe):
+        - 10.1.2.0/24 mtu:9000 speed:25000
         - eth0 mtu:9000 speed:25000
         - lo mtu:65536 op:unknown
         - br0-mgmt mtu:9000
