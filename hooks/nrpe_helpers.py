@@ -539,6 +539,26 @@ class SubordinateCheckDefinitions(dict):
                     }
                     checks.append(netlink_check)
 
+        # checking if cpu governor is supported by the system and add nrpe check
+        governors = "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
+        scaling_governor_paths = glob.glob(governors)
+        if scaling_governor_paths:
+            description = "Check CPU governor scaler"
+            cmd_name = "check_cpu_governor"
+            cmd_exec = local_plugin_dir + "check_cpu_governor.py"
+            # we don't really have any cmd_params to set, however if that
+            # is left empty - the nrpe check is not rendered; so
+            # workaround is to just add a 'performance' keyword, doesn't
+            # have any effect on the script check_cpu_governor.py
+            cmd_params = "performance"
+            cpu_governor_check = {
+                "description": description,
+                "cmd_name": cmd_name,
+                "cmd_exec": cmd_exec,
+                "cmd_params": cmd_params,
+            }
+            checks.append(cpu_governor_check)
+
         self["checks"] = []
         sub_postfix = str(hookenv.config("sub_postfix"))
         # Automatically use _sub for checks shipped on a unit with the nagios
