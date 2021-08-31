@@ -10,8 +10,8 @@
 
 
 import os
-import subprocess
 import re
+import subprocess
 
 from nagios_plugin3 import (
     CriticalError,
@@ -21,18 +21,17 @@ from nagios_plugin3 import (
 
 def check_governors():
     """Check /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor."""
-    cpu_path = os.listdir('/sys/devices/system/cpu')
+    cpu_path = os.listdir("/sys/devices/system/cpu")
     regex = re.compile("(cpu[0-9][0-9]*)")
     numcpus = sum(1 for x in cpu_path if regex.match(x))
     error = False
     error_cpus = ""
     for cpu in range(0, numcpus):
-        path = f'/sys/devices/system/cpu/cpu{cpu}/cpufreq/scaling_governor'
-        cmd = f'cat {path}'
+        path = f"/sys/devices/system/cpu/cpu{cpu}/cpufreq/scaling_governor"
+        cmd = f"cat {path}"
         out = subprocess.check_output(cmd.split())
-        out_str = out.decode().strip()
 
-        if 'performance' in out.decode():
+        if "performance" in out.decode():
             continue
         else:
             error = True
