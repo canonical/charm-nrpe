@@ -9,6 +9,7 @@
 # ./check_cpu_governor.py
 
 
+import argparse
 import os
 import re
 import subprocess
@@ -19,7 +20,7 @@ from nagios_plugin3 import (
 )
 
 
-def check_governors():
+def check_governors(governor):
     """Check /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor."""
     cpu_path = os.listdir("/sys/devices/system/cpu")
     regex = re.compile("(cpu[0-9][0-9]*)")
@@ -31,7 +32,7 @@ def check_governors():
         cmd = f"cat {path}"
         out = subprocess.check_output(cmd.split())
 
-        if "performance" in out.decode():
+        if governor in out.decode():
             continue
         else:
             error = True
@@ -39,14 +40,29 @@ def check_governors():
 
     if error:
         error_cpus = ",".join(error_cpus.split())
-        raise CriticalError(f"CRITICAL: {error_cpus} not set to performance")
+        raise CriticalError(f"CRITICAL: {error_cpus} not set to {governor}")
 
-    print("OK: All CPUs set to performance.")
+    print(f"OK: All CPUs set to {governor}.")
+
+
+def parse_args():
+    """Parse command-line options."""
+    parser = argparse.ArgumentParser(description="Check CPU governor")
+    parser.add_argument(
+        "--governor",
+        "-g",
+        type=str,
+        help="% governor to check each CPU",
+        default="performance",
+    )
+    args = parser.parse_args()
+    return args
 
 
 def main():
     """Check the cpu governors."""
-    try_check(check_governors)
+    args = parse_args()
+    try_check(check_governors, args.governor)
 
 
 if __name__ == "__main__":

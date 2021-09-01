@@ -199,3 +199,12 @@ options:
       beginning with the string /sys.
       The check is disabled on all LXD units, and also for non-container units if this parameter is
       set to ''.
+  cpu_governor:
+    default: ""
+    type: string
+    description: |
+      CPU governor check. The string value here will be checked against all CPUs in
+      /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor. The supported values are
+      'ondemand', 'performance', 'powersave'. Unset value means check will be disabled.
+      There is a relation key called requested_cpu_governor='string', but the charm value
+      will take precedence over the relation data.
