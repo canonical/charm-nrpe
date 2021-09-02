@@ -542,16 +542,16 @@ class SubordinateCheckDefinitions(dict):
         # checking if CPU governor is supported by the system and add nrpe check
         cpu_governor_paths = "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
         cpu_governor_supported = glob.glob(cpu_governor_paths)
-        relid = hookenv.relation_ids("nrpe-external-master")
-        requested_cpu_governor = hookenv.relation_get(
-            relid,
-            "requested_cpu_governor",
-        )
+        requested_cpu_governor = hookenv.relation_get("requested_cpu_governor")
+        cpu_governor_config = hookenv.config("cpu_governor")
         enable_cpu_governor_check = (
-            hookenv.config("cpu_governor") or requested_cpu_governor
+            cpu_governor_config or requested_cpu_governor
         )
         if enable_cpu_governor_check and cpu_governor_supported:
-            governor = hookenv.config("cpu_governor")
+            if cpu_governor_config:
+                governor = cpu_governor_config
+            else:
+                governor = requested_cpu_governor
             description = "Check CPU governor scaler"
             cmd_name = "check_cpu_governor"
             cmd_exec = local_plugin_dir + "check_cpu_governor.py"
