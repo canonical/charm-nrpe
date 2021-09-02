@@ -547,7 +547,6 @@ class SubordinateCheckDefinitions(dict):
                 relid,
                 'nrpe_requested_cpu_governor',
                 )
-        print(requested_cpu_governor)
         enable_cpu_governor_check = hookenv.config("cpu_governor") or requested_cpu_governor
         if enable_cpu_governor_check and cpu_governor_supported:
             governor = hookenv.config("cpu_governor")
