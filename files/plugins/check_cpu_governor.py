@@ -1,18 +1,9 @@
 #!/usr/bin/env python3
-"""Check cpu governor scaling and alert."""
-# -*- coding: us-ascii -*-
-
-# Copyright (C) 2021 Canonical
-# All rights reserved
-# Author: Diko Parvanov <diko.parvanov@canonical.com>
-#
-# ./check_cpu_governor.py
-
+"""Check CPU governor scaling and alert."""
 
 import argparse
 import os
 import re
-import subprocess
 
 from nagios_plugin3 import (
     CriticalError,
@@ -20,26 +11,26 @@ from nagios_plugin3 import (
 )
 
 
-def check_governors(governor):
+def wanted_governor(governor):
     """Check /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor."""
     cpu_path = os.listdir("/sys/devices/system/cpu")
     regex = re.compile("(cpu[0-9][0-9]*)")
     numcpus = sum(1 for x in cpu_path if regex.match(x))
     error = False
-    error_cpus = ""
+    error_cpus = set()
     for cpu in range(0, numcpus):
         path = f"/sys/devices/system/cpu/cpu{cpu}/cpufreq/scaling_governor"
-        cmd = f"cat {path}"
-        out = subprocess.check_output(cmd.split())
+        with open(path) as f:
+            out = f.readline().strip()
 
-        if governor in out.decode():
+        if governor in out:
             continue
         else:
             error = True
-            error_cpus += f"CPU{cpu} "
+            error_cpus.add(f"CPU{cpu}")
 
     if error:
-        error_cpus = ",".join(error_cpus.split())
+        error_cpus = ",".join(error_cpus)
         raise CriticalError(f"CRITICAL: {error_cpus} not set to {governor}")
 
     print(f"OK: All CPUs set to {governor}.")
@@ -52,7 +43,7 @@ def parse_args():
         "--governor",
         "-g",
         type=str,
-        help="% governor to check each CPU",
+        help="Requested governor to check for each CPU",
         default="performance",
     )
     args = parser.parse_args()
@@ -60,9 +51,9 @@ def parse_args():
 
 
 def main():
-    """Check the cpu governors."""
+    """Check the CPU governors."""
     args = parse_args()
-    try_check(check_governors, args.governor)
+    try_check(wanted_governor, args.governor)
 
 
 if __name__ == "__main__":

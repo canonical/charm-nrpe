@@ -539,29 +539,29 @@ class SubordinateCheckDefinitions(dict):
                     }
                     checks.append(netlink_check)
 
-        # checking if cpu governor is supported by the system and add nrpe check
-        # setting cmd_params to an empty values effectivly disables the render
-        # of the *.cfg files in plugins folder
-        if hookenv.config("cpu_governor"):
+        # checking if CPU governor is supported by the system and add nrpe check
+        cpu_governor_paths = "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
+        cpu_governor_supported = glob.glob(cpu_governor_paths)
+        relid = hookenv.relation_ids('nrpe-external-master')
+        requested_cpu_governor = hookenv.relation_get(
+                relid,
+                'nrpe_requested_cpu_governor',
+                )
+        print(requested_cpu_governor)
+        enable_cpu_governor_check = hookenv.config("cpu_governor") or requested_cpu_governor
+        if enable_cpu_governor_check and cpu_governor_supported:
             governor = hookenv.config("cpu_governor")
-            governors = "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
-            scaling_governor_paths = glob.glob(governors)
-            if scaling_governor_paths:
-                cmd_params = "--governor {}".format(governor)
-            else:
-                cmd_params = ""
-        else:
-            cmd_params = ""
-        description = "Check CPU governor scaler"
-        cmd_name = "check_cpu_governor"
-        cmd_exec = local_plugin_dir + "check_cpu_governor.py"
-        cpu_governor_check = {
-            "description": description,
-            "cmd_name": cmd_name,
-            "cmd_exec": cmd_exec,
-            "cmd_params": cmd_params,
-        }
-        checks.append(cpu_governor_check)
+            description = "Check CPU governor scaler"
+            cmd_name = "check_cpu_governor"
+            cmd_exec = local_plugin_dir + "check_cpu_governor.py"
+            cmd_params = "--governor {}".format(governor)
+            cpu_governor_check = {
+                "description": description,
+                "cmd_name": cmd_name,
+                "cmd_exec": cmd_exec,
+                "cmd_params": cmd_params,
+            }
+            checks.append(cpu_governor_check)
 
         self["checks"] = []
         sub_postfix = str(hookenv.config("sub_postfix"))
