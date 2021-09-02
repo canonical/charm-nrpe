@@ -205,6 +205,6 @@ options:
     description: |
       CPU governor check. The string value here will be checked against all CPUs in
       /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor. The supported values are
-      'ondemand', 'performance', 'powersave'. Unset value means check will be disabled.
+      'ondemand', 'performance', 'powersave'. Unset value means the check will be disabled.
       There is a relation key called requested_cpu_governor='string', but the charm config value
       will take precedence over the relation data.

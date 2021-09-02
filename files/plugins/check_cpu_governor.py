@@ -16,7 +16,6 @@ def wanted_governor(governor):
     cpu_path = os.listdir("/sys/devices/system/cpu")
     regex = re.compile("(cpu[0-9][0-9]*)")
     numcpus = sum(1 for x in cpu_path if regex.match(x))
-    error = False
     error_cpus = set()
     for cpu in range(0, numcpus):
         path = f"/sys/devices/system/cpu/cpu{cpu}/cpufreq/scaling_governor"
@@ -26,10 +25,9 @@ def wanted_governor(governor):
         if governor in out:
             continue
         else:
-            error = True
             error_cpus.add(f"CPU{cpu}")
 
-    if error:
+    if error_cpus:
         error_cpus = ",".join(error_cpus)
         raise CriticalError(f"CRITICAL: {error_cpus} not set to {governor}")
 
