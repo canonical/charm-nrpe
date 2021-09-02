@@ -544,9 +544,7 @@ class SubordinateCheckDefinitions(dict):
         cpu_governor_supported = glob.glob(cpu_governor_paths)
         requested_cpu_governor = hookenv.relation_get("requested_cpu_governor")
         cpu_governor_config = hookenv.config("cpu_governor")
-        enable_cpu_governor_check = (
-            cpu_governor_config or requested_cpu_governor
-        )
+        enable_cpu_governor_check = cpu_governor_config or requested_cpu_governor
         if enable_cpu_governor_check and cpu_governor_supported:
             if cpu_governor_config:
                 governor = cpu_governor_config
