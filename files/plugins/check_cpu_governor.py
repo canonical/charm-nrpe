@@ -41,7 +41,7 @@ def parse_args():
         "--governor",
         "-g",
         type=str,
-        help="Requested governor to check for each CPU",
+        help="The requested governor to check for each CPU",
         default="performance",
     )
     args = parser.parse_args()
