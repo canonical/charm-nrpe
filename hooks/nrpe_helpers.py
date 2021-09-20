@@ -102,40 +102,17 @@ def get_ingress_address(binding, external=False):
                 ]
                 hookenv.log("Using ingress-addresses, found %s" % ip_address)
             except KeyError:
-                # ignore KeyError and populate ip_address per old method
-                # fall through to get_unit_ip() below.
-                pass
-    except (NotImplementedError, FileNotFoundError):
-        # We'll fall through to get_unit_ip() below.
-        pass
+                hookenv.log("Using primary-addresses")
+                ip_address = hookenv.network_get_primary_address(binding)
 
-    if ip_address:
-        return ip_address
-    else:
-        return get_unit_ip(binding)
+    except (NotImplementedError, FileNotFoundError) as e:
+        hookenv.log(
+            "Unable to determine inbound IP address for binding {} with {}".format(
+                binding, e
+            ),
+            level=hookenv.ERROR,
+        )
 
-
-def get_unit_ip(binding):
-    """Get the ip address of the unit using methods supporting old Juju."""
-    # Pre 2.3 output
-    try:
-        ip_address = hookenv.network_get_primary_address(binding)
-        hookenv.log("Using primary-addresses")
-    except NotImplementedError:
-        # pre Juju 2.0
-        if hookenv.config("nagios_master") != "None":
-            # Try to work out the correct interface/IP. We can't use
-            # 'unit-get private-address' because it can return the wrong
-            # IP on systems with more than one interface (LP: #1736050).
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect((hookenv.config("nagios_master").split(",")[0], 80))
-            ip_address = s.getsockname()[0]
-            s.close()
-    if not ip_address:
-        # Fall back
-        ip_address = hookenv.unit_private_ip()
-        hookenv.log("Using unit_private_ip")
-    hookenv.log(ip_address)
     return ip_address
 
 
