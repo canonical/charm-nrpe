@@ -208,6 +208,7 @@ class MonitorsRelation(helpers.RelationContext):
             "monitors": self.get_monitors(),
             "private-address": address,
             "ingress-address": address,
+            "target-address": address,
             "machine_id": os.environ["JUJU_MACHINE_ID"],
             "model_id": hookenv.model_uuid(),
         }
