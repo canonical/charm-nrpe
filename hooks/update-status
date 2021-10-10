@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+"""Nrpe update-status hook"""
+
+import os
+import subprocess
+from charmhelpers.core.hookenv import status_set
+from services import get_revision
+
+SERVICE = "nagios-nrpe-server"
+
+
+def update_status():
+    """Update Nrpe Juju status."""
+    retcode = subprocess.call(["systemctl", "is-active", "--quiet", SERVICE])
+    if retcode == 0:
+        status_set("active", "Ready{}".format(get_revision()))
+    else:
+        status_set("blocked", "{} service inactive.".format(SERVICE))
+
+
+if __name__ == '__main__':
+    update_status()
+
