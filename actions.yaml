@@ -7,3 +7,5 @@ run-nrpe-check:
             type: string
             description: Check name to run
     required: [name]
+ack-reboot:
+    description: Acknowledge reboot alert
