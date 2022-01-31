@@ -78,8 +78,9 @@ class TestIngressAddress(unittest.TestCase):
             "egress-subnets": ["3.8.134.119/32"],
             "ingress-addresses": ["3.8.134.119"],
         }
-        self.assertEqual(nrpe_helpers.get_ingress_address("mockbinding"),
-                         "172.31.29.247")
+        self.assertEqual(
+            nrpe_helpers.get_ingress_address("mockbinding"), "172.31.29.247"
+        )
 
     @mock.patch("nrpe_helpers.hookenv.config")
     @mock.patch("nrpe_helpers.hookenv.network_get")
@@ -105,8 +106,10 @@ class TestIngressAddress(unittest.TestCase):
             "egress-subnets": ["3.8.134.119/32"],
             "ingress-addresses": ["3.8.134.119"],
         }
-        self.assertEqual(nrpe_helpers.get_ingress_address("mockbinding", external=True),
-                         "172.31.29.247")
+        self.assertEqual(
+            nrpe_helpers.get_ingress_address("mockbinding", external=True),
+            "172.31.29.247",
+        )
 
     @mock.patch("nrpe_helpers.hookenv.config")
     @mock.patch("nrpe_helpers.hookenv.unit_get")
@@ -114,5 +117,6 @@ class TestIngressAddress(unittest.TestCase):
         """Prove we get a public IP address for Nagios relation."""
         mock_config.return_value = "public"
         mock_unit_get.return_value = "1.2.3.4"
-        self.assertEqual(nrpe_helpers.get_ingress_address("mockbinding", external=True),
-                         "1.2.3.4")
+        self.assertEqual(
+            nrpe_helpers.get_ingress_address("mockbinding", external=True), "1.2.3.4"
+        )
