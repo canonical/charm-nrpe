@@ -483,6 +483,20 @@ class SubordinateCheckDefinitions(dict):
             },
         ]
 
+        if hookenv.config("cis_audit_enabled"):
+            cmd_params = "-a {} -p '{}' {}".format(
+                hookenv.config("cis_audit_interval"),
+                hookenv.config("cis_audit_profile"),
+                hookenv.config("cis_audit_score"),
+            )
+            cis_audit_check = {
+                "description": "Check CIS audit",
+                "cmd_name": "check_cis_audit",
+                "cmd_exec": local_plugin_dir + "check_cis_audit.py",
+                "cmd_params": cmd_params,
+            }
+            checks.append(cis_audit_check)
+
         if not is_container():
             checks.extend(
                 [

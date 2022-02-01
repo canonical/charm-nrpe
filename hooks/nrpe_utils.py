@@ -202,6 +202,25 @@ def has_consumer():
     )
 
 
+def update_cis_audit_cronjob(service_name):
+    """Install/Remove the cis-audit cron job."""
+    crond_file = "/etc/cron.d/cis-audit"
+
+    if not hookenv.config("cis_audit_enabled"):
+        if os.path.exists(crond_file):
+            os.remove(crond_file)
+            hookenv.log("Cronjob removed at {}".format(crond_file), hookenv.DEBUG)
+        return
+
+    file = "/usr/local/lib/nagios/plugins/cron_cis_audit.py"
+    interval = int(hookenv.config("cis_audit_interval"))
+    profile = hookenv.config("cis_audit_profile")
+    cronjob = "*/10 * * * * root ({} -a {} -p '{}') 2>&1 | logger -t {}\n"
+    with open(crond_file, "w") as crond_fd:
+        crond_fd.write(cronjob.format(file, interval, profile, "cron_cis_audit"))
+        hookenv.log("Cronjob configured at {}".format(crond_file), hookenv.DEBUG)
+
+
 class TolerantPortManagerCallback(PortManagerCallback):
     """Manage unit ports.
 
