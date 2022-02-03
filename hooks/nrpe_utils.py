@@ -93,10 +93,6 @@ def install_charm_files(service_name):
     local_plugin_dir = "/usr/local/lib/nagios/plugins/"
 
     shutil.copy2(
-        os.path.join(charm_file_dir, "nagios_plugin.py"),
-        pkg_plugin_dir + "/nagios_plugin.py",
-    )
-    shutil.copy2(
         os.path.join(charm_file_dir, "nagios_plugin3.py"),
         pkg_plugin_dir + "/nagios_plugin3.py",
     )
@@ -104,7 +100,7 @@ def install_charm_files(service_name):
     shutil.copy2(os.path.join(charm_file_dir, "rsyncd.conf"), "/etc/rsyncd.conf")
     host.mkdir("/etc/rsync-juju.d", perms=0o755)
     host.rsync(charm_plugin_dir, "/usr/local/lib/nagios/", options=["--executability"])
-    for nagios_plugin in ("nagios_plugin.py", "nagios_plugin3.py"):
+    for nagios_plugin in "nagios_plugin3.py":
         if not os.path.exists(local_plugin_dir + nagios_plugin):
             os.symlink(pkg_plugin_dir + nagios_plugin, local_plugin_dir + nagios_plugin)
 
