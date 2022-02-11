@@ -356,6 +356,16 @@ class TestDeployment(unittest.TestCase):
         }
         self.check_nrpe_setting(**test_config)
 
+    def test_custom_systemd_scopes_check_params(self):
+        chk_key = ('command[check_systemd_scopes]=/usr/local/lib/nagios/plugins/'
+                   'check_systemd_scopes.py')
+        test_config = {
+            'filename': '/etc/nagios/nrpe.d/check_systemd_scopes_sub.cfg',
+            'expected_settings': {chk_key: '-e 60 -E 120 -a 60 -A 120'},
+            'juju_kv': {'systemd_scopes': '-e 60 -E 120 -a 60 -A 120'}
+        }
+        self.check_nrpe_setting(**test_config)
+
     def test_custom_lacp_bonds(self):
         chk_key = ('command[check_lacp_bond0]=/usr/local/lib/nagios/plugins/'
                    'check_lacp_bond.py -i bond0')

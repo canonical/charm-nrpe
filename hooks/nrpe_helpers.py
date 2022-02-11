@@ -415,6 +415,12 @@ class SubordinateCheckDefinitions(dict):
                 "cmd_exec": local_plugin_dir + "check_conntrack.sh",
                 "cmd_params": hookenv.config("conntrack"),
             },
+            {
+                "description": "Number of bad state systemd scopes",
+                "cmd_name": "check_systemd_scopes",
+                "cmd_exec": local_plugin_dir + "check_systemd_scopes.py",
+                "cmd_params": hookenv.config("systemd_scopes"),
+            },
         ]
 
         if not is_container():
