@@ -32,20 +32,33 @@ DEFAULT_WARN_ABANDONED = 25
 DEFAULT_CRIT_ABANDONED = 50
 
 RE_SCOPES = re.compile('[\\w\\d\\-_]+\\.scope', re.I | re.M)
+BIN_SYSTEMCTL = "/bin/systemctl"
 
 
-def count_systemd_scopes(state):
+def count_systemd_scopes(output):
+    """Count the number of `.scope` units in provided output text."""
+    return len(RE_SCOPES.findall(output))
+
+
+def get_systemd_scopes_state(state):
+    """Get output for systemd scopes in specified state."""
+    # While it is possible to use `grep` within the `check_output` call,
+    # there arises an issue when `grep` counts 0. It will return an error code.
+    # Therefore, this check uses a pre-compiled regular expression to count.
+    cmd = [
+        "/bin/sh", "-c",
+        "{} list-units --type=scope --state={} --no-pager".format(
+            BIN_SYSTEMCTL, state
+        )
+    ]
+    return check_output(cmd, stderr=PIPE).decode('UTF-8')
+
+
+def count_systemd_scopes_state(state):
     """Count number of `.scope` units in specified state."""
     try:
-        # While it is possible to use `grep` within the `check_output` call,
-        # there arises an issue when `grep` counts 0. It will return an error code.
-        # Therefore, this check uses a pre-compiled regular expression to count.
-        cmd = [
-            "/bin/sh", "-c",
-            "/bin/systemctl list-units --type=scope --state={} --no-pager".format(state)
-        ]
-        units = check_output(cmd, stderr=PIPE).decode('UTF-8')
-        return len(RE_SCOPES.findall(units))
+        scopes = get_systemd_scopes_state(state)
+        return count_systemd_scopes(scopes)
     except CalledProcessError as e:
         err = e.stderr.decode('UTF-8')
         raise UnknownError(
@@ -59,7 +72,7 @@ def count_systemd_scopes(state):
 def check_systemd_scopes(args):
     """Check number of systemd scopes in error and abandoned states."""
     # Check scopes in 'error' state
-    error_count = count_systemd_scopes("error")
+    error_count = count_systemd_scopes_state("error")
     if error_count >= args.crit_error:
         raise CriticalError(
             'CRITICAL: System has {} systemd scopes in error state'
@@ -72,7 +85,7 @@ def check_systemd_scopes(args):
         )
 
     # Check scopes in 'abandoned' state
-    abandoned_count = count_systemd_scopes("abandoned")
+    abandoned_count = count_systemd_scopes_state("abandoned")
     if error_count >= args.crit_abandoned:
         raise CriticalError(
             'CRITICAL: System has {} systemd scopes in abandoned state'
