@@ -62,11 +62,11 @@ def count_systemd_scopes_state(state):
     except CalledProcessError as e:
         err = e.stderr.decode('UTF-8')
         raise UnknownError(
-            'Unable to check systemd abandoned state scopes: {}'.format(err))
+            'UNKNOWN: Unable to check systemd abandoned state scopes: {}'.format(err))
     except ValueError:
         # ideally, this should never occur
         raise UnknownError(
-            'Counting systemd abandoned state scopes returns non-integer')
+            'UNKNOWN: Counting systemd abandoned state scopes returns non-integer')
 
 
 def check_systemd_scopes(args):
@@ -115,7 +115,7 @@ def positive_int(value):
     return value
 
 
-def parse_args():
+def parse_args(args):
     """Parse command-line options."""
     parser = ArgumentParser(
         description=__doc__,
@@ -156,18 +156,9 @@ def parse_args():
         help="Message indicating an OK status"
     )
 
-    return parser.parse_args()
-
-
-def main():
-    """
-    Entry function for command-line invocation.
-
-    Parses command-line arguments and pass them into the systemd scopes check.
-    """
-    args = parse_args()
-    try_check(check_systemd_scopes, args)
+    return parser.parse_args(args)
 
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    try_check(check_systemd_scopes, args)
