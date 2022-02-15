@@ -13,7 +13,6 @@ import argparse
 import glob
 import os
 import sys
-from subprocess import getoutput
 
 from nagios_plugin3 import (
     CriticalError,
@@ -24,18 +23,12 @@ from nagios_plugin3 import (
 FILTER = ("operstate", "mtu", "speed")
 
 
-def is_metal():
-    """Return True if the host machine is baremetal."""
-    return "none" in getoutput("/usr/bin/systemd-detect-virt")
-
-
 def check_iface(iface, skiperror, crit_thr):
     """Return /sys/class/net/<iface>/<FILTER> values."""
     file_path = "/sys/class/net/{0}/{1}"
     filter = ["operstate", "mtu"]
     if (
-        is_metal()  # LP#1958928 ignore speed on VMs and LXDs
-        and not os.path.exists(file_path.format(iface, "bridge"))
+        not os.path.exists(file_path.format(iface, "bridge"))
         and iface != "lo"
     ):
         filter.append("speed")
