@@ -11,8 +11,8 @@ from io import StringIO
 from subprocess import CalledProcessError
 from unittest import TestCase, mock
 
+from files.nagios_plugin3 import CriticalError, UnknownError, WarnError
 from files.plugins import check_systemd_scopes
-from files.plugins.nagios_plugin3 import CriticalError, UnknownError, WarnError
 
 
 SAMPLE_SCOPES_OUTPUT_X4 = """
@@ -54,48 +54,38 @@ class TestCheckSystemdScopes(TestCase):
         count = check_systemd_scopes.count_systemd_scopes(SAMPLE_SCOPES_OUTPUT_X0)
         self.assertEqual(count, 0)
 
-    @mock.patch("subprocess.check_output", mock_check_output_x4)
-    def test_get_systemd_scopes_state(self):
-        """Test get_systemd_scopes_state with overridden check_output calls."""
-        scopes = check_systemd_scopes.get_systemd_scopes_state("test")
-        self.assertEqual(scopes, SAMPLE_SCOPES_OUTPUT_X4)
-
-    @mock.patch("check_systemd_scopes.BIN_SYSTEMCTL", "/bin/doesnt-exist")
+    @mock.patch("files.plugins.check_systemd_scopes.BIN_SYSTEMCTL", "/bin/doesnt-exist")
     def test_get_systemd_scopes_state_nosystemctl(self):
         """Test get_systemd_scopes_state on systems without systemctl."""
         with self.assertRaises(CalledProcessError):
             check_systemd_scopes.get_systemd_scopes_state("test")
 
-    @mock.patch("subprocess.check_output", mock_check_output_x4)
+    @mock.patch(
+        "files.plugins.check_systemd_scopes.get_systemd_scopes_state",
+        lambda _: SAMPLE_SCOPES_OUTPUT_X4,
+    )
     def test_count_systemd_scopes_state(self):
-        """Test count_systemd_scopes_state with overridden check_output calls."""
+        """Test count_systemd_scopes_state with overridden X4 output."""
         count = check_systemd_scopes.count_systemd_scopes_state("test")
         self.assertEqual(count, 4)
 
-    @mock.patch("check_systemd_scopes.count_systemd_scopes", lambda _: "nan")
-    def test_count_systemd_scopes_state_nancountl(self):
-        """Test count_systemd_scopes_state with non-int from count_systemd_scopes."""
-        with self.assertRaises(UnknownError) as error:
-            check_systemd_scopes.count_systemd_scopes_state("test")
-
-        self.assertEquals(
-            str(error.exception),
-            "UNKNOWN: Counting systemd abandoned state scopes returns non-integer",
-        )
-
-    @mock.patch("check_systemd_scopes.BIN_SYSTEMCTL", "/bin/doesnt-exist")
+    @mock.patch("files.plugins.check_systemd_scopes.BIN_SYSTEMCTL", "/bin/doesnt-exist")
     def test_count_systemd_scopes_state_nosystemctl(self):
         """Test count_systemd_scopes_state on systems without systemctl."""
         with self.assertRaises(UnknownError):
             check_systemd_scopes.count_systemd_scopes_state("test")
 
     @mock.patch("sys.stdout", new_callable=StringIO)
+    @mock.patch("subprocess.check_output", mock_check_output_x4)
     def assert_check_stdout(self, args, expected_output, mock_stdout):
         """Capture and assertEqual on prints within check_systemd_scopes."""
         check_systemd_scopes.check_systemd_scopes(args)
         self.assertEqual(mock_stdout.getvalue(), expected_output)
 
-    @mock.patch("subprocess.check_output", mock_check_output_x4)
+    @mock.patch(
+        "files.plugins.check_systemd_scopes.get_systemd_scopes_state",
+        lambda _: SAMPLE_SCOPES_OUTPUT_X4,
+    )
     def test_check_systemd_scopes(self):
         """Test check_systemd_scopes with various thresholds."""
         # test with standard arguments and mocked x4 scopes
@@ -103,8 +93,8 @@ class TestCheckSystemdScopes(TestCase):
             ["-e", "1000", "-E", "2000", "-a", "1000", "-A", "2000", "-o", "Nominal"]
         )
 
-        self.assertCheckStdout(
-            args, "OK: Nominal; 4 in error state, 4 in abandoned state"
+        self.assert_check_stdout(
+            args, "OK: Nominal; 4 in error state, 4 in abandoned state\n"
         )
 
         # test arguments to invoke WARN on error state x4 scopes
@@ -163,25 +153,19 @@ class TestCheckSystemdScopes(TestCase):
         with self.assertRaises(ArgumentTypeError) as error:
             check_systemd_scopes.positive_int("-10")
 
-        self.assertEquals(str(error.exception), "-10 is not a positive integer")
+        self.assertEqual(str(error.exception), "-10 is not a positive integer")
 
         # test with 0, expect raise of ArgumentTypeError
         with self.assertRaises(ArgumentTypeError) as error:
             check_systemd_scopes.positive_int("0")
 
-        self.assertEquals(str(error.exception), "0 is not a positive integer")
-
-        # test with a string, expect raise of ValueError
-        with self.assertRaises(ValueError) as error:
-            check_systemd_scopes.positive_int("asdf")
-
-        self.assertEquals(str(error.exception), "asdf is not an integer")
+        self.assertEqual(str(error.exception), "0 is not a positive integer")
 
         # test with positive non-zero number, expect int(val) return
         val = check_systemd_scopes.positive_int("10")
         self.assertEqual(val, 10)
 
-    @mock.patch("sys.argv", [])
+    @mock.patch("sys.argv", ["prog.py"])
     def test_parse_args(self):
         """Test parse_args with various user inputs."""
         # test with default arguments, expect DEFAULT_{WARN,CRIT}_{ERROR,ABANDONED}

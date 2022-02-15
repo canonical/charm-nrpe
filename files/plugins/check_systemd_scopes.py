@@ -18,7 +18,7 @@ from argparse import (
 )
 from subprocess import CalledProcessError, PIPE, check_output
 
-from nagios_plugin3 import (
+from ..nagios_plugin3 import (
     CriticalError,
     UnknownError,
     WarnError,
@@ -115,7 +115,7 @@ def positive_int(value):
     return value
 
 
-def parse_args(args):
+def parse_args(args=None):
     """Parse command-line options."""
     parser = ArgumentParser(
         description=__doc__,
