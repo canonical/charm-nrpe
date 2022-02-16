@@ -208,3 +208,10 @@ options:
       'ondemand', 'performance', 'powersave'. Unset value means the check will be disabled.
       There is a relation key called requested_cpu_governor='string', but the charm config value
       will take precedence over the relation data.
+  reboot:
+    default: True
+    type: boolean
+    description: |
+        Enable reboot check, it will raise critial alert if an unknown reboot is detected via
+        `uptime --since`. Use action `ack-reboot` to acknowledge the alert. To acknowledge on
+        all nrpe units, e.g., after a power outage, simply disable and re-enable this option.

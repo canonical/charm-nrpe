@@ -6,6 +6,7 @@ import socket
 import subprocess
 
 from charmhelpers.core import hookenv
+from charmhelpers.core import unitdata
 from charmhelpers.core.host import is_container
 from charmhelpers.core.services import helpers
 
@@ -13,6 +14,67 @@ import yaml
 
 
 NETLINKS_ERROR = False
+
+pkg_plugin_dir = "/usr/lib/nagios/plugins/"
+local_plugin_dir = "/usr/local/lib/nagios/plugins/"
+
+DB_KEY_KNOWN_REBOOT_TIME = "known_reboot_time"
+db = unitdata.kv()
+
+
+def get_cmd_output(cmd):
+    """Get shell command output in unicode string."""
+    return subprocess.check_output(cmd).decode("utf8").strip()
+
+
+def set_known_reboot_time():
+    """Set current reboot time in db and return it."""
+    uptime_since = get_cmd_output(["uptime", "--since"])
+    db.set(DB_KEY_KNOWN_REBOOT_TIME, uptime_since)
+    db.flush()
+    return uptime_since
+
+
+def unset_known_reboot_time():
+    """Unset current reboot time in db.
+
+    This will remove the key and value from db.
+    Useful when we need to disable and re-enable this check to refresh
+    known reboot time for all machines, e.g. in a power outage.
+    """
+    db.unset(DB_KEY_KNOWN_REBOOT_TIME)
+    db.flush()
+
+
+def get_known_reboot_time():
+    """Get known reboot time from db."""
+    return db.get(DB_KEY_KNOWN_REBOOT_TIME)
+
+
+def get_check_reboot_context(known_reboot_time=None):
+    """Get check_reboot context info for nrpe check, for both add or remove.
+
+    Make this a function because:
+
+    - cmd_params is dynamic
+    - reuse in action ack-reboot
+
+    NOTE: when known_reboot_time is not provided, the check will be removed.
+
+    """
+    if known_reboot_time:
+        # add quotes around the time since it has space in it
+        # e.g.: 2022-02-04 10:53:50
+        cmd_params = '"{}"'.format(known_reboot_time)
+    else:
+        # set to empty will remove/disable this check
+        cmd_params = ""
+    return {
+        "description": "System reboot time",
+        "cmd_name": "check_reboot",
+        "cmd_exec": local_plugin_dir + "check_reboot.py",
+        "cmd_params": cmd_params,
+    }
 
 
 class InvalidCustomCheckException(Exception):
@@ -388,8 +450,6 @@ class SubordinateCheckDefinitions(dict):
         proc_thresholds = self._get_proc_thresholds()
         disk_root_thresholds = self._get_disk_root_thresholds()
 
-        pkg_plugin_dir = "/usr/lib/nagios/plugins/"
-        local_plugin_dir = "/usr/local/lib/nagios/plugins/"
         checks = [
             {
                 "description": "Number of Zombie processes",
@@ -545,6 +605,21 @@ class SubordinateCheckDefinitions(dict):
                 "cmd_params": cmd_params,
             }
             checks.append(cpu_governor_check)
+
+        # add or remove reboot check, according to config
+        enable_check_reboot = hookenv.config("reboot")  # boolean
+        if enable_check_reboot:
+            # read from db if exist, or set current uptime in db and use it
+            known_reboot_time = get_known_reboot_time() or set_known_reboot_time()
+            check_reboot_context = get_check_reboot_context(
+                known_reboot_time=known_reboot_time
+            )
+        else:
+            # set to None will disbale/remove this check
+            check_reboot_context = get_check_reboot_context(known_reboot_time=None)
+            # also rm known reboot time key and value in db
+            unset_known_reboot_time()
+        checks.append(check_reboot_context)
 
         self["checks"] = []
         sub_postfix = str(hookenv.config("sub_postfix"))

@@ -1,0 +1,48 @@
+"""Unit tests for scripts in files/plugins."""
+import subprocess
+import unittest
+from os.path import abspath, dirname, join
+
+DIR_REPO_ROOT = dirname(dirname(dirname(abspath(__file__))))
+DIR_PLUGINS = join(DIR_REPO_ROOT, "files", "plugins")
+
+
+def get_cmd_output(cmd):
+    """Get shell command output in unicode string without checking retcode."""
+    proc = subprocess.run(
+        cmd,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    return proc.stdout.decode("utf8").strip()
+
+
+def get_script_path(filename="check_reboot.py"):
+    """Get script full path under files/plugins dir."""
+    return join(DIR_PLUGINS, filename)
+
+
+class TestCheckRebootScript(unittest.TestCase):
+    """Test plugin scripts in files/plugins."""
+
+    check_reboot = get_script_path(filename="check_reboot.py")
+
+    def test_old_reboot_time(self):
+        """Test old known reboot time will trigger CRITICAL alert."""
+        # check a old reboot time, should raise critical
+        out = get_cmd_output([self.check_reboot, "2000-01-01 00:00:00"])
+        self.assertTrue(out.startswith("CRITICAL"))
+
+    def test_current_reboot_time(self):
+        """Test current reboot time will not trigger alert."""
+        # check current reboot time, should be ok
+        uptime = get_cmd_output(["uptime", "--since"])
+        out = get_cmd_output([self.check_reboot, uptime])
+        self.assertTrue(out.startswith("OK"))
+
+    def test_future_reboot_time(self):
+        """Test future reboot time will not trigger alert."""
+        # check future time, should also be ok
+        out = get_cmd_output([self.check_reboot, "2100-01-01 00:00:00"])
+        self.assertTrue(out.startswith("OK"))

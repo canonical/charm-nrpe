@@ -120,3 +120,33 @@ class TestIngressAddress(unittest.TestCase):
         self.assertEqual(
             nrpe_helpers.get_ingress_address("mockbinding", external=True), "1.2.3.4"
         )
+
+
+class TestCheckReboot(unittest.TestCase):
+    """Test check_reboot related code."""
+
+    def test_set_and_get_known_reboot_time(self):
+        """Test set/get known reboot time."""
+        t0 = nrpe_helpers.get_cmd_output(["uptime", "--since"])
+        t1 = nrpe_helpers.set_known_reboot_time()
+        t2 = nrpe_helpers.get_known_reboot_time()
+        self.assertEqual(t0, t1)
+        self.assertEqual(t0, t2)
+
+    def test_unset_known_reboot_time(self):
+        """Test unset known reboot time will clear the data."""
+        t0 = nrpe_helpers.set_known_reboot_time()
+        self.assertIsNotNone(t0)
+        t2 = nrpe_helpers.unset_known_reboot_time()
+        self.assertIsNone(t2)
+
+    def test_get_check_reboot_context_add(self):
+        """Test get_check_reboot_context will render time correctly."""
+        t0 = nrpe_helpers.get_cmd_output(["uptime", "--since"])
+        context = nrpe_helpers.get_check_reboot_context(known_reboot_time=t0)
+        self.assertEquals(context["cmd_params"], '"{}"'.format(t0))
+
+    def test_get_check_reboot_context_remove(self):
+        """Test get_check_reboot_context will render None correctly."""
+        context = nrpe_helpers.get_check_reboot_context(known_reboot_time=None)
+        self.assertFalse(context["cmd_params"])
