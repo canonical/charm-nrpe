@@ -16,6 +16,11 @@ To acknowledge/resolve the alert:
 import argparse
 import subprocess
 import sys
+from datetime import datetime
+
+# `uptime --since` output, e.g.: 2022-02-12 08:07:02
+UPTIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+UPTIME_FORMAT_HUMAN = "yyyy-mm-dd HH:MM:SS"
 
 NAGIOS_STATUS_OK = 0
 NAGIOS_STATUS_WARNING = 1
@@ -52,6 +57,17 @@ def get_cmd_output(cmd):
     return subprocess.check_output(cmd).decode("utf-8").strip()
 
 
+def convert_time(str_time):
+    """Convert str time to datetime object."""
+    try:
+        return datetime.strptime(str_time, UPTIME_FORMAT)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            'time must be in format {}, '
+            'same as output from `uptime --since`.'.format(UPTIME_FORMAT_HUMAN)
+        ) from exc
+
+
 def main():
     """Check reboot."""
     parser = argparse.ArgumentParser(
@@ -60,13 +76,19 @@ def main():
 
     parser.add_argument(
         "known_reboot_time",
-        help="in yyyy-mm-dd HH:MM:SS format, normally output from `uptime --since`",
+        type=convert_time,
+        help="in format {}, same as output from `uptime --since`".format(
+            UPTIME_FORMAT_HUMAN),
     )
 
     args = parser.parse_args()
 
-    current_reboot_time = get_cmd_output(["uptime", "--since"])
-    if current_reboot_time > args.known_reboot_time:
+    current_reboot_time_str = get_cmd_output(["uptime", "--since"])
+    current_reboot_time = convert_time(current_reboot_time_str)
+    delta = current_reboot_time - args.known_reboot_time
+    # `uptime --since` output maybe flapping because ntp is changing sytem time
+    # here we allow 5s gap to avoid fake alert
+    if delta.total_seconds() > 5.0:
         nagios_exit(
             NAGIOS_STATUS_CRITICAL, "unknown reboot at {}".format(current_reboot_time)
         )
