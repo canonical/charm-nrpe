@@ -615,7 +615,7 @@ class SubordinateCheckDefinitions(dict):
                 known_reboot_time=known_reboot_time
             )
         else:
-            # set to None will disbale/remove this check
+            # set to None will disable/remove this check
             check_reboot_context = get_check_reboot_context(known_reboot_time=None)
             # also rm known reboot time key and value in db
             unset_known_reboot_time()
