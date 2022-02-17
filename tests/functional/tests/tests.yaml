@@ -1,4 +1,5 @@
 charm_name: nrpe
+local_overlay_enabled: true
 gate_bundles:
   - focal
   - bionic
