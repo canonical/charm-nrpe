@@ -15,11 +15,6 @@ import yaml
 NETLINKS_ERROR = False
 
 
-def is_metal():
-    """Return True if the host machine is baremetal."""
-    return "none" in subprocess.getoutput("/usr/bin/systemd-detect-virt")
-
-
 class InvalidCustomCheckException(Exception):
     """Custom exception for Invalid nrpe check."""
 
@@ -515,7 +510,7 @@ class SubordinateCheckDefinitions(dict):
                         checks.append(lacp_check)
 
             # LP#1958928 ignore speed on VMs and LXDs
-            if hookenv.config("netlinks") and is_metal():
+            if hookenv.config("netlinks") and not is_container():
                 ifaces = yaml.safe_load(hookenv.config("netlinks"))
                 cmd_exec = local_plugin_dir + "check_netlinks.py"
                 if hookenv.config("netlinks_skip_unfound_ifaces"):
