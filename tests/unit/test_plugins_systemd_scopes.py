@@ -54,14 +54,14 @@ class TestCheckSystemdScopes(TestCase):
         count = check_systemd_scopes.count_systemd_scopes(SAMPLE_SCOPES_OUTPUT_X0)
         self.assertEqual(count, 0)
 
-    @mock.patch("files.plugins.check_systemd_scopes.BIN_SYSTEMCTL", "/bin/doesnt-exist")
+    @mock.patch("plugins.check_systemd_scopes.BIN_SYSTEMCTL", "/bin/doesnt-exist")
     def test_get_systemd_scopes_state_nosystemctl(self):
         """Test get_systemd_scopes_state on systems without systemctl."""
         with self.assertRaises(CalledProcessError):
             check_systemd_scopes.get_systemd_scopes_state("test")
 
     @mock.patch(
-        "files.plugins.check_systemd_scopes.get_systemd_scopes_state",
+        "plugins.check_systemd_scopes.get_systemd_scopes_state",
         lambda _: SAMPLE_SCOPES_OUTPUT_X4,
     )
     def test_count_systemd_scopes_state(self):
@@ -69,7 +69,7 @@ class TestCheckSystemdScopes(TestCase):
         count = check_systemd_scopes.count_systemd_scopes_state("test")
         self.assertEqual(count, 4)
 
-    @mock.patch("files.plugins.check_systemd_scopes.BIN_SYSTEMCTL", "/bin/doesnt-exist")
+    @mock.patch("plugins.check_systemd_scopes.BIN_SYSTEMCTL", "/bin/doesnt-exist")
     def test_count_systemd_scopes_state_nosystemctl(self):
         """Test count_systemd_scopes_state on systems without systemctl."""
         with self.assertRaises(UnknownError):
@@ -83,7 +83,7 @@ class TestCheckSystemdScopes(TestCase):
         self.assertEqual(mock_stdout.getvalue(), expected_output)
 
     @mock.patch(
-        "files.plugins.check_systemd_scopes.get_systemd_scopes_state",
+        "plugins.check_systemd_scopes.get_systemd_scopes_state",
         lambda _: SAMPLE_SCOPES_OUTPUT_X4,
     )
     def test_check_systemd_scopes(self):
