@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 """Review systemd state scopes and return a nagios status based on their count."""
-# -*- coding: us-ascii -*-
 
 # Copyright (C) 2022 Canonical Ltd.
 # All rights reserved
 # Author: John P Lettman <john.lettman@canonical.com>
-
-# Fix for local development environment:
-# import os, sys
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import re
 from argparse import (
@@ -18,7 +13,7 @@ from argparse import (
 )
 from subprocess import CalledProcessError, PIPE, check_output
 
-from ..nagios_plugin3 import (
+from nagios_plugin3 import (
     CriticalError,
     UnknownError,
     WarnError,
@@ -108,10 +103,11 @@ def positive_int(value):
     """Ensure the provided value is a positive integer greater than 0."""
     try:
         value = int(value)
-        if value <= 0:
-            raise ArgumentTypeError("{} is not a positive integer".format(value))
     except ValueError:
         raise Exception("{} is not an integer".format(value))
+
+    if value <= 0:
+        raise ArgumentTypeError("{} is not a positive integer".format(value))
     return value
 
 

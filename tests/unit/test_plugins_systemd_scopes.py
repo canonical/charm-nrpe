@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Test the files/plugins/check_systemd_scopes.py plugin."""
-# -*- coding: us-ascii -*-
 
 # Copyright (C) 2022 Canonical Ltd.
 # All rights reserved
@@ -11,8 +10,9 @@ from io import StringIO
 from subprocess import CalledProcessError
 from unittest import TestCase, mock
 
-from files.nagios_plugin3 import CriticalError, UnknownError, WarnError
-from files.plugins import check_systemd_scopes
+from nagios_plugin3 import CriticalError, UnknownError, WarnError
+
+from plugins import check_systemd_scopes
 
 
 SAMPLE_SCOPES_OUTPUT_X4 = """
