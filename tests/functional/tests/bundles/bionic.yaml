@@ -1,3 +1,4 @@
+local_overlay_enabled: true
 series: bionic
 applications:
   rabbitmq-server:
