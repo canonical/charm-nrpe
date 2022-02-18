@@ -510,7 +510,7 @@ class SubordinateCheckDefinitions(dict):
                         checks.append(lacp_check)
 
             # LP#1958928 ignore speed on VMs and LXDs
-            if hookenv.config("netlinks") and not is_container():
+            if hookenv.config("netlinks"):
                 ifaces = yaml.safe_load(hookenv.config("netlinks"))
                 cmd_exec = local_plugin_dir + "check_netlinks.py"
                 if hookenv.config("netlinks_skip_unfound_ifaces"):
