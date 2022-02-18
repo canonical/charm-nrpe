@@ -1,10 +1,12 @@
 """Unit tests for scripts in files/plugins."""
 import subprocess
 import unittest
+from datetime import datetime, timedelta
 from os.path import abspath, dirname, join
 
 DIR_REPO_ROOT = dirname(dirname(dirname(abspath(__file__))))
 DIR_PLUGINS = join(DIR_REPO_ROOT, "files", "plugins")
+UPTIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def get_cmd_output(cmd):
@@ -46,3 +48,29 @@ class TestCheckRebootScript(unittest.TestCase):
         # check future time, should also be ok
         out = get_cmd_output([self.check_reboot, "2100-01-01 00:00:00"])
         self.assertTrue(out.startswith("OK"))
+
+    def test_small_reboot_time_gap_is_allowed(self):
+        """Test no fake alert when uptime --since output is flapping a bit.
+
+        `uptime --since` output may be flapping because ntp could keep changing
+        system time. We allow 5s gap.
+        """
+        current_uptime_str = get_cmd_output(["uptime", "--since"])
+        current_uptime = datetime.strptime(current_uptime_str, UPTIME_FORMAT)
+
+        # we allow 5s gap, this should not trigger
+        known_reboot_time = current_uptime - timedelta(seconds=5)
+        known_reboot_time_str = known_reboot_time.strftime(UPTIME_FORMAT)
+        out = get_cmd_output([self.check_reboot, known_reboot_time_str])
+        self.assertTrue(out.startswith("OK"))
+
+    def test_bigger_reboot_time_gap_is_not_allowed(self):
+        """Test fake alert should be triggered when uptime gap is 6s."""
+        current_uptime_str = get_cmd_output(["uptime", "--since"])
+        current_uptime = datetime.strptime(current_uptime_str, UPTIME_FORMAT)
+
+        # we only allow 5s gap, 6s should trigger the alert
+        known_reboot_time = current_uptime - timedelta(seconds=6)
+        known_reboot_time_str = known_reboot_time.strftime(UPTIME_FORMAT)
+        out = get_cmd_output([self.check_reboot, known_reboot_time_str])
+        self.assertTrue(out.startswith("CRITICAL"))

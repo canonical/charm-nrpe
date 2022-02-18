@@ -219,7 +219,10 @@ IPs/networks.
 Actions
 =======
 
-The charm defines 2 actions, 'list-nrpe-checks' that gives a list of all the
-nrpe checks defined for this unit and what commands they use.  The other is
-run-nrpe-check, which allows you to run a specified nrpe check and get the
+The charm defines following actions:
+- `list-nrpe-checks`: gives a list of all the nrpe checks defined for this unit
+and what commands they use.
+- `run-nrpe-check`: allows you to run a specified nrpe check and get the
 output.  This is useful to confirm if an alert is actually resolved.
+- `ack-reboot`: allows you to acknowledge a reboot alert. If you need to acknowledage
+all units, e.g.: in a power outage, you can disable and re-enable the reboot check instead.

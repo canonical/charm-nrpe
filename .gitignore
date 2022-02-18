@@ -29,3 +29,4 @@ report/*
 
 # virtualenv
 .venv/
+.unit-state.db
