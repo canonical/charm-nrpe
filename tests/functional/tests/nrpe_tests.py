@@ -283,21 +283,26 @@ class TestNrpe(TestBase):
 
     def test_07_cronjob_checks(self):
         """Check that cron job is installed and check enabled."""
-        model.set_application_config(self.application_name, {
-            "cis_audit_enabled": "True",
-        })
+        model.set_application_config(
+            self.application_name,
+            {
+                "cis_audit_enabled": "True",
+            },
+        )
         model.block_until_all_units_idle()
         host_checks = self._get_unit_check_files("rabbitmq-server/0")
         expected_shared_checks = set(["check_cis_audit.cfg"])
-        self.assertTrue(expected_shared_checks.issubset(host_checks),
-                        self._get_set_comparison(expected_shared_checks,
-                                                 host_checks))
+        self.assertTrue(
+            expected_shared_checks.issubset(host_checks),
+            self._get_set_comparison(expected_shared_checks, host_checks),
+        )
 
-        cronjobs = self._get_cronjob_files('rabbitmq-server/0')
+        cronjobs = self._get_cronjob_files("rabbitmq-server/0")
         expected_cronjobs = set(["cis-audit"])
-        self.assertTrue(expected_cronjobs.issubset(cronjobs),
-                        self._get_set_comparison(expected_cronjobs,
-                                                 cronjobs))
+        self.assertTrue(
+            expected_cronjobs.issubset(cronjobs),
+            self._get_set_comparison(expected_cronjobs, cronjobs),
+        )
 
     def _get_unit_check_files(self, unit):
         cmdline = "ls /etc/nagios/nrpe.d/"
@@ -307,10 +312,12 @@ class TestNrpe(TestBase):
         return set(result["Stdout"].splitlines())
 
     def _get_set_comparison(self, expected_checks, actual_checks):
-        return pprint.pformat({
-            'Expected:': expected_checks,
-            'Actual:': actual_checks,
-        })
+        return pprint.pformat(
+            {
+                "Expected:": expected_checks,
+                "Actual:": actual_checks,
+            }
+        )
 
     def _get_cronjob_files(self, unit):
         cmdline = "ls /etc/cron.d/"

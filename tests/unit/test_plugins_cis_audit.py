@@ -137,18 +137,18 @@ class TestCheckCisAudit(TestCase):
 
     audit_result_folder = os.path.join(tempfile.gettempdir(), "test-audit-result")
     audit_results_glob = audit_result_folder + "/cis-*-results.xml"
-    testfile1 = os.path.join(audit_result_folder, 'cis-testfile1-results.xml')
-    testfile2 = os.path.join(audit_result_folder, 'cis-testfile2-results.xml')
+    testfile1 = os.path.join(audit_result_folder, "cis-testfile1-results.xml")
+    testfile2 = os.path.join(audit_result_folder, "cis-testfile2-results.xml")
 
     @classmethod
     def setUpClass(cls):
         """Create dummy audit folder and files."""
         if not os.path.exists(cls.audit_result_folder):
             os.mkdir(cls.audit_result_folder)
-            with open(cls.testfile1, mode='a'):
+            with open(cls.testfile1, mode="a"):
                 pass  # create empty file
             sleep(0.1)
-            with open(cls.testfile2, mode='w') as f:
+            with open(cls.testfile2, mode="w") as f:
                 f.write(DUMMY_AUDIT_RESULT)
 
     @classmethod
@@ -168,7 +168,7 @@ class TestCheckCisAudit(TestCase):
     def test_get_audit_result_filepath_found(self):
         """Test that the newest audit file is returned."""
         audit_result_filepath = check_cis_audit.get_audit_result_filepath()
-        expected = os.path.join(self.audit_result_folder, 'cis-testfile2-results.xml')
+        expected = os.path.join(self.audit_result_folder, "cis-testfile2-results.xml")
         self.assertEqual(audit_result_filepath, expected)
 
     def test_check_file_max_age(self):
@@ -183,8 +183,7 @@ class TestCheckCisAudit(TestCase):
 
         profile_id = "xccdf_com.ubuntu.bionic.cis_profile_Level_2_Workstation"
         self.assertEqual(
-            "level2_workstation",
-            check_cis_audit.parse_profile_idref(profile_id)
+            "level2_workstation", check_cis_audit.parse_profile_idref(profile_id)
         )
 
     def test_get_audit_score_and_profile(self):
@@ -210,7 +209,7 @@ class TestCheckCisAudit(TestCase):
                 crit=-1,
                 max_age=170,
                 warn=-1,
-            )
+            ),
         )
 
         # test setting arguments
@@ -224,50 +223,50 @@ class TestCheckCisAudit(TestCase):
                 crit=99,
                 max_age=1,
                 warn=90,
-            )
+            ),
         )
 
     @mock.patch("files.plugins.check_cis_audit.AUDIT_RESULT_GLOB", audit_results_glob)
     def test_check_cis_audit(self):
         """Test the check function with different parameters."""
         # all ok
-        check_cis_audit.check_cis_audit('', 1, 80, 85)
+        check_cis_audit.check_cis_audit("", 1, 80, 85)
 
         # too old
         with self.assertRaises(CriticalError) as error:
-            check_cis_audit.check_cis_audit('', 0, 80, 85)
+            check_cis_audit.check_cis_audit("", 0, 80, 85)
         self.assertRegex(
-                str(error.exception),
-                "CRITICAL: The audit result file age 0.00h is older than threshold.*",
-            )
+            str(error.exception),
+            "CRITICAL: The audit result file age 0.00h is older than threshold.*",
+        )
 
         # score below warning
         with self.assertRaises(WarnError) as error:
             check_cis_audit.check_cis_audit("", 1, 90, 80)
         self.assertRegex(
-                str(error.exception),
-                "WARNING: cis-audit score is 89.44 of 100; threshold -c 80 -w 90",
-            )
+            str(error.exception),
+            "WARNING: cis-audit score is 89.44 of 100; threshold -c 80 -w 90",
+        )
 
         # score below critical
         with self.assertRaises(CriticalError) as error:
             check_cis_audit.check_cis_audit("", 1, 95, 90)
         self.assertRegex(
-                str(error.exception),
-                "CRITICAL: cis-audit score is 89.44 of 100; threshold -c 90 -w 95",
-            )
+            str(error.exception),
+            "CRITICAL: cis-audit score is 89.44 of 100; threshold -c 90 -w 95",
+        )
 
         # profile does not match
         with self.assertRaises(CriticalError) as error:
             check_cis_audit.check_cis_audit("level2_workstation", 1, 85, 80)
         self.assertRegex(
-                str(error.exception),
-                "CRITICAL: requested audit profile 'level2_workstation' does not match",
-            )
+            str(error.exception),
+            "CRITICAL: requested audit profile 'level2_workstation' does not match",
+        )
 
     @mock.patch("files.plugins.check_cis_audit.AUDIT_RESULT_GLOB", audit_results_glob)
     def test_main(self):
         """Test the main function."""
-        namespace = argparse.Namespace(cis_profile='', max_age=1, crit=80, warn=70)
-        with mock.patch('argparse.ArgumentParser.parse_args', return_value=namespace):
+        namespace = argparse.Namespace(cis_profile="", max_age=1, crit=80, warn=70)
+        with mock.patch("argparse.ArgumentParser.parse_args", return_value=namespace):
             check_cis_audit.main()

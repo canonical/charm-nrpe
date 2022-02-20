@@ -443,7 +443,7 @@ class NRPECheckCtxt(dict):
 class SubordinateCheckDefinitions(dict):
     """Return dict of checks the charm configures."""
 
-    def __init__(self):
+    def __init__(self):  # noqa: C901
         """Set dict values."""
         self.procs = self.proc_count()
         load_thresholds = self._get_load_thresholds()
