@@ -20,7 +20,7 @@ import time
 import xml.etree.ElementTree as ElementTree
 
 
-from .nagios_plugin3 import (
+from nagios_plugin3 import (
     CriticalError,
     WarnError,
     try_check,
@@ -156,7 +156,6 @@ def parse_args(args):
         default=-1,
     )
     args = parser.parse_args(args)
-    print(args)
     return args
 
 
