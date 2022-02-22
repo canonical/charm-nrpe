@@ -91,11 +91,8 @@ def install_charm_files(service_name):
     charm_plugin_dir = os.path.join(charm_file_dir, "plugins")
     pkg_plugin_dir = "/usr/lib/nagios/plugins/"
     local_plugin_dir = "/usr/local/lib/nagios/plugins/"
+    nagios_plugin = "nagios_plugin3.py"
 
-    shutil.copy2(
-        os.path.join(charm_file_dir, "nagios_plugin.py"),
-        pkg_plugin_dir + "/nagios_plugin.py",
-    )
     shutil.copy2(
         os.path.join(charm_file_dir, "nagios_plugin3.py"),
         pkg_plugin_dir + "/nagios_plugin3.py",
@@ -104,9 +101,12 @@ def install_charm_files(service_name):
     shutil.copy2(os.path.join(charm_file_dir, "rsyncd.conf"), "/etc/rsyncd.conf")
     host.mkdir("/etc/rsync-juju.d", perms=0o755)
     host.rsync(charm_plugin_dir, "/usr/local/lib/nagios/", options=["--executability"])
-    for nagios_plugin in ("nagios_plugin.py", "nagios_plugin3.py"):
-        if not os.path.exists(local_plugin_dir + nagios_plugin):
-            os.symlink(pkg_plugin_dir + nagios_plugin, local_plugin_dir + nagios_plugin)
+
+    if not os.path.exists(local_plugin_dir + nagios_plugin):
+        os.symlink(
+            os.path.join(pkg_plugin_dir, nagios_plugin),
+            os.path.join(local_plugin_dir, nagios_plugin),
+        )
 
 
 def render_nrpe_check_config(checkctxt):
@@ -200,6 +200,24 @@ def has_consumer():
     return hookenv.config("nagios_master") not in ["None", "", None] or bool(
         hookenv.relation_ids("monitors")
     )
+
+
+def update_cis_audit_cronjob(service_name):
+    """Install/Remove the cis-audit cron job."""
+    crond_file = "/etc/cron.d/cis-audit"
+
+    if not hookenv.config("cis_audit_enabled"):
+        if os.path.exists(crond_file):
+            os.remove(crond_file)
+            hookenv.log("Cronjob removed at {}".format(crond_file), hookenv.DEBUG)
+        return
+
+    file = "/usr/local/lib/nagios/plugins/cron_cis_audit.py"
+    profile = hookenv.config("cis_audit_profile")
+    cronjob = "*/10 * * * * root ({} -p '{}') 2>&1 | logger -t {}\n"
+    with open(crond_file, "w") as crond_fd:
+        crond_fd.write(cronjob.format(file, profile, "cron_cis_audit"))
+        hookenv.log("Cronjob configured at {}".format(crond_file), hookenv.DEBUG)
 
 
 class TolerantPortManagerCallback(PortManagerCallback):

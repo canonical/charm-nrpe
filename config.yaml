@@ -31,7 +31,7 @@ options:
         Determines whether a server is identified by its unit name or
         host name.  If you're in a virtual environment, "unit" is
         probably best.  If you're using MaaS, you may prefer "host".
-        Use "auto" to have nrpe automatically distinguish between 
+        Use "auto" to have nrpe automatically distinguish between
         metal and non-metal hosts.
   dont_blame_nrpe:
     default: False
@@ -229,6 +229,30 @@ options:
       'ondemand', 'performance', 'powersave'. Unset value means the check will be disabled.
       There is a relation key called requested_cpu_governor='string', but the charm config value
       will take precedence over the relation data.
+  cis_audit_enabled:
+    default: False
+    type: boolean
+    description: |
+      Enabled cis-audit cron job which periodically runs cis-audit and enables check_cis_audit.py
+      which verifies that cis-audit was run recently with an acceptable score (see cis_audit_score)
+      and optionally a specific profile (cis_audit_profile).
+  cis_audit_score:
+    default: "-w 85 -c 80"
+    type: string
+    description: |
+      CIS audit score threshold for alerts. Per default it only checks if hardening was run and if
+      usg-cisbenchmark is installed and reports the score. To enable alerts base on the score this
+      config option can be set.
+      example: -w 85 -c 80
+  cis_audit_profile:
+    default: ""
+    type: string
+    description: |
+      Verify that a specific cis audit profile was used for the audit. If not specified the
+      profile will be extracted from '/var/log/cloud-init-output.log', fallback is 'level1_server'.
+      Options are: '' (disable profile check), 'level1_server', 'level2_server',
+                   'level1_workstation' or 'level2_workstation'
+      See also https://ubuntu.com/security/certifications/docs/cis-audit
   reboot:
     default: True
     type: boolean

@@ -37,6 +37,7 @@ manager = ServiceManager(
                 nrpe_utils.update_monitor_relation,
                 nrpe_utils.create_host_export_fragment,
                 nrpe_utils.render_nrped_files,
+                nrpe_utils.update_cis_audit_cronjob,
                 helpers.render_template(
                     source="nrpe.tmpl", target="/etc/nagios/nrpe.cfg"
                 ),

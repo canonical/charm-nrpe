@@ -443,7 +443,7 @@ class NRPECheckCtxt(dict):
 class SubordinateCheckDefinitions(dict):
     """Return dict of checks the charm configures."""
 
-    def __init__(self):
+    def __init__(self):  # noqa: C901
         """Set dict values."""
         self.procs = self.proc_count()
         load_thresholds = self._get_load_thresholds()
@@ -482,6 +482,19 @@ class SubordinateCheckDefinitions(dict):
                 "cmd_params": hookenv.config("systemd_scopes"),
             },
         ]
+
+        if hookenv.config("cis_audit_enabled"):
+            cmd_params = "-p '{}' {}".format(
+                hookenv.config("cis_audit_profile"),
+                hookenv.config("cis_audit_score"),
+            )
+            cis_audit_check = {
+                "description": "Check CIS audit",
+                "cmd_name": "check_cis_audit",
+                "cmd_exec": local_plugin_dir + "check_cis_audit.py",
+                "cmd_params": cmd_params,
+            }
+            checks.append(cis_audit_check)
 
         if not is_container():
             checks.extend(

@@ -2,3 +2,5 @@ coverage
 six
 PyYAML
 netifaces
+pytest
+pytest-cov
