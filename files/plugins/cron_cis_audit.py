@@ -23,6 +23,7 @@ PROFILES = [
     "level2_workstation",
 ]
 MAX_SLEEP = 600
+PID_FILENAME = "/tmp/cron_cis_audit.pid"
 
 
 def _get_cis_hardening_profile(profile):
@@ -114,11 +115,23 @@ def main():
             )
         )
 
-    # audit result file does not exist or is outdated
-    audit_file_age_hours = _get_cis_result_age()
-    if audit_file_age_hours is False or audit_file_age_hours > args.max_age:
-        profile = _get_cis_hardening_profile(args.cis_profile)
-        run_audit(profile)
+    # Ensure a single instance via a simple pidfile
+    pid = str(os.getpid())
+
+    if os.path.isfile(PID_FILENAME):
+        sys.exit("{} already exists, exiting".format(PID_FILENAME))
+
+    with open(PID_FILENAME, "w") as f:
+        f.write(pid)
+
+    try:
+        # audit result file does not exist or is outdated
+        audit_file_age_hours = _get_cis_result_age()
+        if audit_file_age_hours is False or audit_file_age_hours > args.max_age:
+            profile = _get_cis_hardening_profile(args.cis_profile)
+            run_audit(profile)
+    finally:
+        os.unlink(PID_FILENAME)
 
 
 if __name__ == "__main__":
