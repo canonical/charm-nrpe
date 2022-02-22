@@ -484,8 +484,7 @@ class SubordinateCheckDefinitions(dict):
         ]
 
         if hookenv.config("cis_audit_enabled"):
-            cmd_params = "-a {} -p '{}' {}".format(
-                hookenv.config("cis_audit_interval"),
+            cmd_params = "-p '{}' {}".format(
                 hookenv.config("cis_audit_profile"),
                 hookenv.config("cis_audit_score"),
             )

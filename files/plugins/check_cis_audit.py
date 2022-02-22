@@ -145,14 +145,14 @@ def parse_args(args):
         "--warn",
         "-w",
         type=int,
-        help="a score below this number results in status WARNING (default: 85)",
+        help="a score below this number results in status WARNING (default: -1)",
         default=-1,
     )
     parser.add_argument(
         "--crit",
         "-c",
         type=int,
-        help="a score below this number results in status CRITICAL (default: 80)",
+        help="a score below this number results in status CRITICAL (default: -1)",
         default=-1,
     )
     args = parser.parse_args(args)

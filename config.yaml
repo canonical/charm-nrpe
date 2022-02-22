@@ -233,19 +233,11 @@ options:
     default: False
     type: boolean
     description: |
-      Enabled cis-audit cron job which periodically (cis_audit_interval) runs cis-audit and
-      enables check_cis_audit.py which verifies that cis-audit was run recently with an acceptable
-      score (see cis_audit_score) and optionally a specific profile (cis_audit_profile).
-  cis_audit_interval:
-    default: 168
-    type: int
-    description: |
-      How often the cis-audit cron job should trigger an audit (in hours).
-      The cis-audit cron job will monitor the age of the cis-audit result file and trigger an
-      audit if the result is older than cis_audit_interval or if the results file does not exist
-      (e.g. after installation).
+      Enabled cis-audit cron job which periodically runs cis-audit and enables check_cis_audit.py
+      which verifies that cis-audit was run recently with an acceptable score (see cis_audit_score)
+      and optionally a specific profile (cis_audit_profile).
   cis_audit_score:
-    default: ""
+    default: "-w 85 -c 80"
     type: string
     description: |
       CIS audit score threshold for alerts. Per default it only checks if hardening was run and if
