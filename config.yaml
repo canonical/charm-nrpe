@@ -85,6 +85,27 @@ options:
         "-w 8,4,2 -c 16,8,4".
         .
         Set to '' in order to disable this check.
+  systemd_scopes:
+    default: "-e 25 -E 50 -a 25 -A 25"
+    type: string
+    description: |
+        Set thresholds for abandoned and error state scopes in systemd.
+        
+        Threshold for scopes in error state:
+        -e WARN_THRESH, --warn-error WARN_THRESH
+          At the specified threshold number of error state scopes,
+            raise a nagios WARN state (default: 25)
+        -E CRIT_THRESH, --crit-error CRIT_THRESH
+          At the specified threshold number of error state scopes,
+            raise a nagios CRIT state (default: 50)
+
+        Thresholds for scopes in abandoned state:
+        -a WARN_THRESH, --warn-abandoned WARN_THRESH
+          At the specified threshold number of abandoned state scopes,
+            raise a nagios WARN state (default: 25)
+        -A CRIT_THRESH, --crit-abandoned CRIT_THRESH
+          At the specified threshold number of abandoned state scopes,
+            raise a nagios CRIT state (default: 50)
   conntrack:
     default: "-w 80 -c 90"
     type: string
