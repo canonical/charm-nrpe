@@ -1,6 +1,4 @@
 #!/usr/bin/python3
-# Copyright (C) 2022 Canonical
-# All rights reserved
 """Run cis-audit if latest results are outdated."""
 
 import argparse

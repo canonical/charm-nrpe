@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (C) 2022 Canonical
-# All rights reserved
 """
 Check CIS audit score and verify the age of the last report.
 
