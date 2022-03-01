@@ -42,11 +42,10 @@ build: submodules-update
 	@echo "Building charm to base directory ${CHARM_BUILD_DIR}/${CHARM_NAME}"
 	@-git rev-parse --abbrev-ref HEAD > ./repo-info
 	@-git describe --always > ./version
-	@mkdir -p ${CHARM_BUILD_DIR}/${CHARM_NAME}
-	@cp -a ./* ${CHARM_BUILD_DIR}/${CHARM_NAME}
+	@tox -e build
 
 release: clean build
-	@echo "Charm is built at ${CHARM_BUILD_DIR}/${CHARM_NAME}"
+	@charmcraft upload nrpe.charm --release edge
 
 lint:
 	@echo "Running lint checks"

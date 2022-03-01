@@ -1,0 +1,5 @@
+- project:
+    vars:
+      needs_charm_build: true
+      charm_build_name: nrpe
+      build_type: charmcraft
