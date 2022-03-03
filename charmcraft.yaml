@@ -16,8 +16,6 @@ parts:
       - LICENSE
       - metadata.yaml
       - README.md
-      - repo-info
-      - version
 bases:
     - build-on:
         - name: ubuntu
