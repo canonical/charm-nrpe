@@ -2,7 +2,7 @@ PYTHON := /usr/bin/python3
 
 PROJECTPATH=$(dir $(realpath $(MAKEFILE_LIST)))
 ifndef CHARM_BUILD_DIR
-	CHARM_BUILD_DIR=${PROJECTPATH}.build
+	CHARM_BUILD_DIR=${PROJECTPATH}
 endif
 METADATA_FILE="metadata.yaml"
 CHARM_NAME=$(shell cat ${PROJECTPATH}/${METADATA_FILE} | grep -E '^name:' | awk '{print $$2}')
@@ -39,14 +39,13 @@ submodules-update:
 	@git submodule update --init --recursive --remote --merge
 
 build: submodules-update
-	@echo "Building charm to base directory ${CHARM_BUILD_DIR}/${CHARM_NAME}"
+	@echo "Building charm to base directory ${CHARM_BUILD_DIR}/${CHARM_NAME}.charm"
 	@-git rev-parse --abbrev-ref HEAD > ./repo-info
 	@-git describe --always > ./version
-	@mkdir -p ${CHARM_BUILD_DIR}/${CHARM_NAME}
-	@cp -a ./* ${CHARM_BUILD_DIR}/${CHARM_NAME}
+	@tox -e build
 
 release: clean build
-	@echo "Charm is built at ${CHARM_BUILD_DIR}/${CHARM_NAME}"
+	@charmcraft upload nrpe.charm --release edge
 
 lint:
 	@echo "Running lint checks"
