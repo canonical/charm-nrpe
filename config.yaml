@@ -3,7 +3,10 @@ options:
     default: "None"
     type: string
     description: |
-        IP address of the nagios master from which to allow rsync access
+        IP address of the nagios master from which to allow NRPE access, and/or
+        rsync if export_nagios_definitions is set to True.  This setting allows
+        the Nagios servers listed to connect to NRPE in addition to any added
+        by relation data.
   server_port:
     default: 5666
     type: int
