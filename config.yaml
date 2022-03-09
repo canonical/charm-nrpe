@@ -51,6 +51,7 @@ options:
     default: "-u GB -w 25% -c 20% -K 5%"
     type: string
     description: |
+        [DEPRECATED] Please use space_check config option.
         Root disk check. This can be made to also check non-root disk systems
         as follows:
             -u GB -w 20% -c 15% -r '/srv/juju/vol-' -C -u GB -w 25% -c 20%
@@ -59,6 +60,30 @@ options:
         help for further details.
         .
         Set to '' in order to disable this check.
+  space_check:
+    default: "check: auto\nauto_params: -w 25% -c 20% -K 5%"
+    type: string
+    description: |
+        Disk space check. See the nagios check_disk plugin help for further details.
+        .
+        Set to "check: auto" to leave the charm discover and set default threshold for
+        all detected mountpoints/block devices. Defaults threshold are set as a config
+        entry in the yaml, for example auto_params: "-w 25% -c 20% -K 5%".
+        .
+        Set to 'check: disabled' in order to disable this check.
+        .
+        Config gets yaml as input, check can be either 'auto' or 'disabled'.
+        Override values can be specified as a list in the overrides section of
+        the yaml config. Example yaml formatted config:
+        check: auto
+        auto_params: -u GB -w 25% -c 20% -K 5%
+        overrides:
+        - mountpoint: /
+          params: -u GB -w 20% -c 5% -K 5%
+        - mountpoint: /var/tmp
+          params: -u GB -w 15% -c 7% -K 3%
+        - mountpoint: /var/log
+          params: -u GB -w 10% -c 5% -K 2%
   zombies:
     default: ""
     type: string

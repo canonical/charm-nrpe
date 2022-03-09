@@ -1,6 +1,7 @@
 """Nrpe helpers module."""
 import glob
 import ipaddress
+import json
 import os
 import socket
 import subprocess
@@ -448,7 +449,6 @@ class SubordinateCheckDefinitions(dict):
         self.procs = self.proc_count()
         load_thresholds = self._get_load_thresholds()
         proc_thresholds = self._get_proc_thresholds()
-        disk_root_thresholds = self._get_disk_root_thresholds()
 
         checks = [
             {
@@ -500,12 +500,6 @@ class SubordinateCheckDefinitions(dict):
             checks.extend(
                 [
                     {
-                        "description": "Root disk",
-                        "cmd_name": "check_disk_root",
-                        "cmd_exec": pkg_plugin_dir + "check_disk",
-                        "cmd_params": disk_root_thresholds,
-                    },
-                    {
                         "description": "System Load",
                         "cmd_name": "check_load",
                         "cmd_exec": pkg_plugin_dir + "check_load",
@@ -548,6 +542,36 @@ class SubordinateCheckDefinitions(dict):
                     },
                 ]
             )
+
+            # setup the partitions / block devices for disk space_check
+            space_check = yaml.safe_load(hookenv.config("space_check"))
+
+            # create the override map with mountpoint: params
+            override_map = {}
+            if "overrides" in space_check:
+                for mp in space_check["overrides"]:
+                    override_map[mp["mountpoint"]] = mp["params"]
+
+            if space_check["check"] == "auto":
+                for mountpoint in self.get_partitions_to_check():
+                    params = "-u GB -w 25% -c 20% -K 5%"
+                    if "auto_params" in space_check:
+                        params = space_check["auto_params"]
+                    if mountpoint in override_map:
+                        params = override_map[mountpoint]
+                    cmd_params = "{} -p {}".format(params, mountpoint)
+                    # the root partition is only a slash, so add a meaningful name
+                    check_path = mountpoint.replace("/", "_")
+                    if check_path == "_":
+                        check_path = "_root"
+                    checks.append(
+                        {
+                            "description": "Check disk space on {}".format(mountpoint),
+                            "cmd_name": "check_space{}".format(check_path),
+                            "cmd_exec": pkg_plugin_dir + "check_disk",
+                            "cmd_params": cmd_params,
+                        }
+                    )
 
             ro_filesystem_excludes = hookenv.config("ro_filesystem_excludes")
             if ro_filesystem_excludes == "":
@@ -686,14 +710,6 @@ class SubordinateCheckDefinitions(dict):
             load_thresholds = hookenv.config("load")
         return load_thresholds
 
-    def _get_disk_root_thresholds(self):
-        """Return suitable disk thresholds."""
-        if hookenv.config("disk_root"):
-            disk_root_thresholds = hookenv.config("disk_root") + " -p / "
-        else:
-            disk_root_thresholds = ""
-        return disk_root_thresholds
-
     def proc_count(self):
         """Return number number of processing units."""
         return int(subprocess.check_output(["nproc", "--all"]))
@@ -757,6 +773,38 @@ class SubordinateCheckDefinitions(dict):
             for iface_dev in iface_devs:
                 d_ifaces[iface_dev] = "-i {}{}".format(iface_dev, extra_params)
         return d_ifaces
+
+    def is_valid_partition(self, device):
+        """Check if a partition is valid for disk space check."""
+        ignored_devices = {"loop", "tmpfs", "devtmpfs", "squashfs"}
+        if device.get("type") in ignored_devices:
+            return False
+        return True
+
+    def get_partitions_to_check(self):
+        """Get a list of partitions to be checked by check_disk."""
+        lsblk_cmd = "lsblk -J".split()
+        lsblk_output = subprocess.check_output(lsblk_cmd).decode("UTF-8")
+        block_devices = json.loads(lsblk_output).get("blockdevices", [])
+        partitions_to_check = set()
+
+        for dev in block_devices:
+            if not self.is_valid_partition(dev):
+                continue
+            if dev.get("mountpoint", ""):
+                partitions_to_check.add(dev.get("mountpoint"))
+            for child in dev.get("children", []):
+                if not self.is_valid_partition(child):
+                    continue
+                if child.get("mountpoint", ""):
+                    partitions_to_check.add(child.get("mountpoint"))
+
+        skipped_partitions = {"[SWAP]", "/boot/efi"}
+        for skipped in skipped_partitions:
+            if skipped in partitions_to_check:
+                partitions_to_check.remove(skipped)
+
+        return partitions_to_check
 
 
 def match_cidr_to_ifaces(cidr):
