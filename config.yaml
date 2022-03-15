@@ -48,7 +48,7 @@ options:
     description: |
         Setting debug to True enables debug=1 in nrpe.cfg
   disk_root:
-    default: "-u GB -w 25% -c 20% -K 5%"
+    default: ""
     type: string
     description: |
         [DEPRECATED] Please use space_check config option.

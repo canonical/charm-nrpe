@@ -449,6 +449,7 @@ class SubordinateCheckDefinitions(dict):
         self.procs = self.proc_count()
         load_thresholds = self._get_load_thresholds()
         proc_thresholds = self._get_proc_thresholds()
+        disk_root_thresholds = self._get_disk_root_thresholds()
 
         checks = [
             {
@@ -499,6 +500,12 @@ class SubordinateCheckDefinitions(dict):
         if not is_container():
             checks.extend(
                 [
+                    {
+                        "description": "Root disk",
+                        "cmd_name": "check_disk_root",
+                        "cmd_exec": pkg_plugin_dir + "check_disk",
+                        "cmd_params": disk_root_thresholds,
+                    },
                     {
                         "description": "System Load",
                         "cmd_name": "check_load",
@@ -709,6 +716,18 @@ class SubordinateCheckDefinitions(dict):
         else:
             load_thresholds = hookenv.config("load")
         return load_thresholds
+
+    def _get_disk_root_thresholds(self):
+        """Return suitable disk thresholds."""
+        if hookenv.config("disk_root"):
+            disk_root_thresholds = hookenv.config("disk_root") + " -p / "
+            hookenv.log(
+                "disk_root config option is now deprecated in favour of space_check ",
+                level=hookenv.ERROR,
+            )
+        else:
+            disk_root_thresholds = ""
+        return disk_root_thresholds
 
     def proc_count(self):
         """Return number number of processing units."""
