@@ -819,11 +819,8 @@ class SubordinateCheckDefinitions(dict):
                     partitions_to_check.add(child.get("mountpoint"))
 
         skipped_partitions = {"[SWAP]", "/boot/efi"}
-        for skipped in skipped_partitions:
-            if skipped in partitions_to_check:
-                partitions_to_check.remove(skipped)
 
-        return partitions_to_check
+        return partitions_to_check - skipped_partitions
 
 
 def match_cidr_to_ifaces(cidr):
