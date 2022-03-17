@@ -559,7 +559,7 @@ class SubordinateCheckDefinitions(dict):
                 override_map[mp["mountpoint"]] = mp["params"]
 
             if space_check["check"] == "auto":
-                for mountpoint in self.get_partitions_to_check():
+                for mountpoint in get_partitions_to_check():
                     params = "-u GB -w 25% -c 20% -K 5%"
                     if "auto_params" in space_check:
                         params = space_check["auto_params"]
@@ -792,34 +792,36 @@ class SubordinateCheckDefinitions(dict):
                 d_ifaces[iface_dev] = "-i {}{}".format(iface_dev, extra_params)
         return d_ifaces
 
-    def is_valid_partition(self, device):
-        """Check if a partition is valid for disk space check."""
-        ignored_devices = {"loop", "tmpfs", "devtmpfs", "squashfs"}
-        if device.get("type") in ignored_devices:
-            return False
-        return True
 
-    def get_partitions_to_check(self):
-        """Get a list of partitions to be checked by check_disk."""
-        lsblk_cmd = "lsblk -J".split()
-        lsblk_output = subprocess.check_output(lsblk_cmd).decode("UTF-8")
-        block_devices = json.loads(lsblk_output).get("blockdevices", [])
-        partitions_to_check = set()
+def is_valid_partition(device):
+    """Check if a partition is valid for disk space check."""
+    ignored_devices = {"loop", "tmpfs", "devtmpfs", "squashfs"}
+    if device.get("type") in ignored_devices:
+        return False
+    return True
 
-        for dev in block_devices:
-            if not self.is_valid_partition(dev):
+
+def get_partitions_to_check():
+    """Get a list of partitions to be checked by check_disk."""
+    lsblk_cmd = "lsblk -J".split()
+    lsblk_output = subprocess.check_output(lsblk_cmd).decode("UTF-8")
+    block_devices = json.loads(lsblk_output).get("blockdevices", [])
+    partitions_to_check = set()
+
+    for dev in block_devices:
+        if not is_valid_partition(dev):
+            continue
+        if dev.get("mountpoint", ""):
+            partitions_to_check.add(dev.get("mountpoint"))
+        for child in dev.get("children", []):
+            if not is_valid_partition(child):
                 continue
-            if dev.get("mountpoint", ""):
-                partitions_to_check.add(dev.get("mountpoint"))
-            for child in dev.get("children", []):
-                if not self.is_valid_partition(child):
-                    continue
-                if child.get("mountpoint", ""):
-                    partitions_to_check.add(child.get("mountpoint"))
+            if child.get("mountpoint", ""):
+                partitions_to_check.add(child.get("mountpoint"))
 
-        skipped_partitions = {"[SWAP]", "/boot/efi"}
+    skipped_partitions = {"[SWAP]", "/boot/efi"}
 
-        return partitions_to_check - skipped_partitions
+    return partitions_to_check - skipped_partitions
 
 
 def match_cidr_to_ifaces(cidr):
