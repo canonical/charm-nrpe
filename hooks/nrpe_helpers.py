@@ -555,9 +555,8 @@ class SubordinateCheckDefinitions(dict):
 
             # create the override map with mountpoint: params
             override_map = {}
-            if "overrides" in space_check:
-                for mp in space_check["overrides"]:
-                    override_map[mp["mountpoint"]] = mp["params"]
+            for mp in space_check.get("overrides", []):
+                override_map[mp["mountpoint"]] = mp["params"]
 
             if space_check["check"] == "auto":
                 for mountpoint in self.get_partitions_to_check():
