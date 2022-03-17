@@ -34,7 +34,7 @@ class TestNrpe(TestBase):
         nrpe_checks = {
             "check_conntrack.cfg": "command[check_conntrack]="
             "/usr/local/lib/nagios/plugins/check_conntrack.sh",
-            "check_disk_root.cfg": "command[check_disk_root]="
+            "check_space_root.cfg": "command[check_space_root]="
             "/usr/lib/nagios/plugins/check_disk",
             "check_load.cfg": "command[check_load]=/usr/lib/nagios/plugins/check_load",
             "check_mem.cfg": "command[check_mem]="
@@ -253,7 +253,7 @@ class TestNrpe(TestBase):
         expected_host_only_checks = set(
             [
                 "check_arp_cache.cfg",
-                "check_disk_root.cfg",
+                "check_space_root.cfg",
                 "check_lacp_lo.cfg",
                 "check_load.cfg",
                 "check_mem.cfg",

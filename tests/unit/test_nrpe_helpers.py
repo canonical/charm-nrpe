@@ -150,3 +150,107 @@ class TestCheckReboot(unittest.TestCase):
         """Test get_check_reboot_context will render None correctly."""
         context = nrpe_helpers.get_check_reboot_context(known_reboot_time=None)
         self.assertFalse(context["cmd_params"])
+
+
+class TestDiskSpaceCheck(unittest.TestCase):
+    """Test space_check related code."""
+
+    def test_valid_partition(self):
+        """Test a valid partition."""
+        device_root = {
+            "name": "nvme0n1p4",
+            "maj:min": "259:4",
+            "rm": False,
+            "size": "100G",
+            "ro": False,
+            "type": "part",
+            "mountpoint": "/",
+        }
+        result = nrpe_helpers.is_valid_partition(device_root)
+        self.assertEqual(result, True)
+
+    def test_invalid_partition(self):
+        """Test an invalid partitions."""
+        invalid_partitions = {"loop", "tmpfs", "devtmpfs", "squashfs"}
+        for partition in invalid_partitions:
+            device = {
+                "name": "loop0",
+                "maj:min": "7:0",
+                "rm": False,
+                "size": "15M",
+                "ro": True,
+                "type": partition,
+                "mountpoint": "/snap/something",
+            }
+            result = nrpe_helpers.is_valid_partition(device)
+            self.assertEqual(result, False)
+
+    lsblk_output = b"""{
+        "blockdevices": [
+            {
+                "name": "loop2",
+                "maj:min": "7:2",
+                "rm": false,
+                "size": "113,7M",
+                "ro": true,
+                "type": "loop",
+                "mountpoint": "/snap/charm/602"
+            },
+            {
+                "name": "nvme0n1",
+                "maj:min": "259:0",
+                "rm": false,
+                "size": "477G",
+                "ro": false,
+                "type": "disk",
+                "mountpoint": null,
+                "children": [
+                    {
+                        "name": "nvme0n1p1",
+                        "maj:min": "259:1",
+                        "rm": false,
+                        "size": "260M",
+                        "ro": false,
+                        "type": "part",
+                        "mountpoint": "/boot/efi"
+                    },
+                    {
+                        "name": "nvme0n1p4",
+                        "maj:min": "259:4",
+                        "rm": false,
+                        "size": "100G",
+                        "ro": false,
+                        "type": "part",
+                        "mountpoint": "/"
+                    },
+                    {
+                        "name": "nvme0n1p5",
+                        "maj:min": "259:5",
+                        "rm": false,
+                        "size": "4G",
+                        "ro": false,
+                        "type": "part",
+                        "mountpoint": "[SWAP]"
+                    },
+                    {
+                        "name": "nvme0n1p6",
+                        "maj:min": "259:6",
+                        "rm": false,
+                        "size": "1000M",
+                        "ro": false,
+                        "type": "part",
+                        "mountpoint": "/srv/instances"
+                    }
+                ]
+            }
+        ]
+    }"""
+
+    @mock.patch("subprocess.check_output", return_value=lsblk_output)
+    def test_get_partitions_to_check(self, lock_lsblk_output):
+        """Test the list of partitions to check."""
+        result = nrpe_helpers.get_partitions_to_check()
+        self.assertEqual("SWAP" in result, False)
+        self.assertEqual("/boot/efi" in result, False)
+        self.assertEqual("/" in result, True)
+        self.assertEqual("/srv/instances" in result, True)
