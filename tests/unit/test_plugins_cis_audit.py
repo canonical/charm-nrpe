@@ -94,7 +94,7 @@ class TestCronCisAudit(TestCase):
         """Test the default parsing behavior of the argument parser."""
         # test empty parameters
         args = cron_cis_audit.parse_args([])
-        self.assertEqual(args, argparse.Namespace(cis_profile="", max_age=170))
+        self.assertEqual(args, argparse.Namespace(cis_profile="", max_age=168))
 
         # test setting parameters
         args = cron_cis_audit.parse_args(["-a 1", "-p=level2_workstation"])

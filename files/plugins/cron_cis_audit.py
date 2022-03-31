@@ -88,8 +88,8 @@ def parse_args(args):
         "--max-age",
         "-a",
         type=int,
-        help="maximum age (h) of audit result file before alerting (default 170)",
-        default=170,
+        help="maximum age (h) of result file before running the audit (default 168)",
+        default=168,
     )
     profile_options = PROFILES + [""]
     parser.add_argument(
