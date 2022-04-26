@@ -94,6 +94,7 @@ def install_charm_files(service_name):
         os.path.join(charm_file_dir, "nagios_plugin3.py"),
         pkg_plugin_dir + "/nagios_plugin3.py",
     )
+    os.chmod(pkg_plugin_dir + "/nagios_plugin3.py", 0o644)
 
     if hookenv.config("export_nagios_definitions"):
         shutil.copy2(
