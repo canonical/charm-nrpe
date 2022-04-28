@@ -104,10 +104,10 @@ def install_charm_files(service_name):
         host.mkdir("/etc/rsync-juju.d", perms=0o755)
 
     for filename in os.listdir(charm_plugin_dir):
-        source = charm_plugin_dir + filename
-        dest = "/usr/local/lib/nagios/" + filename
-        if os.path.isfile(source):
-            shutil.copy2(source, dest)
+        source_file = os.path.join(charm_plugin_dir, filename)
+        dest = local_plugin_dir + filename
+        if os.path.isfile(source_file):
+            shutil.copy2(source_file, dest)
 
     if not os.path.exists(local_plugin_dir + nagios_plugin):
         os.symlink(
