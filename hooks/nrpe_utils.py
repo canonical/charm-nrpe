@@ -105,7 +105,7 @@ def install_charm_files(service_name):
 
     for filename in os.listdir(charm_plugin_dir):
         source_file = os.path.join(charm_plugin_dir, filename)
-        dest = local_plugin_dir + filename
+        dest = os.path.join(local_plugin_dir, filename)
         if os.path.isfile(source_file):
             shutil.copy2(source_file, dest)
 
