@@ -304,6 +304,38 @@ class TestNrpe(TestBase):
             self._get_set_comparison(expected_cronjobs, cronjobs),
         )
 
+    def test_08_plugins_copied(self):
+        """Check that NRPE plugins are copied."""
+        plugin_dir = "/usr/local/lib/nagios/plugins"
+        plugin_files = [
+            "check_arp_cache.py",
+            "check_cis_audit.py",
+            "check_exit_status.pl",
+            "check_netlinks.py",
+            "check_status_file.py",
+            "check_upstart_job",
+            "check_netns.sh",
+            "check_swap_activity",
+            "check_xfs_errors.py",
+            "check_conntrack.sh",
+            "check_lacp_bond.py",
+            "check_reboot.py",
+            "check_systemd.py",
+            "cron_cis_audit.py",
+            "check_cpu_governor.py",
+            "check_mem.pl",
+            "check_ro_filesystem.py",
+            "check_systemd_scopes.py",
+            "nagios_plugin3.py",
+        ]
+        for filename in plugin_files:
+            logging.info("Checking that {} was copied into place.".format(filename))
+            cmd = "ls {}/{}".format(plugin_dir, filename)
+            # run this on the lead unit only
+            result = model.run_on_unit(self.lead_unit_name, cmd)
+            code = result.get("Code")
+            self.assertEqual(code, "0")
+
     def _get_unit_check_files(self, unit):
         cmdline = "ls /etc/nagios/nrpe.d/"
         result = model.run_on_unit(unit, cmdline)
