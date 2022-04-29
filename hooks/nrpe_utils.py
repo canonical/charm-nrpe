@@ -108,12 +108,15 @@ def install_charm_files(service_name):
         dest = os.path.join(local_plugin_dir, filename)
         if os.path.isfile(source_file):
             shutil.copy2(source_file, dest)
+            os.chmod(dest, 0o755)
 
     if not os.path.exists(local_plugin_dir + nagios_plugin):
         os.symlink(
             os.path.join(pkg_plugin_dir, nagios_plugin),
             os.path.join(local_plugin_dir, nagios_plugin),
         )
+    else:
+        os.chmod(local_plugin_dir + "/nagios_plugin3.py", 0o644)
 
 
 def render_nrpe_check_config(checkctxt):
