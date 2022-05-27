@@ -140,6 +140,7 @@ sub get_memory_info {
     my $hugepages_nr    = 0;
     my $hugepages_size  = 0;
     my $hugepages_kb    = 0;
+    my $available_memory_kb = 0;
 
     my $uname;
     if ( -e '/usr/bin/uname') {
@@ -166,7 +167,7 @@ sub get_memory_info {
                 }
             }
             elsif (/^MemAvailable:\s+(\d+) kB/) {
-                $caches_kb += $1;
+                $available_memory_kb = $1;
             }
             elsif (/^(Buffers|Cached|SReclaimable):\s+(\d+) kB/) {
                 $caches_kb += $2;
@@ -185,7 +186,7 @@ sub get_memory_info {
             }
         }
         $hugepages_kb = $hugepages_nr * $hugepages_size;
-        $used_memory_kb = $total_memory_kb - $free_memory_kb;
+        $used_memory_kb = $total_memory_kb - $available_memory_kb;
 
         # Read hugepages info from the newer sysfs interface if available
         my $hugepages_sysfs_dir = '/sys/kernel/mm/hugepages';
