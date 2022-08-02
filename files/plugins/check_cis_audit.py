@@ -124,7 +124,7 @@ def parse_args(args):
         "-a",
         type=int,
         help="maximum age (h) of audit result file before alerting (default 170)",
-        default=170,
+        default=172,
     )
     parser.add_argument(
         "--cis-profile",
