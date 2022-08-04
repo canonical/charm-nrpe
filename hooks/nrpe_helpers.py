@@ -637,16 +637,33 @@ class SubordinateCheckDefinitions(dict):
                     checks.append(netlink_check)
 
         # Checking if CPU governor is supported by the system and add nrpe check
-        cpu_governor_paths = "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
-        cpu_governor_supported = glob.glob(cpu_governor_paths)
-        requested_cpu_governor = hookenv.relation_get("requested_cpu_governor")
-        cpu_governor_config = hookenv.config("cpu_governor")
-        wanted_cpu_governor = cpu_governor_config or requested_cpu_governor
-        if wanted_cpu_governor and cpu_governor_supported:
+        cpu_governor_supported = glob.glob(
+            "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
+        )
+        cpu_governor_setting = hookenv.config("cpu_governor")
+        if not cpu_governor_setting:
+            principal_unit = hookenv.principal_unit()
+            principal_charm_name = hookenv._metadata_unit(principal_unit).get("name")
+            if principal_charm_name in [
+                "nova-compute",
+                "kubernetes-worker",
+                "rabbitmq-server",
+                "percona-cluster",
+            ]:
+                hookenv.log(
+                    "Setting default cpu freq scaling governor to 'performance' \
+                     for unit:[{}] with charm name:[{}]".format(
+                        principal_unit, principal_charm_name
+                    ),
+                    level=hookenv.DEBUG,
+                )
+                cpu_governor_setting = "performance"
+
+        if cpu_governor_setting and cpu_governor_supported:
             description = "Check CPU governor scaler"
             cmd_name = "check_cpu_governor"
             cmd_exec = local_plugin_dir + "check_cpu_governor.py"
-            cmd_params = "--governor {}".format(wanted_cpu_governor)
+            cmd_params = "--governor {}".format(cpu_governor_setting)
             cpu_governor_check = {
                 "description": description,
                 "cmd_name": cmd_name,
