@@ -818,6 +818,11 @@ def get_partitions_to_check():
                 continue
             if child.get("mountpoint", ""):
                 partitions_to_check.add(child.get("mountpoint"))
+            # Jammy returns a list of "mountpoints" instead of a single value
+            # in the key "mountpoint"
+            for mountpoint in child.get("mountpoints", []):
+                if mountpoint:
+                    partitions_to_check.add(mountpoint)
 
     skipped_partitions = {"[SWAP]", "/boot/efi"}
 

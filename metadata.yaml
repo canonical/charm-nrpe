@@ -27,6 +27,7 @@ requires:
     interface: local-monitors
     scope: container
 series:
-  - bionic
+  - jammy
   - focal
+  - bionic
   - xenial

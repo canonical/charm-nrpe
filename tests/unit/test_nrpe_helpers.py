@@ -242,7 +242,41 @@ class TestDiskSpaceCheck(unittest.TestCase):
                         "mountpoint": "/srv/instances"
                     }
                 ]
-            }
+            },
+            {
+             "name": "vda",
+             "maj:min": "252:0",
+             "rm": false,
+             "size": "20G",
+             "ro": false,
+             "type": "disk",
+             "mountpoints": [
+                 null
+             ],
+             "children": [
+                {
+                   "name": "vda1",
+                   "maj:min": "252:1",
+                   "rm": false,
+                   "size": "19.9G",
+                   "ro": false,
+                   "type": "part",
+                   "mountpoints": [
+                       "/srv/jammy"
+                   ]
+                },{
+                   "name": "vda14",
+                   "maj:min": "252:14",
+                   "rm": false,
+                   "size": "4M",
+                   "ro": false,
+                   "type": "part",
+                   "mountpoints": [
+                       null
+                   ]
+                }
+             ]
+          }
         ]
     }"""
 
@@ -254,3 +288,4 @@ class TestDiskSpaceCheck(unittest.TestCase):
         self.assertEqual("/boot/efi" in result, False)
         self.assertEqual("/" in result, True)
         self.assertEqual("/srv/instances" in result, True)
+        self.assertEqual("/srv/jammy" in result, True)
