@@ -1,4 +1,5 @@
 """Unit tests for hooks/nrpe_helpers.py module."""
+import os
 import unittest
 from unittest import mock
 
@@ -6,6 +7,8 @@ import netifaces
 
 import nrpe_helpers
 from nrpe_helpers import match_cidr_to_ifaces
+
+import yaml
 
 
 class TestMatchCidrToIfaces(unittest.TestCase):
@@ -289,3 +292,152 @@ class TestDiskSpaceCheck(unittest.TestCase):
         self.assertEqual("/" in result, True)
         self.assertEqual("/srv/instances" in result, True)
         self.assertEqual("/srv/jammy" in result, True)
+
+
+def load_default_config():
+    """Load the default config values from the charm config.yaml.
+
+    Returns a dict of {config:default}
+    """
+    with open(os.path.join(os.getcwd(), "config.yaml"), "r") as f:
+        config_raw = yaml.safe_load(f)
+    return {key: value["default"] for key, value in config_raw["options"].items()}
+
+
+class TestSubordinateCheckDefinitions(unittest.TestCase):
+    """Test SubordinateCheckDefinitions() related code."""
+
+    def glob_valid_cpufreq_path(self, arg):
+        """Return a valid list of cpufreq sysfs paths.
+
+        This function is meant to be used as a side_effect when
+        mocking glob.glob(), to provide a more controlled unit
+        testing environment.
+        """
+        ret = []
+        if arg == "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor":
+            ret = ["/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"]
+        return ret
+
+    @mock.patch("nrpe_helpers.glob.glob")
+    @mock.patch("nrpe_helpers.hookenv._metadata_unit")
+    @mock.patch("nrpe_helpers.hookenv.principal_unit")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_cpu_governor_default_enabled_for_principle_charms(
+        self, mock_config, mock_principal_unit, mock__metadata_unit, mock_glob
+    ):
+        """Test cpu_governor check is enabled by default for principle charms.
+
+        A cpu scaling governor value of 'performance' is expected
+        by default for the charms nova-compute, kubernetes-worker,
+        rabbitmq-server, percona-cluster even if the charm config
+        is unset
+        """
+        config = load_default_config()
+        mock_config.side_effect = lambda key: config[key]
+        mock_glob.side_effect = self.glob_valid_cpufreq_path
+
+        principal_charms = [
+            "nova-compute",
+            "rabbitmq-server",
+            "kubernetes-worker",
+            "percona-cluster",
+        ]
+        for charm in principal_charms:
+            mock_principal_unit.return_value = charm + "/0"
+            mock__metadata_unit.return_value = {"name": charm}
+
+            check = {
+                "description": "Check CPU governor scaler (sub)",
+                "cmd_name": "check_cpu_governor",
+                "cmd_exec": "/usr/local/lib/nagios/plugins/check_cpu_governor.py",
+                "cmd_params": "--governor performance",
+                "matching_files": [],
+            }
+            checks = nrpe_helpers.SubordinateCheckDefinitions()["checks"]
+            self.assertIn(check, checks)
+
+            mock_principal_unit.reset_mock(return_value=True)
+            mock__metadata_unit.reset_mock(return_value=True)
+
+    @mock.patch("nrpe_helpers.glob.glob")
+    @mock.patch("nrpe_helpers.hookenv._metadata_unit")
+    @mock.patch("nrpe_helpers.hookenv.principal_unit")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_cpu_governor_disabled_default_for_non_principle_charms(
+        self, mock_config, mock_principal_unit, mock__metadata_unit, mock_glob
+    ):
+        """Test cpu_governor check is disabled by default for non principle charms.
+
+        A cpu scaling governor value check should be disabled by default
+        by most charms.
+        """
+        config = load_default_config()
+        mock_config.side_effect = lambda key: config[key]
+        mock_glob.side_effect = self.glob_valid_cpufreq_path
+        mock_principal_unit.return_value = "mongodb/0"
+        mock__metadata_unit.return_value = {"name": "mongodb"}
+
+        checks = nrpe_helpers.SubordinateCheckDefinitions()["checks"]
+        check_in_list = False
+        for check in checks:
+            if check["cmd_name"].startswith("check_cpu_governor"):
+                check_in_list = True
+                break
+        self.assertFalse(check_in_list)
+
+    @mock.patch("nrpe_helpers.glob.glob")
+    @mock.patch("nrpe_helpers.hookenv._metadata_unit")
+    @mock.patch("nrpe_helpers.hookenv.principal_unit")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_cpu_governor_config_overrides_default(
+        self, mock_config, mock_principal_unit, mock__metadata_unit, mock_glob
+    ):
+        """Test cpu_governor default value overriden by config.
+
+        The value coming from the configuration should take precedence
+        in case it is set for principle charms.
+        """
+        config = load_default_config()
+        config["cpu_governor"] = "ondemand"
+        mock_config.side_effect = lambda key: config[key]
+        mock_glob.side_effect = self.glob_valid_cpufreq_path
+        mock_principal_unit.return_value = "nova-compute/0"
+        mock__metadata_unit.return_value = {"name": "nova-compute"}
+
+        check = {
+            "description": "Check CPU governor scaler (sub)",
+            "cmd_name": "check_cpu_governor",
+            "cmd_exec": "/usr/local/lib/nagios/plugins/check_cpu_governor.py",
+            "cmd_params": "--governor ondemand",
+            "matching_files": [],
+        }
+        checks = nrpe_helpers.SubordinateCheckDefinitions()["checks"]
+        self.assertIn(check, checks)
+
+    @mock.patch("nrpe_helpers.glob.glob")
+    @mock.patch("nrpe_helpers.hookenv._metadata_unit")
+    @mock.patch("nrpe_helpers.hookenv.principal_unit")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_cpu_governor_check_disabled_in_vm(
+        self, mock_config, mock_principal_unit, mock__metadata_unit, mock_glob
+    ):
+        """Test cpu_governor check is disabled for virtual environments.
+
+        When running in VM, this check should be disabled even if it is
+        set through the config.
+        """
+        config = load_default_config()
+        config["cpu_governor"] = "performance"
+        mock_config.side_effect = lambda key: config[key]
+        mock_glob.side_effect = lambda arg: []  # cpufreq paths no exist in VM
+        mock_principal_unit.return_value = "nova-compute/0"
+        mock__metadata_unit.return_value = {"name": "nova-compute"}
+
+        check_in_list = False
+        checks = nrpe_helpers.SubordinateCheckDefinitions()["checks"]
+        for check in checks:
+            if check["cmd_name"].startswith("check_cpu_governor"):
+                check_in_list = True
+                break
+        self.assertFalse(check_in_list)
