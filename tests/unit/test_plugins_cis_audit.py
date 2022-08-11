@@ -208,7 +208,7 @@ class TestCheckCisAudit(TestCase):
             argparse.Namespace(
                 cis_profile="",
                 crit=-1,
-                max_age=170,
+                max_age=172,
                 warn=-1,
             ),
         )
