@@ -62,7 +62,8 @@ def parse_args():
         "--exclude",
         "-e",
         type=str,
-        help="""Comma separated list of mount points to exclude from checks for readonly filesystem.
+        help="""Comma separated list of mount points to exclude from
+                checks for readonly filesystem.
                 Can be just a substring of the whole mount point.""",
         default="",
     )
