@@ -254,9 +254,15 @@ options:
     description: |
       CPU governor check. The string value here will be checked against all CPUs in
       /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor. The supported values are
-      'ondemand', 'performance', 'powersave'. Unset value means the check will be disabled.
-      There is a relation key called requested_cpu_governor='string', but the charm config value
-      will take precedence over the relation data.
+      'ondemand', 'performance', 'powersave'. Although this value is initially unset for
+      most principal charms, for the following principal charms a default check for
+      'performance' will be deployed to aid the operator since for most use cases these
+      applications will require all the available cpu power they need. If this value is set,
+      the set value will take precedence over the default.
+      - nova-compute
+      - rabbitmq-server
+      - kubernetes-worker
+      - percona-cluster
   cis_audit_enabled:
     default: False
     type: boolean
