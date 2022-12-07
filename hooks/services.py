@@ -96,9 +96,9 @@ def manage():
         manager = get_manager()
     except (CalledProcessError, KeyError, IndexError) as err:
         msg = "Public address not available yet"
-        log(msg, WARNING)
+        log(msg, level=WARNING)
         log(err, level=WARNING)
-        status_set("blocked", msg)
+        status_set("waiting", msg)
     else:
         manager.manage()
         if not nrpe_utils.has_consumer():
