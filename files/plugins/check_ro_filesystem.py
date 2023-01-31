@@ -15,6 +15,7 @@ from nagios_plugin3 import (
 )
 
 EXCLUDE = {"/snap/", "/sys/fs/cgroup"}
+EXCLUDE_FS = {"ramfs", "tmpfs"}
 
 
 def check_ro_filesystem(excludes=""):
@@ -41,7 +42,9 @@ def check_ro_filesystem(excludes=""):
     for mount in mounts:
         # for each line in the list, split by space to a new list
         split_mount = mount.split()
-        # if mount[1] matches EXCLUDE_FS then next, else check it's not readonly
+        # if current fs matches EXCLUDE_FS then next, else check it's not readonly
+        if split_mount[2] in EXCLUDE_FS:
+            continue
         if not any(
             split_mount[1].startswith(exclusion.strip()) for exclusion in exclude_mounts
         ):
