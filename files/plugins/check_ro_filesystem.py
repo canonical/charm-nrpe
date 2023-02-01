@@ -15,7 +15,7 @@ from nagios_plugin3 import (
 )
 
 EXCLUDE = {"/snap/", "/sys/fs/cgroup"}
-EXCLUDE_FS = {"ramfs", "tmpfs"}
+EXCLUDE_FS = {"nsfs", "ramfs", "tmpfs"}
 
 
 def check_ro_filesystem(excludes=""):
@@ -40,17 +40,16 @@ def check_ro_filesystem(excludes=""):
             msg = "UNKNOWN: unable to read list of mounts to exclude {}".format(e)
             raise UnknownError(msg)
     for mount in mounts:
-        # for each line in the list, split by space to a new list
-        split_mount = mount.split()
+        _, mount_point, fs, mount_options, *others = mount.split()
         # if current fs matches EXCLUDE_FS then next, else check it's not readonly
-        if split_mount[2] in EXCLUDE_FS:
+        if fs in EXCLUDE_FS:
             continue
         if not any(
-            split_mount[1].startswith(exclusion.strip()) for exclusion in exclude_mounts
+            mount_point.startswith(exclusion.strip()) for exclusion in exclude_mounts
         ):
-            mount_options = split_mount[3].split(",")
+            mount_options = mount_options.split(",")
             if "ro" in mount_options:
-                ro_filesystems.append(split_mount[1])
+                ro_filesystems.append(mount_point)
     if len(ro_filesystems) > 0:
         msg = "CRITICAL: filesystem(s) {} readonly".format(",".join(ro_filesystems))
         raise CriticalError(msg)
