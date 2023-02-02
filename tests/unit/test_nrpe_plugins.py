@@ -3,10 +3,38 @@ import subprocess
 import unittest
 from datetime import datetime, timedelta
 from os.path import abspath, dirname, join
+from unittest.mock import mock_open, patch
+
+from check_ro_filesystem import check_ro_filesystem
+
+from nagios_plugin3 import CriticalError
 
 DIR_REPO_ROOT = dirname(dirname(dirname(abspath(__file__))))
 DIR_PLUGINS = join(DIR_REPO_ROOT, "files", "plugins")
 UPTIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+TEST_PROC_MOUNTS_RO = """sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
+proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
+udev /dev devtmpfs rw,nosuid,relatime,size=991864k,nr_inodes=247966,mode=755,inode64 0 0
+devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000 0 0
+tmpfs /run tmpfs rw,nosuid,nodev,noexec,relatime,size=202340k,mode=755,inode64 0 0
+/dev/vda1 / ext4 ro,relatime,discard,errors=remount-ro 0 0
+"""
+TEST_PROC_MOUNTS_NO_RO = """sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
+proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
+udev /dev devtmpfs rw,nosuid,relatime,size=991864k,nr_inodes=247966,mode=755,inode64 0 0
+devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000 0 0
+tmpfs /run tmpfs rw,nosuid,nodev,noexec,relatime,size=202340k,mode=755,inode64 0 0
+/dev/vda1 / ext4 rw,relatime,discard,errors=remount-ro 0 0
+"""
+TEST_PROC_MOUNTS_TMPFS_RO = """sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
+proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
+udev /dev devtmpfs rw,nosuid,relatime,size=991864k,nr_inodes=247966,mode=755,inode64 0 0
+devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000 0 0
+tmpfs /run tmpfs ro,nosuid,nodev,noexec,relatime,size=202340k,mode=755,inode64 0 0
+/dev/vda1 / ext4 rw,relatime,discard,errors=remount-ro 0 0
+"""
 
 
 def get_cmd_output(cmd):
@@ -25,8 +53,28 @@ def get_script_path(filename="check_reboot.py"):
     return join(DIR_PLUGINS, filename)
 
 
+class TestCheckRoFilesystem(unittest.TestCase):
+    """Test check_ro_filesystem script in files/plugins."""
+
+    @patch("builtins.open", mock_open(read_data=TEST_PROC_MOUNTS_RO))
+    def test_ro_true(self):
+        """Test that CriticalError exception is raised when readonly fs is present."""
+        with self.assertRaises(CriticalError):
+            check_ro_filesystem()
+
+    @patch("builtins.open", mock_open(read_data=TEST_PROC_MOUNTS_NO_RO))
+    def test_ro_false(self):
+        """Test that no exception is raised in absence of readonly fs."""
+        check_ro_filesystem()
+
+    @patch("builtins.open", mock_open(read_data=TEST_PROC_MOUNTS_TMPFS_RO))
+    def test_ro_tmpfs(self):
+        """Test that no exception is raised when only tmpfs is readonly fs."""
+        check_ro_filesystem()
+
+
 class TestCheckRebootScript(unittest.TestCase):
-    """Test plugin scripts in files/plugins."""
+    """Test check_reboot script in files/plugins."""
 
     check_reboot = get_script_path(filename="check_reboot.py")
 
