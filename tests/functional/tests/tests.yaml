@@ -8,6 +8,7 @@ smoke_bundles:
   - focal
 tests:
   - tests.nrpe_tests.TestNrpe
+  - tests.nrpe_tests.TestNrpeActions
 target_deploy_status:
   container:
     workload-status: active
