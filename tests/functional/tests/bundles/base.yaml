@@ -3,22 +3,15 @@ applications:
   rabbitmq-server:
     charm: ch:rabbitmq-server
     num_units: 1
-  # Note(sudeephb): Ubuntu lxd deployments on bionic/xenial hosts are
-  # not working, issue related to this - https://github.com/lxc/lxd/issues/10231
-  # (see recent comments/references on the issue). Until the lxd/public-cloud team
-  # come up with a permanent solution, we can deploy ubuntu bionic and xenial containers
-  # on focal hosts. After the issue is fixed, the `container` application can be
-  # deployed on the rabbitmq-server host and this ubuntu host can be removed.
-  ubuntu:
-    charm: ch:ubuntu
-    num_units: 1
+    constraints: root-disk=8G cores=2
   container:
     charm: ch:ubuntu
     num_units: 1
-    to: ["lxd:ubuntu/0"]
+    to: ["lxd:rabbitmq-server/0"]
   nagios:
     charm: ch:nagios
     num_units: 1
+    series: bionic
 relations:
   - - rabbitmq-server:nrpe-external-master
     - nrpe:nrpe-external-master

@@ -356,3 +356,19 @@ class TestNrpe(TestBase):
         result = model.run_on_unit(unit, cmdline)
         self.assertEqual(result["Code"], "0")
         return set(result["Stdout"].splitlines())
+
+
+class TestNrpeActions(TestBase):
+    """Class for charm actions."""
+
+    def test_01_ack_reboot(self):
+        """Test the ack-reboot action."""
+        uptime = (
+            model.run_on_leader(self.application_name, "uptime --since")
+            .get("Stdout")
+            .strip()
+        )
+        action = model.run_action_on_leader(self.application_name, "ack-reboot")
+        message = action.data["results"].get("message")
+        self.assertIsNotNone(message)
+        self.assertEqual(message, "known reboot time updated to {}".format(uptime))
