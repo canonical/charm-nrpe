@@ -818,6 +818,11 @@ def is_valid_partition(device):
     return True
 
 
+def is_kubernetes_pv(mountpoint):
+    """Check if a mountpoint is Kubernetes persistent volume."""
+    return mountpoint.startswith("/var/lib/kubelet/pods")
+
+
 def get_partitions_to_check():
     """Get a list of partitions to be checked by check_disk."""
     lsblk_cmd = "lsblk -J".split()
@@ -828,18 +833,18 @@ def get_partitions_to_check():
     for dev in block_devices:
         if not is_valid_partition(dev):
             continue
-        if dev.get("mountpoint", ""):
-            partitions_to_check.add(dev.get("mountpoint"))
+        mnt = dev.get("mountpoint", "")
+        if mnt and not is_kubernetes_pv(mnt):
+            partitions_to_check.add(mnt)
         for child in dev.get("children", []):
             if not is_valid_partition(child):
                 continue
-            if child.get("mountpoint", ""):
-                partitions_to_check.add(child.get("mountpoint"))
             # Jammy returns a list of "mountpoints" instead of a single value
             # in the key "mountpoint"
-            for mountpoint in child.get("mountpoints", []):
-                if mountpoint:
-                    partitions_to_check.add(mountpoint)
+            mountpoints = child.get("mountpoints", []) or [child.get("mountpoint")]
+            for mnt in filter(bool, mountpoints):
+                if not is_kubernetes_pv(mnt):
+                    partitions_to_check.add(mnt)
 
     skipped_partitions = {"[SWAP]", "/boot/efi"}
 
