@@ -279,7 +279,16 @@ class TestDiskSpaceCheck(unittest.TestCase):
                    ]
                 }
              ]
-          }
+            },
+            {
+             "name":"vdb",
+             "maj:min":"252:16",
+             "rm":false,
+             "size":"1G",
+             "ro":false,
+             "type":"disk",
+             "mountpoint": "/var/lib/kubelet/pods/../k..s.io~csi/pvc../mount"
+            }
         ]
     }"""
 
@@ -292,6 +301,9 @@ class TestDiskSpaceCheck(unittest.TestCase):
         self.assertEqual("/" in result, True)
         self.assertEqual("/srv/instances" in result, True)
         self.assertEqual("/srv/jammy" in result, True)
+        self.assertEqual(
+            "/var/lib/kubelet/pods/../k..s.io~csi/pvc../mount" in result, False
+        )
 
 
 def load_default_config():
