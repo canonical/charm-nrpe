@@ -296,14 +296,17 @@ class TestDiskSpaceCheck(unittest.TestCase):
     def test_get_partitions_to_check(self, lock_lsblk_output):
         """Test the list of partitions to check."""
         result = nrpe_helpers.get_partitions_to_check()
-        self.assertEqual("SWAP" in result, False)
-        self.assertEqual("/boot/efi" in result, False)
-        self.assertEqual("/" in result, True)
-        self.assertEqual("/srv/instances" in result, True)
-        self.assertEqual("/srv/jammy" in result, True)
-        self.assertEqual(
-            "/var/lib/kubelet/pods/../k..s.io~csi/pvc../mount" in result, False
-        )
+        params = [
+            ("SWAP", False),
+            ("/boot/efi", False),
+            ("/", True),
+            ("/srv/instances", True),
+            ("/srv/jammy", True),
+            ("/var/lib/kubelet/pods/../k..s.io~csi/pvc../mount", False),
+        ]
+        for p1, p2 in params:
+            with self.subTest(msg="Validate partition filtering", p1=p1, p2=p2):
+                self.assertEqual(p1 in result, p2)
 
 
 def load_default_config():
