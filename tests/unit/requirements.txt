@@ -4,3 +4,4 @@ PyYAML
 netifaces
 pytest
 pytest-cov
+pytest-subtests
