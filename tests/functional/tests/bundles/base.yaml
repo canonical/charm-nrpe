@@ -6,6 +6,9 @@ applications:
     constraints: root-disk=8G cores=2
   container:
     charm: ch:ubuntu
+    # temporary fix for https://github.com/juju-solutions/charm-ubuntu/issues/48
+    revision: 21
+    channel: stable
     num_units: 1
     to: ["lxd:rabbitmq-server/0"]
   nagios:
