@@ -6,10 +6,9 @@ nrpedir="/etc/nagios/nrpe.d"
 checkfile="$nrpedir/${check}.cfg"
 
 if [ -f $checkfile ]; then
-    command=$(awk -F "=" '{ print $2 }' $checkfile)
+    command=$(grep command $checkfile | sed -e "s/command\[.*\]=//")
     output=$(echo $command | xargs sudo -u nagios)
     action-set check-output="$output"
 else
     action-fail "$checkfile does not exist or the check failed"
 fi
-

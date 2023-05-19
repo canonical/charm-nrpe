@@ -6,10 +6,12 @@ if [ ! -d $nrpedir ]; then
     action-fail "No $nrpedir exists"
     exit 1
 else
-  for i in $nrpedir/*.cfg; do 
-    check=$(grep command $i | awk -F "=" '{ print $1 }' | sed -e 's/command\[//' | sed -e 's/\]//' | sed -e 's/_/-/g'); 
-    command=$(grep command $i | awk -F "=" '{ print $2 }'); 
-    action-set checks.$check="$command";
+  for i in $nrpedir/*.cfg; do
+    if [ -f $i ]; then
+      check=$(grep command $i | sed "s/command\[\(.*\\)]=\(.*\)$/\1/" | tr _ -);
+      command=$(grep command $i | sed "s/command\[\(.*\\)]=\(.*\)$/\2/");
+      action-set checks.$check="$command";
+    fi
   done
 fi
 
