@@ -78,6 +78,23 @@ def get_check_reboot_context(known_reboot_time=None):
     }
 
 
+def check_cos_integration():
+    """Check if COS integration exists or not.
+
+    Note: Currently, this is a hacky way to disable all built-in checks for COS
+    integraion.
+    """
+    # We should have a better way to do it properly:
+    # - find subordinate charm in the principal charm;
+    # - find cos_agent interface;
+    # - ...
+    try:
+        subprocess.check_call(["snap", "list", "grafana-agent"])
+    except subprocess.CalledProcessError:
+        return False
+    return True
+
+
 class InvalidCustomCheckException(Exception):
     """Custom exception for Invalid nrpe check."""
 
@@ -687,6 +704,7 @@ class SubordinateCheckDefinitions(dict):
                 sub_postfix = "_sub"
         nrpe_config_sub_tmpl = "/etc/nagios/nrpe.d/{}_*.cfg"
         nrpe_config_tmpl = "/etc/nagios/nrpe.d/{}.cfg"
+        disable_check = check_cos_integration()
         for check in checks:
             # This can be used to clean up old files before rendering the new
             # ones
@@ -696,6 +714,7 @@ class SubordinateCheckDefinitions(dict):
             check["matching_files"].extend(glob.glob(nrpe_configfiles))
             check["description"] += " (sub)"
             check["cmd_name"] += sub_postfix
+            check["cmd_params"] = check["cmd_params"] if not disable_check else ""
             self["checks"].append(check)
 
     def _get_proc_thresholds(self):
