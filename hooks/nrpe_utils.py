@@ -119,11 +119,10 @@ def install_charm_files(service_name):
         os.chmod(local_plugin_dir + "/nagios_plugin3.py", 0o644)
 
 
-def render_nrpe_check_config(checkctxt):
+def render_nrpe_check_config(checkctxt, disable=False):
     """Write nrpe check definition."""
-    # Only render if we actually have cmd parameters
-
-    if checkctxt["cmd_params"]:
+    # Only render if we actually have cmd parameters, and it's not disabled.
+    if checkctxt["cmd_params"] and not disable:
         render(
             "nrpe_command.tmpl",
             "/etc/nagios/nrpe.d/{}.cfg".format(checkctxt["cmd_name"]),
@@ -131,20 +130,39 @@ def render_nrpe_check_config(checkctxt):
         )
 
 
+def remove_nrpe_check_config(checkctxt):
+    """Remove nrpe check definition."""
+    # Remove all nrpe check related to this checktxt.
+    for fname in checkctxt["matching_files"]:
+        if os.path.exists(fname):
+            os.unlink(fname)
+
+
 def render_nrped_files(service_name):
     """Render each of the predefined checks."""
+    disable_nrpe_check = check_cos_integration()
     for checkctxt in nrpe_helpers.SubordinateCheckDefinitions()["checks"]:
-        # Clean up existing files
-
-        for fname in checkctxt["matching_files"]:
-            try:
-                os.unlink(fname)
-            except FileNotFoundError:
-                # Don't clean up non-existent files
-                pass
-        render_nrpe_check_config(checkctxt)
+        remove_nrpe_check_config(checkctxt)
+        render_nrpe_check_config(checkctxt, disable=disable_nrpe_check)
     process_local_monitors()
     process_user_monitors()
+
+
+def check_cos_integration():
+    """Check if COS integration exists or not.
+
+    Note: Currently, this is a hacky way to disable all built-in checks for COS
+    integraion.
+    """
+    # We should have a better way to do it properly:
+    # - find subordinate charm in the principal charm;
+    # - find cos_agent interface;
+    # - ...
+    try:
+        subprocess.check_call(["snap", "list", "grafana-agent"])
+    except subprocess.CalledProcessError:
+        return False
+    return True
 
 
 def process_user_monitors():
