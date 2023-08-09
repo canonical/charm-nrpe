@@ -3,6 +3,7 @@ format: 2
 summary: Nagios Remote Plugin Executor Server
 maintainer: LMA Charmers <llama-charmers@lists.ubuntu.com>
 subordinate: true
+docs: https://discourse.charmhub.io/t/nrpe-docs-index/11332
 description: |
   Nagios is a host/service/network monitoring and management system.  The
   purpose of this addon is to allow you to execute Nagios plugins on a
