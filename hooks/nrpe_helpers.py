@@ -78,6 +78,23 @@ def get_check_reboot_context(known_reboot_time=None):
     }
 
 
+def check_cos_integration():
+    """Check if COS integration exists or not.
+
+    Note: Currently, this is a hacky way to disable all built-in checks for COS
+    integraion.
+    """
+    # We should have a better way to do it properly:
+    # - find subordinate charm in the principal charm;
+    # - find cos_agent interface;
+    # - ...
+    try:
+        subprocess.check_call(["snap", "list", "grafana-agent"])
+    except subprocess.CalledProcessError:
+        return False
+    return True
+
+
 class InvalidCustomCheckException(Exception):
     """Custom exception for Invalid nrpe check."""
 
@@ -545,7 +562,19 @@ class SubordinateCheckDefinitions(dict):
                         "cmd_exec": os.path.join(
                             local_plugin_dir, "check_arp_cache.py"
                         ),
-                        "cmd_params": "-w 60 -c 80",
+                        "cmd_params": hookenv.config("arp_cache"),
+                    },
+                    {
+                        "description": "Readonly filesystems",
+                        "cmd_name": "check_ro_filesystem",
+                        "cmd_exec": os.path.join(
+                            local_plugin_dir, "check_ro_filesystem.py"
+                        ),
+                        "cmd_params": "-e {}".format(
+                            hookenv.config("ro_filesystem_excludes")
+                        )
+                        if hookenv.config("ro_filesystem_excludes")
+                        else "",
                     },
                 ]
             )
@@ -558,50 +587,27 @@ class SubordinateCheckDefinitions(dict):
             for mp in space_check.get("overrides", []):
                 override_map[mp["mountpoint"]] = mp["params"]
 
-            if space_check["check"] == "auto":
-                for mountpoint in get_partitions_to_check():
-                    params = "-u GB -w 25% -c 20% -K 5%"
-                    if "auto_params" in space_check:
-                        params = space_check["auto_params"]
-                    if mountpoint in override_map:
-                        params = override_map[mountpoint]
-                    cmd_params = "{} -p {}".format(params, mountpoint)
-                    # the root partition is only a slash, so add a meaningful name
-                    check_path = mountpoint.replace("/", "_")
-                    if check_path == "_":
-                        check_path = "_root"
-                    checks.append(
-                        {
-                            "description": "Check disk space on {}".format(mountpoint),
-                            "cmd_name": "check_space{}".format(check_path),
-                            "cmd_exec": pkg_plugin_dir + "check_disk",
-                            "cmd_params": cmd_params,
-                        }
-                    )
-
-            ro_filesystem_excludes = hookenv.config("ro_filesystem_excludes")
-            if ro_filesystem_excludes == "":
-                # specify cmd_params = '' to disable/remove the check from nrpe
-                check_ro_filesystem = {
-                    "description": "Readonly filesystems",
-                    "cmd_name": "check_ro_filesystem",
-                    "cmd_exec": os.path.join(
-                        local_plugin_dir, "check_ro_filesystem.py"
-                    ),
-                    "cmd_params": "",
-                }
-            else:
-                check_ro_filesystem = {
-                    "description": "Readonly filesystems",
-                    "cmd_name": "check_ro_filesystem",
-                    "cmd_exec": os.path.join(
-                        local_plugin_dir, "check_ro_filesystem.py"
-                    ),
-                    "cmd_params": "-e {}".format(
-                        hookenv.config("ro_filesystem_excludes")
-                    ),
-                }
-            checks.append(check_ro_filesystem)
+            for mountpoint in get_partitions_to_check():
+                params = "-u GB -w 25% -c 20% -K 5%"
+                if "auto_params" in space_check:
+                    params = space_check["auto_params"]
+                if mountpoint in override_map:
+                    params = override_map[mountpoint]
+                cmd_params = "{} -p {}".format(params, mountpoint)
+                # the root partition is only a slash, so add a meaningful name
+                check_path = mountpoint.replace("/", "_")
+                if check_path == "_":
+                    check_path = "_root"
+                checks.append(
+                    {
+                        "description": "Check disk space on {}".format(mountpoint),
+                        "cmd_name": "check_space{}".format(check_path),
+                        "cmd_exec": pkg_plugin_dir + "check_disk",
+                        "cmd_params": cmd_params
+                        if space_check["check"].strip() != "disabled"
+                        else "",
+                    }
+                )
 
             if hookenv.config("lacp_bonds").strip():
                 for bond_iface in hookenv.config("lacp_bonds").strip().split():
@@ -698,6 +704,7 @@ class SubordinateCheckDefinitions(dict):
                 sub_postfix = "_sub"
         nrpe_config_sub_tmpl = "/etc/nagios/nrpe.d/{}_*.cfg"
         nrpe_config_tmpl = "/etc/nagios/nrpe.d/{}.cfg"
+        disable_check = check_cos_integration()
         for check in checks:
             # This can be used to clean up old files before rendering the new
             # ones
@@ -707,6 +714,7 @@ class SubordinateCheckDefinitions(dict):
             check["matching_files"].extend(glob.glob(nrpe_configfiles))
             check["description"] += " (sub)"
             check["cmd_name"] += sub_postfix
+            check["cmd_params"] = check["cmd_params"] if not disable_check else ""
             self["checks"].append(check)
 
     def _get_proc_thresholds(self):
@@ -757,7 +765,7 @@ class SubordinateCheckDefinitions(dict):
         """
         iface_path = "/sys/class/net/{}"
         props_dict = {"mtu": "-m {}", "speed": "-s {}", "op": "-o {}"}
-        if type(ifaces) == str:
+        if isinstance(ifaces, str):
             ifaces = [ifaces]
 
         d_ifaces = {}

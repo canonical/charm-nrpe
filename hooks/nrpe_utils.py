@@ -121,8 +121,7 @@ def install_charm_files(service_name):
 
 def render_nrpe_check_config(checkctxt):
     """Write nrpe check definition."""
-    # Only render if we actually have cmd parameters
-
+    # Only render if we actually have cmd parameters.
     if checkctxt["cmd_params"]:
         render(
             "nrpe_command.tmpl",
@@ -131,17 +130,18 @@ def render_nrpe_check_config(checkctxt):
         )
 
 
+def remove_nrpe_check_config(checkctxt):
+    """Remove nrpe check definition."""
+    # Remove all nrpe check related to this checktxt.
+    for fname in checkctxt["matching_files"]:
+        if os.path.exists(fname):
+            os.unlink(fname)
+
+
 def render_nrped_files(service_name):
     """Render each of the predefined checks."""
     for checkctxt in nrpe_helpers.SubordinateCheckDefinitions()["checks"]:
-        # Clean up existing files
-
-        for fname in checkctxt["matching_files"]:
-            try:
-                os.unlink(fname)
-            except FileNotFoundError:
-                # Don't clean up non-existent files
-                pass
+        remove_nrpe_check_config(checkctxt)
         render_nrpe_check_config(checkctxt)
     process_local_monitors()
     process_user_monitors()

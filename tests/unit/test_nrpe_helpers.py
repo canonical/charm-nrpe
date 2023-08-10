@@ -322,6 +322,15 @@ def load_default_config():
 class TestSubordinateCheckDefinitions(unittest.TestCase):
     """Test SubordinateCheckDefinitions() related code."""
 
+    def setUp(self):
+        """Prepare mocks."""
+        self.check_cos_integration_patcher = mock.patch(
+            "nrpe_helpers.check_cos_integration"
+        )
+        self.mock_check_cos_integration = self.check_cos_integration_patcher.start()
+        self.mock_check_cos_integration.return_value = False
+        self.addCleanup(self.check_cos_integration_patcher.stop)
+
     def glob_valid_cpufreq_path(self, arg):
         """Return a valid list of cpufreq sysfs paths.
 
@@ -456,3 +465,28 @@ class TestSubordinateCheckDefinitions(unittest.TestCase):
                 check_in_list = True
                 break
         self.assertFalse(check_in_list)
+
+    @mock.patch("nrpe_helpers.check_cos_integration")
+    @mock.patch("nrpe_helpers.glob.glob")
+    @mock.patch("nrpe_helpers.hookenv._metadata_unit")
+    @mock.patch("nrpe_helpers.hookenv.principal_unit")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_disable_all_built_in_checks(
+        self,
+        mock_config,
+        mock_principal_unit,
+        mock__metadata_unit,
+        mock_glob,
+        mock_check_cos_integration,
+    ):
+        """Test disabling all built-in checks when cos integration is detected."""
+        config = load_default_config()
+        mock_config.side_effect = lambda key: config[key]
+        mock_glob.side_effect = lambda arg: []  # cpufreq paths no exist in VM
+        mock_principal_unit.return_value = "nova-compute/0"
+        mock__metadata_unit.return_value = {"name": "nova-compute"}
+
+        checks = nrpe_helpers.SubordinateCheckDefinitions()["checks"]
+        mock_check_cos_integration.return_value = True
+        for check in checks:
+            self.assertEqual(check["cmd_params"], "")

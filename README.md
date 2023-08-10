@@ -64,6 +64,9 @@ For example to increase the alert threshold for number of processes:
 
 Default checks maybe disabled by setting them to the empty string.
 
+In addition, if this charm detects the existence of cos integration, it will
+automatically disable all default checks.
+
 Principal Requested Checks
 --------------------------
 
@@ -92,7 +95,7 @@ for the rsyslog process:
 
 
 
-External Nagios 
+External Nagios
 ===============
 
 If the nagios server is not deployed in the juju environment then the charm can
@@ -116,7 +119,7 @@ lists provided via the principal, the user and the default checks.
 
 The monitors yaml is of the following form:
 
-     
+
     # Version of the spec, mostly ignored but 0.3 is the current one
     version: '0.3'
     # Dict with just 'local' and 'remote' as parts
@@ -197,7 +200,7 @@ Supported nrpe checks are:
       path: Directory to monitor space usage of
     custom:
       check: the name of the check to execute
-      plugin_path: (optional) Absolute path to the directory containing the 
+      plugin_path: (optional) Absolute path to the directory containing the
                    custom plugin. Default value is /var/lib/nagios/plugins
       description: (optional) Description of the check
       params: (optional) Parameters to pass to the check on invocation
