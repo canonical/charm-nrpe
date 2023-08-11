@@ -4,7 +4,6 @@
 import os
 import subprocess
 from charmhelpers.core.hookenv import status_set
-from services import manage
 from services import get_revision
 
 SERVICE = "nagios-nrpe-server"
@@ -12,11 +11,6 @@ SERVICE = "nagios-nrpe-server"
 
 def update_status():
     """Update Nrpe Juju status."""
-    # Check whether cos_integration exist or not. If cos_integration exists,
-    # then re-render the nrpe check config file. This will effectively remove
-    # the built-in nrpe checks.
-    manage()
-
     retcode = subprocess.call(["systemctl", "is-active", "--quiet", SERVICE])
     if retcode == 0:
         status_set("active", "Ready{}".format(get_revision()))

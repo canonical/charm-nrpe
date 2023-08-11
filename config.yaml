@@ -304,3 +304,10 @@ options:
         if arp cache entry is >= 60% of the threshold, and raise critical alert
         if arp cache entry is >= 80% of the threshold.
         Set to '' in order to disable this check.
+  disable_system_checks:
+    default: False
+    type: boolean
+    description: |
+      Disable all built-in system level NRPE checks. Setting this to "True"
+      will force to disable all system level NRPE checks. By default, it's set
+      to "False".
