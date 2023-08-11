@@ -757,7 +757,7 @@ class SubordinateCheckDefinitions(dict):
         """
         iface_path = "/sys/class/net/{}"
         props_dict = {"mtu": "-m {}", "speed": "-s {}", "op": "-o {}"}
-        if type(ifaces) == str:
+        if isinstance(ifaces, str):
             ifaces = [ifaces]
 
         d_ifaces = {}
