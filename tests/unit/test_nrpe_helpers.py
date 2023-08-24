@@ -475,3 +475,92 @@ class TestSubordinateCheckDefinitions(unittest.TestCase):
         checks = nrpe_helpers.SubordinateCheckDefinitions()["checks"]
         for check in checks:
             self.assertEqual(check["cmd_params"], "")
+
+    @mock.patch("nrpe_helpers.is_container")
+    @mock.patch("nrpe_helpers.glob.glob")
+    @mock.patch("nrpe_helpers.hookenv._metadata_unit")
+    @mock.patch("nrpe_helpers.hookenv.principal_unit")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_sub_postfix(
+        self,
+        mock_config,
+        mock_principal_unit,
+        mock__metadata_unit,
+        mock_glob,
+        mock_is_container,
+    ):
+        """Test that sub_postfix is added to all checks."""
+        postfix = "unittest"
+        config = load_default_config()
+        config["sub_postfix"] = postfix
+        mock_config.side_effect = lambda key: config[key]
+        mock_principal_unit.return_value = "nova-compute/0"
+        mock__metadata_unit.return_value = {"name": "nova-compute"}
+        mock_glob.side_effect = self.glob_valid_cpufreq_path
+        mock_is_container.return_value = False
+
+        check_definitions = nrpe_helpers.SubordinateCheckDefinitions()
+        cmd_postfix = "###" + postfix
+        for check in check_definitions["checks"]:
+            with self.subTest(check):
+                self.assertTrue(
+                    check["cmd_name"].endswith(cmd_postfix),
+                    f"{check['cmd_name']} does not end with {cmd_postfix}",
+                )
+
+    @mock.patch("nrpe_helpers.get_partitions_to_check")
+    @mock.patch("nrpe_helpers.is_container")
+    @mock.patch("nrpe_helpers.glob.glob")
+    @mock.patch("nrpe_helpers.hookenv._metadata_unit")
+    @mock.patch("nrpe_helpers.hookenv.principal_unit")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_sub_postfix_not_in_check_names(
+        self,
+        mock_config,
+        mock_principal_unit,
+        mock__metadata_unit,
+        mock_glob,
+        mock_is_container,
+        mock_partitions,
+    ):
+        """Test that sub_postfix is not faced in normal check names."""
+        config = load_default_config()
+        mock_config.side_effect = lambda key: config[key]
+        mock_principal_unit.return_value = "nova-compute/0"
+        mock__metadata_unit.return_value = {"name": "nova-compute"}
+        mock_glob.side_effect = self.glob_valid_cpufreq_path
+        mock_is_container.return_value = False
+        mock_partitions.return_value = {"/", "/var", "/var/log"}
+
+        check_definitions = nrpe_helpers.SubordinateCheckDefinitions()
+        for check in check_definitions["checks"]:
+            with self.subTest(check):
+                self.assertNotIn(check["cmd_name"], "###")
+
+    @mock.patch("nrpe_helpers.is_container")
+    @mock.patch("nrpe_helpers.hookenv._metadata_unit")
+    @mock.patch("nrpe_helpers.hookenv.principal_unit")
+    @mock.patch("nrpe_helpers.get_partitions_to_check")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_check_space_basics_functions(
+        self,
+        mock_config,
+        mock_partitions,
+        mock_principal_unit,
+        mock__metadata_unit,
+        mock_is_container,
+    ):
+        """Test generation of check_space commands."""
+        config = load_default_config()
+        mock_config.side_effect = lambda key: config[key]
+        mock_principal_unit.return_value = "nova-compute/0"
+        mock__metadata_unit.return_value = {"name": "nova-compute"}
+        # without the line below test will fail in CI
+        mock_is_container.return_value = False
+
+        mock_partitions.return_value = {"/", "/var", "/var/log"}
+        checks = nrpe_helpers.SubordinateCheckDefinitions()["checks"]
+        cmd_names = {check["cmd_name"] for check in checks}
+        for expected in {"check_space_root", "check_space_var", "check_space_var_log"}:
+            with self.subTest():
+                self.assertIn(expected, cmd_names)
