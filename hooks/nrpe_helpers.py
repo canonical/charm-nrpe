@@ -678,14 +678,17 @@ class SubordinateCheckDefinitions(dict):
 
         self["checks"] = []
         sub_postfix = str(hookenv.config("sub_postfix"))
+        sub_postfix_sep = "###"
         # Automatically use _sub for checks shipped on a unit with the nagios
         # charm. Mostly for backwards compatibility.
         principal_unit = hookenv.principal_unit()
         if sub_postfix == "" and principal_unit:
             md = hookenv._metadata_unit(principal_unit)
             if md and md.pop("name", None) == "nagios":
-                sub_postfix = "_sub"
-        nrpe_config_sub_tmpl = "/etc/nagios/nrpe.d/{}_*.cfg"
+                sub_postfix = "sub"
+        nrpe_config_sub_tmpl = "/etc/nagios/nrpe.d/{}{}*.cfg".format(
+            "{}", sub_postfix_sep
+        )
         nrpe_config_tmpl = "/etc/nagios/nrpe.d/{}.cfg"
         disable_system_checks = hookenv.config("disable_system_checks")
         for check in checks:
@@ -696,7 +699,8 @@ class SubordinateCheckDefinitions(dict):
             check["matching_files"] = glob.glob(nrpe_configfiles_sub)
             check["matching_files"].extend(glob.glob(nrpe_configfiles))
             check["description"] += " (sub)"
-            check["cmd_name"] += sub_postfix
+            if sub_postfix:
+                check["cmd_name"] += sub_postfix_sep + sub_postfix
             check["cmd_params"] = (
                 check["cmd_params"] if not disable_system_checks else ""
             )
