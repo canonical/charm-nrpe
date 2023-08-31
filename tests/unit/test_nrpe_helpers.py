@@ -218,7 +218,7 @@ class TestDiskSpaceCheck(unittest.TestCase):
                         "mountpoint": "/boot/efi"
                     },
                     {
-                        "name": "nvme0n1p4",
+                        "name": "nvme0n1p2",
                         "maj:min": "259:4",
                         "rm": false,
                         "size": "100G",
@@ -227,7 +227,7 @@ class TestDiskSpaceCheck(unittest.TestCase):
                         "mountpoint": "/"
                     },
                     {
-                        "name": "nvme0n1p5",
+                        "name": "nvme0n1p3",
                         "maj:min": "259:5",
                         "rm": false,
                         "size": "4G",
@@ -236,58 +236,57 @@ class TestDiskSpaceCheck(unittest.TestCase):
                         "mountpoint": "[SWAP]"
                     },
                     {
-                        "name": "nvme0n1p6",
+                        "name": "nvme0n1p4",
                         "maj:min": "259:6",
                         "rm": false,
                         "size": "1000M",
                         "ro": false,
                         "type": "part",
                         "mountpoint": "/srv/instances"
+                    },
+                    {
+                        "name": "nvme0n1p5",
+                        "maj:min": "259:6",
+                        "rm": false,
+                        "size": "500G",
+                        "ro": false,
+                        "type": "part",
+                        "mountpoints": [
+                            null
+                        ],
+                        "children": [
+                            {
+                                "name": "vg0-var--log--audit",
+                                "maj:min": "253:1",
+                                "rm": "0",
+                                "size": "51.2G",
+                                "ro": "0",
+                                "type": "lvm",
+                                "mountpoint": "/var/log/audit"
+                            },
+                            {
+                                "name": "vg0-var--log",
+                                "maj:min": "253:3",
+                                "rm": "0",
+                                "size": "93.1G",
+                                "ro": "0",
+                                "type": "lvm",
+                                "mountpoint": "/var/log"
+                            }
+                        ]
                     }
                 ]
             },
             {
-             "name": "vda",
-             "maj:min": "252:0",
-             "rm": false,
-             "size": "20G",
-             "ro": false,
-             "type": "disk",
-             "mountpoints": [
-                 null
-             ],
-             "children": [
-                {
-                   "name": "vda1",
-                   "maj:min": "252:1",
-                   "rm": false,
-                   "size": "19.9G",
-                   "ro": false,
-                   "type": "part",
-                   "mountpoints": [
-                       "/srv/jammy"
-                   ]
-                },{
-                   "name": "vda14",
-                   "maj:min": "252:14",
-                   "rm": false,
-                   "size": "4M",
-                   "ro": false,
-                   "type": "part",
-                   "mountpoints": [
-                       null
-                   ]
-                }
-             ]
-            },
-            {
-             "name":"vdb",
-             "maj:min":"252:16",
-             "rm":false,
-             "size":"1G",
-             "ro":false,
-             "type":"disk",
-             "mountpoint": "/var/lib/kubelet/pods/../k..s.io~csi/pvc../mount"
+                "name":"vdb",
+                "maj:min":"252:16",
+                "rm":false,
+                "size":"1G",
+                "ro":false,
+                "type":"disk",
+                "mountpoints": [
+                    "/var/lib/kubelet/pods/../k..s.io~csi/pvc../mount"
+                ]
             }
         ]
     }"""
@@ -295,18 +294,25 @@ class TestDiskSpaceCheck(unittest.TestCase):
     @mock.patch("subprocess.check_output", return_value=lsblk_output)
     def test_get_partitions_to_check(self, lock_lsblk_output):
         """Test the list of partitions to check."""
-        result = nrpe_helpers.get_partitions_to_check()
+        partitions = nrpe_helpers.get_partitions_to_check()
         params = [
-            ("SWAP", False),
+            ("/snap/charm/602", False),
             ("/boot/efi", False),
             ("/", True),
+            ("SWAP", False),
             ("/srv/instances", True),
-            ("/srv/jammy", True),
+            ("/var/log/audit", True),
+            ("/var/log", True),
             ("/var/lib/kubelet/pods/../k..s.io~csi/pvc../mount", False),
         ]
-        for p1, p2 in params:
-            with self.subTest(msg="Validate partition filtering", p1=p1, p2=p2):
-                self.assertEqual(p1 in result, p2)
+        for partition, expected in params:
+            with self.subTest(
+                msg="Validate partition filtering", p1=partition, p2=expected
+            ):
+                if expected:
+                    self.assertIn(partition, partitions)
+                else:
+                    self.assertNotIn(partition, partitions)
 
 
 def load_default_config():

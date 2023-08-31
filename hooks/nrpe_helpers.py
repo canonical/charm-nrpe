@@ -815,9 +815,25 @@ def is_valid_partition(device):
     return True
 
 
-def is_kubernetes_pv(mountpoint):
+def is_not_kubernetes_pv(mountpoint):
     """Check if a mountpoint is Kubernetes persistent volume."""
-    return mountpoint.startswith("/var/lib/kubelet/pods")
+    return not mountpoint.startswith("/var/lib/kubelet/pods")
+
+
+def process_block_devices(devices):
+    """Recursively process all sections in lsblk output."""
+    partitions_to_check = set()
+
+    for dev in devices:
+        # Jammy returns a list of "mountpoints" instead of a single value
+        # in the key "mountpoint"
+        mountpoints = dev.get("mountpoints", []) or [dev.get("mountpoint")]
+        if is_valid_partition(dev):
+            partitions_to_check.update(mountpoints)
+        children = dev.get("children", [])
+        partitions_to_check.update(process_block_devices(children))
+
+    return partitions_to_check
 
 
 def get_partitions_to_check():
@@ -825,27 +841,15 @@ def get_partitions_to_check():
     lsblk_cmd = "lsblk -J".split()
     lsblk_output = subprocess.check_output(lsblk_cmd).decode("UTF-8")
     block_devices = json.loads(lsblk_output).get("blockdevices", [])
-    partitions_to_check = set()
 
-    for dev in block_devices:
-        if not is_valid_partition(dev):
-            continue
-        mnt = dev.get("mountpoint", "")
-        if mnt and not is_kubernetes_pv(mnt):
-            partitions_to_check.add(mnt)
-        for child in dev.get("children", []):
-            if not is_valid_partition(child):
-                continue
-            # Jammy returns a list of "mountpoints" instead of a single value
-            # in the key "mountpoint"
-            mountpoints = child.get("mountpoints", []) or [child.get("mountpoint")]
-            for mnt in filter(bool, mountpoints):
-                if not is_kubernetes_pv(mnt):
-                    partitions_to_check.add(mnt)
+    partitions_to_check = process_block_devices(block_devices)
 
-    skipped_partitions = {"[SWAP]", "/boot/efi"}
+    skipped_partitions = {"[SWAP]", "/boot/efi", None}
+    partitions_to_check = partitions_to_check - skipped_partitions
 
-    return partitions_to_check - skipped_partitions
+    partitions_to_check = set(filter(is_not_kubernetes_pv, partitions_to_check))
+
+    return partitions_to_check
 
 
 def match_cidr_to_ifaces(cidr):
