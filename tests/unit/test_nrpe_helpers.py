@@ -295,6 +295,8 @@ class TestDiskSpaceCheck(unittest.TestCase):
     def test_get_partitions_to_check(self, lock_lsblk_output):
         """Test the list of partitions to check."""
         partitions = nrpe_helpers.get_partitions_to_check()
+        # mp here denotes the 'mountpoint' for microk8s
+        mp = "/var/snap/microk8s/common/var/lib/kubelet/pods/../k..s.io~csi/pvc../mount"
         params = [
             ("/snap/charm/602", False),
             ("/boot/efi", False),
@@ -304,6 +306,7 @@ class TestDiskSpaceCheck(unittest.TestCase):
             ("/var/log/audit", True),
             ("/var/log", True),
             ("/var/lib/kubelet/pods/../k..s.io~csi/pvc../mount", False),
+            (mp, False),
         ]
         for partition, expected in params:
             with self.subTest(
