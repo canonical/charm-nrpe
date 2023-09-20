@@ -815,11 +815,6 @@ def is_valid_partition(device):
     return True
 
 
-def is_not_kubernetes_pv(mountpoint):
-    """Check if a mountpoint is Kubernetes persistent volume."""
-    return not mountpoint.startswith("/var/lib/kubelet/pods")
-
-
 def process_block_devices(devices):
     """Recursively process all sections in lsblk output."""
     partitions_to_check = set()
@@ -836,6 +831,17 @@ def process_block_devices(devices):
     return partitions_to_check
 
 
+def is_valid_mountpoint(mountpoint):
+    """Check if mountpoint is not a K8s PV or system partition but valid mountpoint."""
+    skipped_partitions = [None, "[SWAP]", "/boot/efi"]
+
+    path = "/var/lib/kubelet/pods"
+
+    # Filtering mountpoints related to various Kubernetes PVs and system partition.
+    # ex- in MicroK8s, prefix "/var/snap/microk8s/common/" is appended to the mount path
+    return mountpoint not in skipped_partitions and path not in mountpoint
+
+
 def get_partitions_to_check():
     """Get a list of partitions to be checked by check_disk."""
     lsblk_cmd = "lsblk -J".split()
@@ -844,10 +850,7 @@ def get_partitions_to_check():
 
     partitions_to_check = process_block_devices(block_devices)
 
-    skipped_partitions = {"[SWAP]", "/boot/efi", None}
-    partitions_to_check = partitions_to_check - skipped_partitions
-
-    partitions_to_check = set(filter(is_not_kubernetes_pv, partitions_to_check))
+    partitions_to_check = set(filter(is_valid_mountpoint, partitions_to_check))
 
     return partitions_to_check
 
