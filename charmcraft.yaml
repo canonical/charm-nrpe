@@ -34,7 +34,3 @@ bases:
           channel: "18.04"
           architectures:
               - amd64
-        - name: ubuntu
-          channel: "16.04"
-          architectures:
-              - amd64
