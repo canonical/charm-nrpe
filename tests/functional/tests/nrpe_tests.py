@@ -3,8 +3,15 @@ import logging
 import pprint
 import unittest
 
+import tenacity
+
 import yaml
 import zaza.model as model  # noqa I201
+
+RETRY = tenacity.retry(
+    wait=tenacity.wait_fixed(5),
+    stop=tenacity.stop_after_attempt(5),
+)
 
 
 class TestBase(unittest.TestCase):
@@ -25,6 +32,7 @@ class TestBase(unittest.TestCase):
 class TestNrpe(TestBase):
     """Class for charm functional tests."""
 
+    @RETRY
     def test_01_nrpe_check(self):
         """Verify nrpe check exists."""
         logging.debug(
@@ -62,6 +70,7 @@ class TestNrpe(TestBase):
             content = result.get("Stdout")
             self.assertTrue(nrpe_checks[nrpe_check] in content)
 
+    @RETRY
     def test_02_enable_swap(self):
         """Check swap checks are applied."""
         swap = "-w 40% -c 25%"
@@ -79,6 +88,7 @@ class TestNrpe(TestBase):
         content = result.get("Stdout")
         self.assertTrue(swap in content)
 
+    @RETRY
     def test_02_remove_check(self):
         """Verify swap check is removed."""
         model.set_application_config(self.application_name, {"swap": ""})
@@ -87,6 +97,7 @@ class TestNrpe(TestBase):
         result = model.run_on_unit(self.lead_unit_name, cmd)
         self.assertTrue(result.get("Code") != 0)
 
+    @RETRY
     def test_03_user_monitor(self):
         """Verify user monitors are applied."""
         user_monitors = {
@@ -181,6 +192,7 @@ class TestNrpe(TestBase):
             content = result.get("Stdout")
             self.assertTrue(remote_nrpe_checks[nrpe_check] in content)
 
+    @RETRY
     def test_04_check_nagios_ip_is_allowed(self):
         """Verify nagios ip is allowed in nrpe.cfg."""
         nagios_ip = model.get_app_ips("nagios")[0]
@@ -195,6 +207,7 @@ class TestNrpe(TestBase):
         content = result.get("Stdout")
         self.assertTrue(line in content)
 
+    @RETRY
     def test_05_netlinks(self):
         """Check netlinks checks are applied."""
         netlinks = "- ens3 mtu:9000 speed:10000"
@@ -217,6 +230,7 @@ class TestNrpe(TestBase):
         content = result.get("Stdout")
         self.assertTrue(line in content)
 
+    @RETRY
     def test_06_container_checks(self):
         """Check that certain checks are enabled on hosts but disabled on containers."""
         # Enable appropriate config to enable various checks for testing whether they
@@ -281,6 +295,7 @@ class TestNrpe(TestBase):
             self._get_set_comparison(expected_host_only_checks, container_checks),
         )
 
+    @RETRY
     def test_07_cronjob_checks(self):
         """Check that cron job is installed and check enabled."""
         model.set_application_config(
@@ -304,6 +319,7 @@ class TestNrpe(TestBase):
             self._get_set_comparison(expected_cronjobs, cronjobs),
         )
 
+    @RETRY
     def test_08_plugins_copied(self):
         """Check that NRPE plugins are copied."""
         plugin_dir = "/usr/local/lib/nagios/plugins"
@@ -361,6 +377,7 @@ class TestNrpe(TestBase):
 class TestNrpeActions(TestBase):
     """Class for charm actions."""
 
+    @RETRY
     def test_01_ack_reboot(self):
         """Test the ack-reboot action."""
         uptime = (
