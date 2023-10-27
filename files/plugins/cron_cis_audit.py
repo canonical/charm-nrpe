@@ -7,21 +7,33 @@ import grp
 import os
 import random
 import re
+import stat
 import subprocess
 import sys
 import time
 
 
-AUDIT_FOLDER = "/usr/share/ubuntu-scap-security-guides"
-AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/cis-*-results.xml"
-CLOUD_INIT_LOG = "/var/log/cloud-init-output.log"
-DEFAULT_PROFILE = "level1_server"
+# cis audit changed from bionic ot focal.
 PROFILES = [
     "level1_server",
     "level2_server",
     "level1_workstation",
     "level2_workstation",
 ]
+if os.path.isfile("/usr/sbin/cis-audit"):
+    AUDIT_FOLDER = "/usr/share/ubuntu-scap-security-guides"
+    AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/cis-*-results.xml"
+    AUDIT_BIN = ["/usr/sbin/cis-audit"]
+else:
+    AUDIT_FOLDER = "/var/lib/usg/"
+    AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/usg-results-*.*.xml"
+    PROFILES = ["cis_" + p for p in PROFILES]
+    AUDIT_BIN = ["/usr/sbin/usg", "audit"]
+
+
+CLOUD_INIT_LOG = "/var/log/cloud-init-output.log"
+DEFAULT_PROFILE = PROFILES[0]
+
 MAX_SLEEP = 600
 PID_FILENAME = "/tmp/cron_cis_audit.pid"
 
@@ -56,9 +68,18 @@ def _get_cis_result_age():
         return (time.time() - os.path.getmtime(audit_file)) / 3600
 
 
+def _set_permissions():
+    print("Done cis-audit, change group of result file to nagios", flush=True)
+    os.chmod(AUDIT_FOLDER, stat.S_IRWXU | stat.S_IXGRP | stat.S_IRGRP)
+    os.chown(AUDIT_FOLDER, 0, grp.getgrnam("nagios").gr_gid)
+    for file in glob.glob(AUDIT_RESULT_GLOB):
+        os.chown(file, 0, grp.getgrnam("nagios").gr_gid)
+        os.chmod(file, stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP)
+
+
 def run_audit(profile):
     """Execute the cis-audit as subprocess and allow nagios group to read result."""
-    cmd_run_audit = ["/usr/sbin/cis-audit", profile]
+    cmd_run_audit = AUDIT_BIN + [profile]
     sleep_time = random.randint(0, MAX_SLEEP)
     print("Sleeping for {}s to randomize the cis-audit start time".format(sleep_time))
     time.sleep(sleep_time)
@@ -67,9 +88,7 @@ def run_audit(profile):
         subprocess.run(
             cmd_run_audit, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
-        print("Done cis-audit, change group of result file to nagios", flush=True)
-        for file in glob.glob(AUDIT_RESULT_GLOB):
-            os.chown(file, 0, grp.getgrnam("nagios").gr_gid)
+        _set_permissions()
     except subprocess.CalledProcessError as e:
         sys.exit(
             "Failed running command '{}' Return Code {}: {}".format(
@@ -108,7 +127,7 @@ def main():
     args = parse_args(sys.argv[1:])
 
     # folder does not exist - usg-cisbenchmark likely not installed
-    if not os.path.exists(AUDIT_FOLDER):
+    if not os.path.exists(AUDIT_FOLDER) and os.path.isfile("/usr/sbin/cis-audit"):
         raise FileNotFoundError(
             "Folder {} does not exist, is usg-cisbenchmark installed?".format(
                 AUDIT_FOLDER
