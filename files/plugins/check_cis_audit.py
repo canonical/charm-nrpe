@@ -17,7 +17,6 @@ import sys
 import time
 import xml.etree.ElementTree as ElementTree
 
-
 from nagios_plugin3 import (
     CriticalError,
     WarnError,
@@ -25,8 +24,21 @@ from nagios_plugin3 import (
 )
 
 
+def _get_major_version():
+    """Get major version from /etc/os-release."""
+    with open(os.path.join(os.sep, 'etc', 'os-release')) as fin:
+        content = dict(
+            line.split('=', 1)
+            for line in fin.read().splitlines()
+            if '=' in line
+        )
+    for k, v in content.items():
+        content[k] = v.strip('"')
+    return int(float(content["VERSION_ID"]))
+
+
 # cis-audit changed between bionic and focal
-if os.path.isfile("/usr/sbin/cis-audit"):
+if _get_major_version() < 20:
     AUDIT_FOLDER = "/usr/share/ubuntu-scap-security-guides"
     AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/cis-*-results.xml"
     PROFILE_MAP = {

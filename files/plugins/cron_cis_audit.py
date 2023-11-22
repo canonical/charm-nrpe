@@ -13,6 +13,19 @@ import sys
 import time
 
 
+def _get_major_version():
+    """Get major version from /etc/os-release."""
+    with open(os.path.join(os.sep, 'etc', 'os-release')) as fin:
+        content = dict(
+            line.split('=', 1)
+            for line in fin.read().splitlines()
+            if '=' in line
+        )
+    for k, v in content.items():
+        content[k] = v.strip('"')
+    return int(float(content["VERSION_ID"]))
+
+
 # cis audit changed from bionic ot focal.
 PROFILES = [
     "level1_server",
@@ -20,7 +33,8 @@ PROFILES = [
     "level1_workstation",
     "level2_workstation",
 ]
-if os.path.isfile("/usr/sbin/cis-audit"):
+DISTRO_VERSION = _get_major_version()
+if DISTRO_VERSION < 20:
     AUDIT_FOLDER = "/usr/share/ubuntu-scap-security-guides"
     AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/cis-*-results.xml"
     AUDIT_BIN = ["/usr/sbin/cis-audit"]
@@ -127,7 +141,7 @@ def main():
     args = parse_args(sys.argv[1:])
 
     # folder does not exist - usg-cisbenchmark likely not installed
-    if not os.path.exists(AUDIT_FOLDER) and os.path.isfile("/usr/sbin/cis-audit"):
+    if not os.path.exists(AUDIT_FOLDER) and DISTRO_VERSION < 20:
         raise FileNotFoundError(
             "Folder {} does not exist, is usg-cisbenchmark installed?".format(
                 AUDIT_FOLDER
