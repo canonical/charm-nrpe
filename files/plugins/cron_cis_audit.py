@@ -16,14 +16,10 @@ import time
 def _get_major_version():
     """Get major version from /etc/os-release."""
     with open(os.path.join(os.sep, 'etc', 'os-release')) as fin:
-        content = dict(
-            line.split('=', 1)
-            for line in fin.read().splitlines()
-            if '=' in line
-        )
-    for k, v in content.items():
-        content[k] = v.strip('"')
-    return int(float(content["VERSION_ID"]))
+        for line in fin.readlines():
+            if "VERSION_ID" in line:
+                value = line.strip().split("=", 1)[1]
+                return int(float(value.strip('"')))
 
 
 # cis audit changed from bionic ot focal.
