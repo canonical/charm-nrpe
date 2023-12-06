@@ -183,7 +183,11 @@ class TestCronCisAudit(TestCase):
             process_mock.configure_mock(**attrs)
             mock_subprocess_run.return_value = process_mock
             cron_cis_audit.main()
-            mock_subprocess_run.assert_called_once_with([self.bionic_audit_bin[0], self.bionic_profiles[0]], stdout=-3, stderr=-3)
+            mock_subprocess_run.assert_called_once_with(
+                [self.bionic_audit_bin[0], self.bionic_profiles[0]],
+                stdout=-3,
+                stderr=-3,
+            )
 
     @mock.patch("files.plugins.cron_cis_audit.MAX_SLEEP", 1)
     @mock.patch.multiple(
@@ -204,7 +208,9 @@ class TestCronCisAudit(TestCase):
             process_mock.configure_mock(**attrs)
             mock_subprocess_run.return_value = process_mock
             cron_cis_audit.main()
-            mock_subprocess_run.assert_called_once_with(self.focal_audit_bin + [self.focal_profiles[0]], stdout=-3, stderr=-3)
+            mock_subprocess_run.assert_called_once_with(
+                self.focal_audit_bin + [self.focal_profiles[0]], stdout=-3, stderr=-3
+            )
 
 
 class TestCheckCisAudit(TestCase):
@@ -243,7 +249,8 @@ class TestCheckCisAudit(TestCase):
             os.mkdir(cls.audit_result_folder)
             with open(cls.bionic_testfile1, mode="a"):
                 pass  # create empty file
-            sleep(0.1)  # short delay since get_audit_result_filepath returns the newest file by mtime
+            # short delay. get_audit_result_filepath returns the newest file by mtime
+            sleep(0.1)
             with open(cls.bionic_testfile2, mode="w") as f:
                 f.write(DUMMY_AUDIT_RESULT)
             with open(cls.focal_testfile1, mode="a"):
