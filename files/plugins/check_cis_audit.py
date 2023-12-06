@@ -27,10 +27,11 @@ from nagios_plugin3 import (
 def _get_major_version():
     """Get major version from /etc/os-release."""
     with open(os.path.join(os.sep, 'etc', 'os-release')) as fin:
-        for line in fin.readlines():
+        for line in fin:
             if "VERSION_ID" in line:
                 value = line.strip().split("=", 1)[1]
                 return int(float(value.strip('"')))
+    raise OSError("No VERSION_ID in /etc/os-release")
 
 
 # cis-audit changed between bionic and focal
