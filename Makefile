@@ -38,7 +38,7 @@ submodules-update:
 	@echo "Pulling latest updates for submodules"
 	@git submodule update --init --recursive --remote --merge
 
-build: submodules-update
+build:
 	@echo "Building charm to base directory ${CHARM_BUILD_DIR}/${CHARM_NAME}.charm"
 	@-git rev-parse --abbrev-ref HEAD > ./repo-info
 	@-git describe --always > ./version
@@ -59,7 +59,7 @@ proof:
 	@echo "Running charm proof"
 	@-charm proof
 
-unittests: submodules-update
+unittests:
 	@echo "Running unit tests"
 	@tox -e unit
 
