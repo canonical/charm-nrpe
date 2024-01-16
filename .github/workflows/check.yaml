@@ -26,16 +26,19 @@ jobs:
     needs: lint-unit
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - juju-channel: "3.1/stable"
-            command: "make functional"
-            runs-on: "['self-hosted', 'xlarge']"
     with:
-      command: ${{ matrix.command }}
-      juju-channel: ${{ matrix.juju-channel }}
-      nested-containers: true
+      command: "make functional"
+      juju-channel: "2.9/stable"
       provider: "lxd"
       python-version: "3.10"
       timeout-minutes: 120
       tox-version: "<4"
+      runs-on: "['self-hosted', 'runner-nrpe']"
+      action-operator: false
+      external-controller: true
+      juju-controller: soleng-ci-ctrl-29
+      zaza-yaml: "LS0tCm1vZGVsX3NldHRpbmdzOgogIGltYWdlLXN0cmVhbTogcmVsZWFzZWQKcmVnaW9uOiBwcm9kc3RhY2s2CmNsb3VkOiBidWlsZGVyLWNsb3VkLTI5CmNyZWRlbnRpYWw6IGJ1aWxkZXItY2xvdWQtMjktY3JlZAo="
+    secrets:
+      juju-controllers-yaml: ${{ secrets.JUJU_CONTROLLERS_YAML }}
+      juju-accounts-yaml: ${{ secrets.JUJU_ACCOUNTS_YAML }}
+      openstack-auth-env: ${{ secrets.OPENSTACK_AUTH_ENV }}
