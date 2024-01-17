@@ -13,7 +13,7 @@ So when new check triggered, alert will be resolved.
 """
 import sys
 
-# current dir will be charm root dir
+# current dir will be the charm root dir
 sys.path.append("hooks")
 
 # ignore E402 since we have to import these after we append hooks to sys.path
