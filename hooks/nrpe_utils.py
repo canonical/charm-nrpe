@@ -1,4 +1,5 @@
 """Nrpe utils module."""
+
 import glob
 import os
 import shutil

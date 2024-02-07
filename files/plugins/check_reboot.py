@@ -63,8 +63,8 @@ def convert_time(str_time):
         return datetime.strptime(str_time, UPTIME_FORMAT)
     except ValueError as exc:
         raise argparse.ArgumentTypeError(
-            'time must be in format {}, '
-            'same as output from `uptime --since`.'.format(UPTIME_FORMAT_HUMAN)
+            "time must be in format {}, "
+            "same as output from `uptime --since`.".format(UPTIME_FORMAT_HUMAN)
         ) from exc
 
 
@@ -78,7 +78,8 @@ def main():
         "known_reboot_time",
         type=convert_time,
         help="in format {}, same as output from `uptime --since`".format(
-            UPTIME_FORMAT_HUMAN),
+            UPTIME_FORMAT_HUMAN
+        ),
     )
 
     args = parser.parse_args()

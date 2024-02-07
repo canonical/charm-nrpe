@@ -26,7 +26,7 @@ from nagios_plugin3 import (
 
 def _get_major_version():
     """Get major version from /etc/os-release."""
-    with open(os.path.join(os.sep, 'etc', 'os-release')) as fin:
+    with open(os.path.join(os.sep, "etc", "os-release")) as fin:
         for line in fin:
             if "VERSION_ID" in line:
                 value = line.strip().split("=", 1)[1]
@@ -48,10 +48,10 @@ else:
     AUDIT_FOLDER = "/var/lib/usg"
     AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/usg-results-*.*.xml"
     PROFILE_MAP = {
-      "level1_server": "cis_level1_server",
-      "level2_server": "cis_level2_server",
-      "level1_workstation": "cis_level1_workstation",
-      "level2_workstation": "cis_level2_workstation",
+        "level1_server": "cis_level1_server",
+        "level2_server": "cis_level2_server",
+        "level1_workstation": "cis_level1_workstation",
+        "level2_workstation": "cis_level2_workstation",
     }
 
 

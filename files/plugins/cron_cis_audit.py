@@ -15,7 +15,7 @@ import time
 
 def _get_major_version():
     """Get major version from /etc/os-release."""
-    with open(os.path.join(os.sep, 'etc', 'os-release')) as fin:
+    with open(os.path.join(os.sep, "etc", "os-release")) as fin:
         for line in fin:
             if "VERSION_ID" in line:
                 value = line.strip().split("=", 1)[1]

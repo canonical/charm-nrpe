@@ -1,4 +1,5 @@
 """Unit tests for hooks/nrpe_helpers.py module."""
+
 import os
 import unittest
 from unittest import mock
