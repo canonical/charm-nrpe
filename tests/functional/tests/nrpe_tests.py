@@ -1,4 +1,5 @@
 """Zaza functional tests."""
+
 import logging
 import pprint
 import unittest

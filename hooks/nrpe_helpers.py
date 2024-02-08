@@ -1,4 +1,5 @@
 """Nrpe helpers module."""
+
 import glob
 import ipaddress
 import json
@@ -553,11 +554,11 @@ class SubordinateCheckDefinitions(dict):
                         "cmd_exec": os.path.join(
                             local_plugin_dir, "check_ro_filesystem.py"
                         ),
-                        "cmd_params": "-e {}".format(
-                            hookenv.config("ro_filesystem_excludes")
-                        )
-                        if hookenv.config("ro_filesystem_excludes")
-                        else "",
+                        "cmd_params": (
+                            "-e {}".format(hookenv.config("ro_filesystem_excludes"))
+                            if hookenv.config("ro_filesystem_excludes")
+                            else ""
+                        ),
                     },
                 ]
             )
@@ -586,9 +587,11 @@ class SubordinateCheckDefinitions(dict):
                         "description": "Check disk space on {}".format(mountpoint),
                         "cmd_name": "check_space{}".format(check_path),
                         "cmd_exec": pkg_plugin_dir + "check_disk",
-                        "cmd_params": cmd_params
-                        if space_check["check"].strip() != "disabled"
-                        else "",
+                        "cmd_params": (
+                            cmd_params
+                            if space_check["check"].strip() != "disabled"
+                            else ""
+                        ),
                     }
                 )
 
