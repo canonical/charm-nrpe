@@ -17,7 +17,6 @@ import sys
 import time
 import xml.etree.ElementTree as ElementTree
 
-
 from nagios_plugin3 import (
     CriticalError,
     WarnError,
@@ -25,8 +24,35 @@ from nagios_plugin3 import (
 )
 
 
-AUDIT_FOLDER = "/usr/share/ubuntu-scap-security-guides"
-AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/cis-*-results.xml"
+def _get_major_version():
+    """Get major version from /etc/os-release."""
+    with open(os.path.join(os.sep, "etc", "os-release")) as fin:
+        for line in fin:
+            if "VERSION_ID" in line:
+                value = line.strip().split("=", 1)[1]
+                return int(float(value.strip('"')))
+    raise OSError("No VERSION_ID in /etc/os-release")
+
+
+# cis-audit changed between bionic and focal
+if _get_major_version() < 20:
+    AUDIT_FOLDER = "/usr/share/ubuntu-scap-security-guides"
+    AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/cis-*-results.xml"
+    PROFILE_MAP = {
+        "level1_server": "cis_profile_Level_1_Server",
+        "level2_server": "cis_profile_Level_2_Server",
+        "level1_workstation": "cis_profile_Level_1_Workstation",
+        "level2_workstation": "cis_profile_Level_2_Workstation",
+    }
+else:
+    AUDIT_FOLDER = "/var/lib/usg"
+    AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/usg-results-*.*.xml"
+    PROFILE_MAP = {
+        "level1_server": "cis_level1_server",
+        "level2_server": "cis_level2_server",
+        "level1_workstation": "cis_level1_workstation",
+        "level2_workstation": "cis_level2_workstation",
+    }
 
 
 def get_audit_result_filepath():
@@ -56,14 +82,8 @@ def check_file_max_age(max_age, results_filepath):
 
 def parse_profile_idref(profile_idref):
     """Parse the profile idref and return cis-audit level."""
-    profiles = {  # name: match_string
-        "level1_server": "cis_profile_Level_1_Server",
-        "level2_server": "cis_profile_Level_2_Server",
-        "level1_workstation": "cis_profile_Level_1_Workstation",
-        "level2_workstation": "cis_profile_Level_2_Workstation",
-    }
-    for profile in profiles:
-        if profile_idref.endswith(profiles[profile]):
+    for profile in PROFILE_MAP:
+        if profile_idref.endswith(PROFILE_MAP[profile]):
             return profile
 
     msg = "CRITICAL: could not determine profile from idref '{}'"
