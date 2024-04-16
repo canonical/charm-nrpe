@@ -28,8 +28,8 @@ jobs:
     strategy:
       fail-fast: false
     with:
-      command: "make functional"
-      juju-channel: "2.9/stable"
+      command: "TEST_JUJU3=1 make functional"
+      juju-channel: "3.1/stable"
       provider: "lxd"
       python-version: "3.10"
       timeout-minutes: 120
@@ -37,8 +37,8 @@ jobs:
       runs-on: "['self-hosted', 'runner-nrpe']"
       action-operator: false
       external-controller: true
-      juju-controller: soleng-ci-ctrl-29
-      zaza-yaml: "LS0tCm1vZGVsX3NldHRpbmdzOgogIGltYWdlLXN0cmVhbTogcmVsZWFzZWQKcmVnaW9uOiBwcm9kc3RhY2s2CmNsb3VkOiBidWlsZGVyLWNsb3VkLTI5CmNyZWRlbnRpYWw6IGJ1aWxkZXItY2xvdWQtMjktY3JlZAo="
+      juju-controller: soleng-ci-ctrl
+      zaza-yaml: "LS0tCm1vZGVsX3NldHRpbmdzOgogIGltYWdlLXN0cmVhbTogcmVsZWFzZWQKcmVnaW9uOiBwcm9kc3RhY2s2CmNsb3VkOiBidWlsZGVyLWNsb3VkCmNyZWRlbnRpYWw6IGJ1aWxkZXItY2xvdWQtY3JlZAo="
     secrets:
       juju-controllers-yaml: ${{ secrets.JUJU_CONTROLLERS_YAML }}
       juju-accounts-yaml: ${{ secrets.JUJU_ACCOUNTS_YAML }}
