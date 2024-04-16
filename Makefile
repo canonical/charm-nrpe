@@ -25,10 +25,10 @@ help:
 	@echo ""
 
 clean:
-	@echo "Cleaning files"
-	@git clean -ffXd -e '!.idea'
 	@echo "Cleaning existing build"
-	@rm -rf ${CHARM_BUILD_DIR}/${CHARM_NAME}
+	@rm -rf ${PROJECTPATH}/${CHARM_NAME}*.charm
+	@echo "Cleaning charmcraft"
+	@charmcraft clean
 
 submodules:
 	@echo "Cloning submodules"
@@ -64,8 +64,9 @@ unittests:
 	@tox -e unit
 
 functional: build
-	@echo "Executing functional tests in ${CHARM_BUILD_DIR}"
-	@CHARM_BUILD_DIR=${CHARM_BUILD_DIR} tox -e func
+	@echo "Executing functional tests with ${PROJECTPATH}/${CHARM_NAME}.charm"
+	@CHARM_LOCATION=${PROJECTPATH} tox -e func -- ${FUNC_ARGS}
+
 
 test: lint proof unittests functional
 	@echo "Charm ${CHARM_NAME} has been tested"
