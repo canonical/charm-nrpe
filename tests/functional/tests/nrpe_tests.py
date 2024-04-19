@@ -211,13 +211,13 @@ class TestNrpe(TestBase):
     @RETRY
     def test_05_netlinks(self):
         """Check netlinks checks are applied."""
-        netlinks = "- ens3 mtu:9000 speed:10000"
+        netlinks = "- lxdbr0 mtu:1500 speed:1000"
         model.set_application_config(self.application_name, {"netlinks": netlinks})
         model.block_until_all_units_idle()
-        cmd = "cat /etc/nagios/nrpe.d/check_netlinks_ens3.cfg"
+        cmd = "cat /etc/nagios/nrpe.d/check_netlinks_lxdbr0.cfg"
         line = (
-            "command[check_netlinks_ens3]=/usr/local/lib/nagios/plugins/"
-            "check_netlinks.py -i ens3 -m 9000 -s 1000"
+            "command[check_netlinks_lxdbr0]=/usr/local/lib/nagios/plugins/"
+            "check_netlinks.py -i lxdbr0 -m 1500 -s 1000"
         )
         result = model.run_on_unit(self.lead_unit_name, cmd)
         code = result.get("Code")
@@ -225,7 +225,7 @@ class TestNrpe(TestBase):
         if code != "0":
             logging.warning(
                 "Unable to find nrpe check at "
-                "/etc/nagios/nrpe.d/check_netlinks_ens3.cfg"
+                "/etc/nagios/nrpe.d/check_netlinks_lxdbr0.cfg"
             )
             raise model.CommandRunFailed(cmd, result)
         content = result.get("Stdout")
@@ -249,7 +249,7 @@ class TestNrpe(TestBase):
                 "swap_activity": "-i 5 -w 10240 -c 40960",
                 "mem": "-C -h -u -w 85 -c 90",
                 "lacp_bonds": "lo",  # Enable a bogus lacp check on the loopback iface
-                "netlinks": "- ens3 mtu:9000 speed:10000",
+                "netlinks": "- lxdbr0 mtu:1500 speed:1000",
                 "xfs_errors": "5",
             },
         )
@@ -272,7 +272,7 @@ class TestNrpe(TestBase):
                 "check_lacp_lo.cfg",
                 "check_load.cfg",
                 "check_mem.cfg",
-                "check_netlinks_ens3.cfg",
+                "check_netlinks_lxdbr0.cfg",
                 "check_ro_filesystem.cfg",
                 "check_swap.cfg",
                 "check_swap_activity.cfg",

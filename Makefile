@@ -25,10 +25,10 @@ help:
 	@echo ""
 
 clean:
-	@echo "Cleaning files"
-	@git clean -ffXd -e '!.idea'
 	@echo "Cleaning existing build"
-	@rm -rf ${CHARM_BUILD_DIR}/${CHARM_NAME}
+	@rm -rf ${PROJECTPATH}/${CHARM_NAME}*.charm
+	@echo "Cleaning charmcraft"
+	@charmcraft clean
 
 submodules:
 	@echo "Cloning submodules"
@@ -38,11 +38,10 @@ submodules-update:
 	@echo "Pulling latest updates for submodules"
 	@git submodule update --init --recursive --remote --merge
 
-build:
-	@echo "Building charm to base directory ${CHARM_BUILD_DIR}/${CHARM_NAME}.charm"
-	@-git rev-parse --abbrev-ref HEAD > ./repo-info
-	@-git describe --always > ./version
-	@tox -e build
+build: clean
+	@echo "Building charm"
+	@charmcraft -v pack ${BUILD_ARGS}
+	@bash -c ./rename.sh
 
 release: clean build
 	@charmcraft upload nrpe.charm --release edge
@@ -64,8 +63,9 @@ unittests:
 	@tox -e unit
 
 functional: build
-	@echo "Executing functional tests in ${CHARM_BUILD_DIR}"
-	@CHARM_BUILD_DIR=${CHARM_BUILD_DIR} tox -e func
+	@echo "Executing functional tests with ${PROJECTPATH}/${CHARM_NAME}.charm"
+	@CHARM_LOCATION=${PROJECTPATH} tox -e func -- ${FUNC_ARGS}
+
 
 test: lint proof unittests functional
 	@echo "Charm ${CHARM_NAME} has been tested"
