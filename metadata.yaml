@@ -2,6 +2,7 @@ name: nrpe
 format: 2
 summary: Nagios Remote Plugin Executor Server
 maintainer: LMA Charmers <llama-charmers@lists.ubuntu.com>
+website: https://github.com/canonical/charm-nrpe
 subordinate: true
 docs: https://discourse.charmhub.io/t/nrpe-docs-index/11332
 description: |
