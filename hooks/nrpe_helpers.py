@@ -269,6 +269,7 @@ class MonitorsRelation(helpers.RelationContext):
 
         relation_info = {
             "target-id": self.principal_relation.nagios_hostname(),
+            "nagios_host_context": hookenv.config("nagios_host_context"),
             "monitors": self.get_monitors(),
             "private-address": address,
             "ingress-address": address,
