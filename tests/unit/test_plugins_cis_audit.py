@@ -75,7 +75,7 @@ class TestCronCisAudit(TestCase):
         profile = cron_cis_audit._get_cis_hardening_profile("")
         self.assertEqual(
             profile,
-            cron_cis_audit.DEFAULT_PROFILE,
+            [cron_cis_audit.DEFAULT_PROFILE],
             "Default profile should have been returned",
         )
         # parameter should be returned if parameter contains a valid profile
@@ -83,19 +83,31 @@ class TestCronCisAudit(TestCase):
         profile = cron_cis_audit._get_cis_hardening_profile(expected_profile)
         self.assertEqual(
             profile,
-            expected_profile,
+            [expected_profile],
             "The profile in the parameter should have been returned",
         )
 
     @mock.patch("files.plugins.cron_cis_audit.CLOUD_INIT_LOG", cloud_init_logfile)
     def test_get_cis_hardening_profile_cloudinit(self):
         """Test the detection of the hardening profile from cloudinit.log."""
-        expected_profile = "level2_server"
+        expected_profile = ["level2_server"]
         profile = cron_cis_audit._get_cis_hardening_profile("")
         self.assertEqual(
             profile,
             expected_profile,
             "Profile from Dummy file should be 'level2_server'",
+        )
+
+    @mock.patch("files.plugins.cron_cis_audit.TAILORING_CIS_FILE")
+    def test_get_cis_hardening_profile_tailoring(self, mock_tailoring):
+        """Test hardening profile when using tailoring file."""
+        # default profile should be return if profile passed is invalid
+        mock_tailoring.exists.return_value = True
+        profile = cron_cis_audit._get_cis_hardening_profile("")
+        self.assertEqual(
+            profile,
+            [],
+            "No profile should have been returned",
         )
 
     def test_get_cis_result_age(self):
@@ -124,12 +136,23 @@ class TestCronCisAudit(TestCase):
         """Test the default parsing behavior of the argument parser."""
         # test empty parameters
         args = cron_cis_audit.parse_args([])
-        self.assertEqual(args, argparse.Namespace(cis_profile="", max_age=168))
+        self.assertEqual(
+            args, argparse.Namespace(cis_profile="", max_age=168, tailoring=False)
+        )
 
         # test setting parameters
         args = cron_cis_audit.parse_args(["-a 1", f"-p={self.bionic_profiles[3]}"])
         self.assertEqual(
-            args, argparse.Namespace(cis_profile=self.bionic_profiles[3], max_age=1)
+            args,
+            argparse.Namespace(
+                cis_profile=self.bionic_profiles[3], max_age=1, tailoring=False
+            ),
+        )
+
+        # test to use tailoring file
+        args = cron_cis_audit.parse_args(["-t"])
+        self.assertEqual(
+            args, argparse.Namespace(cis_profile="", max_age=168, tailoring=True)
         )
 
         # test setting invalid parameter
@@ -137,6 +160,14 @@ class TestCronCisAudit(TestCase):
             cron_cis_audit.parse_args(["-p=invalid-parameter-test"])
         self.assertRegex(
             mock_stderr.getvalue(), r"invalid choice: 'invalid-parameter-test'"
+        )
+
+        # test setting mutual exclusive parameters
+        with self.assertRaises(SystemExit):
+            cron_cis_audit.parse_args(["-t", f"-p={self.bionic_profiles[3]}"])
+        self.assertRegex(
+            mock_stderr.getvalue(),
+            r"You cannot provide both a tailoring file and a profile",
         )
 
     @mock.patch("sys.argv", [])

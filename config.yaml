@@ -288,7 +288,16 @@ options:
       profile will be extracted from '/var/log/cloud-init-output.log', fallback is 'level1_server'.
       Options are: '' (disable profile check), 'level1_server', 'level2_server',
                    'level1_workstation' or 'level2_workstation'
+      This option cannot be used with cis_audit_tailoringfile at the same time.
       See also https://ubuntu.com/security/certifications/docs/cis-audit
+  cis_audit_tailoringfile:
+    default: ""
+    type: string
+    description: |
+      Custom cis profile xml file. The content of the file will be placed at
+      /etc/usg/default-tailoring.xml. This option cannot be used with cis_audit_profile at the
+      same time.
+      See also https://ubuntu.com/blog/cis-security-compliance-usg
   reboot:
     default: True
     type: boolean

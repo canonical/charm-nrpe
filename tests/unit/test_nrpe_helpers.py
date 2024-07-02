@@ -7,7 +7,7 @@ from unittest import mock
 import netifaces
 
 import nrpe_helpers
-from nrpe_helpers import match_cidr_to_ifaces
+from nrpe_helpers import _get_cis_audit_check, match_cidr_to_ifaces
 
 import yaml
 
@@ -332,6 +332,12 @@ def load_default_config():
 class TestSubordinateCheckDefinitions(unittest.TestCase):
     """Test SubordinateCheckDefinitions() related code."""
 
+    def setUp(self):
+        """Patch necessary methods for this test case."""
+        self.cis_audit_check = mock.patch("nrpe_helpers._get_cis_audit_check").start()
+        self.addCleanup(mock.patch.stopall)
+        self.cis_audit_check.return_value = {}
+
     def glob_valid_cpufreq_path(self, arg):
         """Return a valid list of cpufreq sysfs paths.
 
@@ -574,3 +580,48 @@ class TestSubordinateCheckDefinitions(unittest.TestCase):
         for expected in {"check_space_root", "check_space_var", "check_space_var_log"}:
             with self.subTest():
                 self.assertIn(expected, cmd_names)
+
+
+class TestCISAuditCheck(unittest.TestCase):
+    """Test CIS audit related code."""
+
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_get_cis_audit_check_not_enabled(self, mock_config):
+        """Test when cis_audit_enabled is not enabled."""
+        config = {"cis_audit_enabled": False}
+        mock_config.side_effect = lambda key: config[key]
+        self.assertEqual(_get_cis_audit_check(), {})
+
+    @mock.patch("nrpe_helpers.TAILORING_CIS_FILE")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_get_cis_audit_check_enabled_not_tailoring_file(
+        self, mock_config, mock_tailoring
+    ):
+        """Test when cis_audit_enabled is enabled and using profile."""
+        config = {
+            "cis_audit_enabled": True,
+            "cis_audit_profile": "level1_server",
+            "cis_audit_score": "-w 85 -c 80",
+            "cis_audit_tailoringfile": "",
+        }
+        mock_config.side_effect = lambda key: config[key]
+        self.assertEqual(
+            _get_cis_audit_check()["cmd_params"], "-p 'level1_server' -w 85 -c 80"
+        )
+        mock_tailoring.write_text.assert_not_called()
+
+    @mock.patch("nrpe_helpers.TAILORING_CIS_FILE")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_get_cis_audit_check_enabled_tailoring_file(
+        self, mock_config, mock_tailoring
+    ):
+        """Test when cis_audit_enabled is enabled and using the tailoring file."""
+        config = {
+            "cis_audit_enabled": True,
+            "cis_audit_profile": "",
+            "cis_audit_score": "-w 85 -c 80",
+            "cis_audit_tailoringfile": "xml content",
+        }
+        mock_config.side_effect = lambda key: config[key]
+        self.assertEqual(_get_cis_audit_check()["cmd_params"], "-t -p '' -w 85 -c 80")
+        mock_tailoring.write_text.assert_called_once_with("xml content")
