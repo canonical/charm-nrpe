@@ -101,7 +101,6 @@ class TestCronCisAudit(TestCase):
     @mock.patch("files.plugins.cron_cis_audit.TAILORING_CIS_FILE")
     def test_get_cis_hardening_profile_tailoring(self, mock_tailoring):
         """Test hardening profile when using tailoring file."""
-        # default profile should be return if profile passed is invalid
         mock_tailoring.exists.return_value = True
         profile = cron_cis_audit._get_cis_hardening_profile("")
         self.assertEqual(
