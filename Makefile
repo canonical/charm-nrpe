@@ -38,7 +38,7 @@ submodules-update:
 	@echo "Pulling latest updates for submodules"
 	@git submodule update --init --recursive --remote --merge
 
-build: clean
+build: clean submodules
 	@echo "Building charm"
 	@charmcraft -v pack ${BUILD_ARGS}
 	@bash -c ./rename.sh
