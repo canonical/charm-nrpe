@@ -614,7 +614,6 @@ class TestCISAuditCheck(unittest.TestCase):
         self.assertEqual(nrpe_helpers._get_cis_audit_check(), {})
         mock_tailor_handler.assert_not_called()
 
-
     @mock.patch("nrpe_helpers.hookenv.config")
     def test_cis_misconfiguration(self, mock_config):
         """Test that is misconfigured if user pass profile and tailoring file."""
@@ -629,9 +628,7 @@ class TestCISAuditCheck(unittest.TestCase):
 
     @mock.patch("nrpe_helpers.TAILORING_CIS_FILE")
     @mock.patch("nrpe_helpers.hookenv.config")
-    def test_cis_tailoring_file_handler_erase(
-        self, mock_config, mock_tailor
-    ):
+    def test_cis_tailoring_file_handler_erase(self, mock_config, mock_tailor):
         """Test that the file handler erase the tailoring file."""
         config = {
             "cis_audit_profile": "level1_server",
@@ -645,9 +642,7 @@ class TestCISAuditCheck(unittest.TestCase):
 
     @mock.patch("nrpe_helpers.TAILORING_CIS_FILE")
     @mock.patch("nrpe_helpers.hookenv.config")
-    def test_cis_tailoring_file_handler_write(
-        self, mock_config, mock_tailor
-    ):
+    def test_cis_tailoring_file_handler_write(self, mock_config, mock_tailor):
         """Test that the file handler write the tailoring file."""
         config = {
             "cis_audit_profile": "",

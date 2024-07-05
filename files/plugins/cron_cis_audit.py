@@ -75,7 +75,7 @@ def _get_cis_hardening_profile(profile):
     for _, line in enumerate(open(CLOUD_INIT_LOG)):
         for match in re.finditer(pattern, line):
             level, machine_type = match.groups()
-            return ["level{}_{}".format(level, machine_type)]
+            return "level{}_{}".format(level, machine_type)
 
     return DEFAULT_PROFILE
 
