@@ -338,6 +338,7 @@ class TestCheckCisAudit(TestCase):
         self.assertEqual(score, 66.160233)
         self.assertEqual(profile, "level1_server")
 
+    @mock.patch("files.plugins.check_cis_audit._get_major_version", 20)
     @mock.patch("sys.argv", [])
     def test_parse_args(self):
         """Test the argument parsing."""
@@ -355,16 +356,52 @@ class TestCheckCisAudit(TestCase):
 
         # test setting arguments
         arguments = check_cis_audit.parse_args(
-            ["-a", "1", "-c", "99", "-w", "90", "-p", "level2_server"]
+            ["-a", "1", "-c", "99", "-w", "90", "-p", "cis_level2_server"]
         )
         self.assertEqual(
             arguments,
             argparse.Namespace(
-                cis_profile="level2_server",
+                cis_profile="cis_level2_server",
                 crit=99,
                 max_age=1,
                 warn=90,
             ),
+        )
+
+    @mock.patch("sys.argv", [])
+    @mock.patch("files.plugins.check_cis_audit.PROFILE_OPTIONS")
+    @mock.patch("sys.stderr", new_callable=StringIO)
+    def test_parse_args_wrong_profile(self, mock_stderr, profile_options):
+        # When on focal, profile options should have the "cis_" prefix
+        profile_options.return_value = [
+            "",
+            "cis_level1_server",
+            "cis_level2_server",
+            "cis_level1_workstation",
+            "cis_level2_workstation"
+        ]
+        with self.assertRaises(SystemExit):
+            check_cis_audit.parse_args(["-p", "level2_server"])
+
+        self.assertRegex(
+            mock_stderr.getvalue(),
+            r"argument --cis-profile/-p: invalid choice:",
+        )
+
+        # When on bionic, profile options cannot have the "cis_" prefix
+        profile_options.return_value = [
+            "",
+            "level1_server",
+            "level2_server",
+            "level1_workstation",
+            "level2_workstation"
+        ]
+        with self.assertRaises(SystemExit):
+            check_cis_audit.parse_args(["-p", "cis_level2_server"])
+
+        self.assertRegex(
+            mock_stderr.getvalue(),
+            r"argument --cis-profile/-p: invalid choice:",
         )
 
     @mock.patch.multiple(

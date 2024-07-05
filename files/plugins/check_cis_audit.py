@@ -58,6 +58,7 @@ else:
     }
     PROFILE_OPTIONS = list(PROFILE_MAP.values())
 
+
 def get_audit_result_filepath():
     """Get the path of the newest audit results file."""
     audit_files = glob.glob(AUDIT_RESULT_GLOB)
