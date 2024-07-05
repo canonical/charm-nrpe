@@ -54,14 +54,14 @@ TAILORING_CIS_FILE = Path("/etc/usg/default-tailoring.xml")
 def _get_cis_hardening_profile(profile):
     """Try to read the cis profile from cloud init log or default to level1_server.
 
-    If exists the "default" tailoring file in /etc/usg/default-tailoring.xml,
+    If the "default" tailoring file exists in /etc/usg/default-tailoring.xml,
     no profile is passed.
     """
-    if profile in PROFILES:
-        return [profile]
-
     if TAILORING_CIS_FILE.exists():
-        return []
+        return None
+
+    if profile in PROFILES:
+        return profile
 
     if not os.path.exists(CLOUD_INIT_LOG) or not os.access(CLOUD_INIT_LOG, os.R_OK):
         print(
@@ -69,7 +69,7 @@ def _get_cis_hardening_profile(profile):
                 CLOUD_INIT_LOG, DEFAULT_PROFILE
             )
         )
-        return [DEFAULT_PROFILE]
+        return DEFAULT_PROFILE
 
     pattern = re.compile(r"Applying Level-(1|2) scored (server|workstation)")
     for _, line in enumerate(open(CLOUD_INIT_LOG)):
@@ -77,7 +77,7 @@ def _get_cis_hardening_profile(profile):
             level, machine_type = match.groups()
             return ["level{}_{}".format(level, machine_type)]
 
-    return [DEFAULT_PROFILE]
+    return DEFAULT_PROFILE
 
 
 def _get_cis_result_age():
@@ -101,7 +101,7 @@ def _set_permissions():
 
 def run_audit(profile):
     """Execute the cis-audit as subprocess and allow nagios group to read result."""
-    cmd_run_audit = AUDIT_BIN + profile
+    cmd_run_audit = AUDIT_BIN + [profile] if profile else AUDIT_BIN
     sleep_time = random.randint(0, MAX_SLEEP)
     print("Sleeping for {}s to randomize the cis-audit start time".format(sleep_time))
     time.sleep(sleep_time)

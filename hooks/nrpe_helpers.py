@@ -13,9 +13,10 @@ from charmhelpers.core import unitdata
 from charmhelpers.core.host import is_container
 from charmhelpers.core.services import helpers
 
+
 import yaml
 
-
+TAILORING_CIS_FILE = Path("/etc/usg/default-tailoring.xml")
 NETLINKS_ERROR = False
 
 pkg_plugin_dir = "/usr/lib/nagios/plugins/"
@@ -23,8 +24,6 @@ local_plugin_dir = "/usr/local/lib/nagios/plugins/"
 
 DB_KEY_KNOWN_REBOOT_TIME = "known_reboot_time"
 db = unitdata.kv()
-
-TAILORING_CIS_FILE = Path("/etc/usg/default-tailoring.xml")
 
 
 def get_cmd_output(cmd):
@@ -892,22 +891,32 @@ def _get_cis_audit_check():
     if not hookenv.config("cis_audit_enabled"):
         return {}
 
-    cmd_params = "{}-p '{}' {}".format(
-        _tailoringfile_cmd(),
-        hookenv.config("cis_audit_profile"),
-        hookenv.config("cis_audit_score"),
-    )
+    cis_cmd = cis_cmd_params(include_score=True)
+
     cis_audit_check = {
         "description": "Check CIS audit",
         "cmd_name": "check_cis_audit",
         "cmd_exec": local_plugin_dir + "check_cis_audit.py",
-        "cmd_params": cmd_params,
+        "cmd_params": cis_cmd,
     }
     return cis_audit_check
 
 
-def _tailoringfile_cmd():
-    """Generate or not the command to use the tailoring file.
+def cis_misconfiguration():
+    """Check if CIS config are misconfigured.
+
+    if profile and tailoring file are used at the same time.
+    """
+    if hookenv.config("cis_audit_profile") and hookenv.config(
+        "cis_audit_tailoringfile"
+    ):
+        return True
+
+    return False
+
+
+def cis_tailoring_file_handler():
+    """Handle the tailoring file depending on the configuration.
 
     When tailoring file is passed, creates a file at the default location with
     the content passed on cis_audit_tailoringfile charm config.
@@ -918,7 +927,23 @@ def _tailoringfile_cmd():
     if hookenv.config("cis_audit_tailoringfile"):
         TAILORING_CIS_FILE.parent.mkdir(parents=True, exist_ok=True)
         TAILORING_CIS_FILE.write_text(hookenv.config("cis_audit_tailoringfile"))
-        return "-t "
+        return
 
     TAILORING_CIS_FILE.unlink(missing_ok=True)
-    return ""
+
+
+def cis_cmd_params(include_score=False):
+    """Get the CIS command parameters to use in the CLIs."""
+    cmd_params = []
+
+    profile = hookenv.config("cis_audit_profile")
+    cmd_params.append(f"-p {profile}" if profile else "")
+
+    cis_tailoring_file_handler()
+    tailoring = hookenv.config("cis_audit_tailoringfile")
+    cmd_params.append("-t" if tailoring else "")
+
+    if include_score:
+        cmd_params.append(hookenv.config("cis_audit_score"))
+
+    return " ".join(cmd for cmd in cmd_params if cmd)

@@ -7,7 +7,7 @@ from unittest import mock
 import netifaces
 
 import nrpe_helpers
-from nrpe_helpers import _get_cis_audit_check, match_cidr_to_ifaces
+from nrpe_helpers import match_cidr_to_ifaces
 
 import yaml
 
@@ -585,19 +585,10 @@ class TestSubordinateCheckDefinitions(unittest.TestCase):
 class TestCISAuditCheck(unittest.TestCase):
     """Test CIS audit related code."""
 
+    @mock.patch("nrpe_helpers.cis_tailoring_file_handler")
     @mock.patch("nrpe_helpers.hookenv.config")
-    def test_get_cis_audit_check_not_enabled(self, mock_config):
-        """Test when cis_audit_enabled is not enabled."""
-        config = {"cis_audit_enabled": False}
-        mock_config.side_effect = lambda key: config[key]
-        self.assertEqual(_get_cis_audit_check(), {})
-
-    @mock.patch("nrpe_helpers.TAILORING_CIS_FILE")
-    @mock.patch("nrpe_helpers.hookenv.config")
-    def test_get_cis_audit_check_enabled_not_tailoring_file(
-        self, mock_config, mock_tailoring
-    ):
-        """Test when cis_audit_enabled is enabled and using profile."""
+    def test_get_cis_audit_check_enabled(self, mock_config, mock_tailor_handler):
+        """Test when cis_audit_enabled is enabled."""
         config = {
             "cis_audit_enabled": True,
             "cis_audit_profile": "level1_server",
@@ -605,23 +596,104 @@ class TestCISAuditCheck(unittest.TestCase):
             "cis_audit_tailoringfile": "",
         }
         mock_config.side_effect = lambda key: config[key]
-        self.assertEqual(
-            _get_cis_audit_check()["cmd_params"], "-p 'level1_server' -w 85 -c 80"
-        )
-        mock_tailoring.write_text.assert_not_called()
+        expected_check = {
+            "description": "Check CIS audit",
+            "cmd_name": "check_cis_audit",
+            "cmd_exec": nrpe_helpers.local_plugin_dir + "check_cis_audit.py",
+            "cmd_params": "-p level1_server -w 85 -c 80",
+        }
+        self.assertEqual(nrpe_helpers._get_cis_audit_check(), expected_check)
+        mock_tailor_handler.assert_called_once()
+
+    @mock.patch("nrpe_helpers.cis_tailoring_file_handler")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_get_cis_audit_check_not_enabled(self, mock_config, mock_tailor_handler):
+        """Test when cis_audit_enabled is not enabled."""
+        config = {"cis_audit_enabled": False}
+        mock_config.side_effect = lambda key: config[key]
+        self.assertEqual(nrpe_helpers._get_cis_audit_check(), {})
+        mock_tailor_handler.assert_not_called()
+
+
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_cis_misconfiguration(self, mock_config):
+        """Test that is misconfigured if user pass profile and tailoring file."""
+        config = {
+            "cis_audit_profile": "level1_server",
+            "cis_audit_score": "-w 85 -c 80",
+            "cis_audit_tailoringfile": "my xml content",
+        }
+        mock_config.side_effect = lambda key: config[key]
+
+        self.assertTrue(nrpe_helpers.cis_misconfiguration())
 
     @mock.patch("nrpe_helpers.TAILORING_CIS_FILE")
     @mock.patch("nrpe_helpers.hookenv.config")
-    def test_get_cis_audit_check_enabled_tailoring_file(
-        self, mock_config, mock_tailoring
+    def test_cis_tailoring_file_handler_erase(
+        self, mock_config, mock_tailor
     ):
-        """Test when cis_audit_enabled is enabled and using the tailoring file."""
+        """Test that the file handler erase the tailoring file."""
         config = {
-            "cis_audit_enabled": True,
-            "cis_audit_profile": "",
+            "cis_audit_profile": "level1_server",
             "cis_audit_score": "-w 85 -c 80",
-            "cis_audit_tailoringfile": "xml content",
+            "cis_audit_tailoringfile": "",
         }
         mock_config.side_effect = lambda key: config[key]
-        self.assertEqual(_get_cis_audit_check()["cmd_params"], "-t -p '' -w 85 -c 80")
-        mock_tailoring.write_text.assert_called_once_with("xml content")
+
+        nrpe_helpers.cis_tailoring_file_handler()
+        mock_tailor.unlink.assert_called_once_with(missing_ok=True)
+
+    @mock.patch("nrpe_helpers.TAILORING_CIS_FILE")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_cis_tailoring_file_handler_write(
+        self, mock_config, mock_tailor
+    ):
+        """Test that the file handler write the tailoring file."""
+        config = {
+            "cis_audit_profile": "",
+            "cis_audit_score": "-w 85 -c 80",
+            "cis_audit_tailoringfile": "my xml content",
+        }
+        mock_config.side_effect = lambda key: config[key]
+
+        nrpe_helpers.cis_tailoring_file_handler()
+        mock_tailor.parent.mkdir.assert_called_once_with(parents=True, exist_ok=True)
+        mock_tailor.write_text.assert_called_once_with("my xml content")
+
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_cis_cmd_params_no_tailoring_file(self, mock_config):
+        """Test cis command when using profile with and without scores."""
+        config = {
+            "cis_audit_enabled": True,
+            "cis_audit_profile": "level1_server",
+            "cis_audit_score": "-w 85 -c 80",
+            "cis_audit_tailoringfile": "",
+        }
+        mock_config.side_effect = lambda key: config[key]
+        # include score
+        self.assertEqual(
+            nrpe_helpers.cis_cmd_params(include_score=True),
+            "-p level1_server -w 85 -c 80",
+        )
+        # doesn't include score
+        self.assertEqual(
+            nrpe_helpers.cis_cmd_params(include_score=False), "-p level1_server"
+        )
+
+    @mock.patch("nrpe_helpers.cis_tailoring_file_handler")
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_cis_cmd_params_no_profile(self, mock_config, mock_tailor_handler):
+        """Test when using tailoring with and without scores."""
+        config = {
+            "cis_audit_profile": "",
+            "cis_audit_score": "-w 85 -c 80",
+            "cis_audit_tailoringfile": "my xml content",
+        }
+        mock_config.side_effect = lambda key: config[key]
+        # include score
+        self.assertEqual(
+            nrpe_helpers.cis_cmd_params(include_score=True), "-t -w 85 -c 80"
+        )
+        # doesn't include score
+        self.assertEqual(nrpe_helpers.cis_cmd_params(include_score=False), "-t")
+        mock_tailor_handler.assert_called()

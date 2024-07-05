@@ -75,7 +75,7 @@ class TestCronCisAudit(TestCase):
         profile = cron_cis_audit._get_cis_hardening_profile("")
         self.assertEqual(
             profile,
-            [cron_cis_audit.DEFAULT_PROFILE],
+            cron_cis_audit.DEFAULT_PROFILE,
             "Default profile should have been returned",
         )
         # parameter should be returned if parameter contains a valid profile
@@ -83,7 +83,7 @@ class TestCronCisAudit(TestCase):
         profile = cron_cis_audit._get_cis_hardening_profile(expected_profile)
         self.assertEqual(
             profile,
-            [expected_profile],
+            expected_profile,
             "The profile in the parameter should have been returned",
         )
 
@@ -105,7 +105,7 @@ class TestCronCisAudit(TestCase):
         profile = cron_cis_audit._get_cis_hardening_profile("")
         self.assertEqual(
             profile,
-            [],
+            None,
             "No profile should have been returned",
         )
 
@@ -345,11 +345,11 @@ class TestCheckCisAudit(TestCase):
         """Test the parsing of the audit results file."""
         # empty file raises CriticalError
         with self.assertRaises(CriticalError):
-            check_cis_audit.get_audit_score_and_profile(self.bionic_testfile1)
+            check_cis_audit.get_audit_score_and_profile(self.bionic_testfile1, False)
 
         # score and profile correctly read from xml
         score, profile = check_cis_audit.get_audit_score_and_profile(
-            self.bionic_testfile2
+            self.bionic_testfile2, False
         )
         self.assertEqual(score, 89.444443)
         self.assertEqual(profile, "level1_server")
@@ -359,14 +359,28 @@ class TestCheckCisAudit(TestCase):
         """Test the parsing of the audit results file."""
         # empty file raises CriticalError
         with self.assertRaises(CriticalError):
-            check_cis_audit.get_audit_score_and_profile(self.focal_testfile1)
+            check_cis_audit.get_audit_score_and_profile(self.focal_testfile1, False)
 
         # score and profile correctly read from xml
         score, profile = check_cis_audit.get_audit_score_and_profile(
-            self.focal_testfile2
+            self.focal_testfile2, False
         )
         self.assertEqual(score, 66.160233)
         self.assertEqual(profile, "level1_server")
+
+    @mock.patch("files.plugins.check_cis_audit.PROFILE_MAP", focal_profile_map)
+    def test_get_audit_score_and_profile_tailoring(self):
+        """Test the parsing of the audit results file using a tailoring file."""
+        # empty file raises CriticalError
+        with self.assertRaises(CriticalError):
+            check_cis_audit.get_audit_score_and_profile(self.focal_testfile1, True)
+
+        # score and profile correctly read from xml
+        score, profile = check_cis_audit.get_audit_score_and_profile(
+            self.focal_testfile2, True
+        )
+        self.assertEqual(score, 66.160233)
+        self.assertEqual(profile, "default-tailoring-file")
 
     @mock.patch("sys.argv", [])
     def test_parse_args(self):
@@ -377,6 +391,7 @@ class TestCheckCisAudit(TestCase):
             arguments,
             argparse.Namespace(
                 cis_profile="",
+                tailoring=False,
                 crit=-1,
                 max_age=172,
                 warn=-1,
@@ -392,10 +407,32 @@ class TestCheckCisAudit(TestCase):
             argparse.Namespace(
                 cis_profile="level2_server",
                 crit=99,
+                tailoring=False,
                 max_age=1,
                 warn=90,
             ),
         )
+
+        # test setting tailoring
+        arguments = check_cis_audit.parse_args(
+            ["-a", "1", "-c", "99", "-w", "90", "-t"]
+        )
+        self.assertEqual(
+            arguments,
+            argparse.Namespace(
+                cis_profile="",
+                crit=99,
+                tailoring=True,
+                max_age=1,
+                warn=90,
+            ),
+        )
+
+        # test setting tailoring and profile at the same time
+        with self.assertRaises(SystemExit):
+            check_cis_audit.parse_args(
+                ["-a", "1", "-c", "99", "-w", "90", "-t", "-p", "level2_server"]
+            )
 
     @mock.patch.multiple(
         "files.plugins.check_cis_audit",
@@ -405,11 +442,11 @@ class TestCheckCisAudit(TestCase):
     def test_check_cis_audit(self):
         """Test the check function with different parameters."""
         # all ok
-        check_cis_audit.check_cis_audit("", 1, 80, 85)
+        check_cis_audit.check_cis_audit("", 1, False, 80, 85)
 
         # too old
         with self.assertRaises(CriticalError) as error:
-            check_cis_audit.check_cis_audit("", 0, 80, 85)
+            check_cis_audit.check_cis_audit("", 0, False, 80, 85)
         self.assertRegex(
             str(error.exception),
             "CRITICAL: The audit result file age 0.00h is older than threshold.*",
@@ -417,7 +454,7 @@ class TestCheckCisAudit(TestCase):
 
         # score below warning
         with self.assertRaises(WarnError) as error:
-            check_cis_audit.check_cis_audit("", 1, 90, 80)
+            check_cis_audit.check_cis_audit("", 1, False, 90, 80)
         self.assertRegex(
             str(error.exception),
             "WARNING: cis-audit score is 89.44 of 100; threshold -c 80 -w 90",
@@ -425,7 +462,7 @@ class TestCheckCisAudit(TestCase):
 
         # score below critical
         with self.assertRaises(CriticalError) as error:
-            check_cis_audit.check_cis_audit("", 1, 95, 90)
+            check_cis_audit.check_cis_audit("", 1, False, 95, 90)
         self.assertRegex(
             str(error.exception),
             "CRITICAL: cis-audit score is 89.44 of 100; threshold -c 90 -w 95",
@@ -433,7 +470,7 @@ class TestCheckCisAudit(TestCase):
 
         # profile does not match
         with self.assertRaises(CriticalError) as error:
-            check_cis_audit.check_cis_audit("level2_workstation", 1, 85, 80)
+            check_cis_audit.check_cis_audit("level2_workstation", 1, False, 85, 80)
         self.assertRegex(
             str(error.exception),
             "CRITICAL: requested audit profile 'level2_workstation' does not match",
@@ -446,6 +483,8 @@ class TestCheckCisAudit(TestCase):
     )
     def test_main(self):
         """Test the main function."""
-        namespace = argparse.Namespace(cis_profile="", max_age=1, crit=80, warn=70)
+        namespace = argparse.Namespace(
+            cis_profile="", max_age=1, tailoring=False, crit=80, warn=70
+        )
         with mock.patch("argparse.ArgumentParser.parse_args", return_value=namespace):
             check_cis_audit.main()
