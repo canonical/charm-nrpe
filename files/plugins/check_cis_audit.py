@@ -34,8 +34,10 @@ def _get_major_version():
     raise OSError("No VERSION_ID in /etc/os-release")
 
 
-# cis-audit changed between bionic and focal
-if _get_major_version() < 20:
+# cis audit changed from bionic to focal.
+DISTRO_VERSION = _get_major_version()
+
+if DISTRO_VERSION < 20:
     AUDIT_FOLDER = "/usr/share/ubuntu-scap-security-guides"
     AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/cis-*-results.xml"
     PROFILE_MAP = {
@@ -44,6 +46,7 @@ if _get_major_version() < 20:
         "level1_workstation": "cis_profile_Level_1_Workstation",
         "level2_workstation": "cis_profile_Level_2_Workstation",
     }
+    PROFILE_OPTIONS = list(PROFILE_MAP.keys())
 else:
     AUDIT_FOLDER = "/var/lib/usg"
     AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/usg-results-*.*.xml"
@@ -53,7 +56,7 @@ else:
         "level1_workstation": "cis_level1_workstation",
         "level2_workstation": "cis_level2_workstation",
     }
-
+    PROFILE_OPTIONS = list(PROFILE_MAP.values())
 
 def get_audit_result_filepath():
     """Get the path of the newest audit results file."""
@@ -149,13 +152,7 @@ def parse_args(args):
     parser.add_argument(
         "--cis-profile",
         "-p",
-        choices=[
-            "",
-            "level1_server",
-            "level2_server",
-            "level1_workstation",
-            "level2_workstation",
-        ],
+        choices=PROFILE_OPTIONS + [""],
         help="cis-audit level parameter (verifies if audit report matches)",
         default="",
     )

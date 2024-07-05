@@ -23,7 +23,7 @@ def _get_major_version():
     raise OSError("No VERSION_ID in /etc/os-release")
 
 
-# cis audit changed from bionic ot focal.
+# cis audit changed from bionic to focal.
 PROFILES = [
     "level1_server",
     "level2_server",
