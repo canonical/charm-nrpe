@@ -90,7 +90,7 @@ class TestCronCisAudit(TestCase):
     @mock.patch("files.plugins.cron_cis_audit.CLOUD_INIT_LOG", cloud_init_logfile)
     def test_get_cis_hardening_profile_cloudinit(self):
         """Test the detection of the hardening profile from cloudinit.log."""
-        expected_profile = ["level2_server"]
+        expected_profile = "level2_server"
         profile = cron_cis_audit._get_cis_hardening_profile("")
         self.assertEqual(
             profile,
