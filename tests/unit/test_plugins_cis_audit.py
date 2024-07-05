@@ -372,13 +372,14 @@ class TestCheckCisAudit(TestCase):
     @mock.patch("files.plugins.check_cis_audit.PROFILE_OPTIONS")
     @mock.patch("sys.stderr", new_callable=StringIO)
     def test_parse_args_wrong_profile(self, mock_stderr, profile_options):
+        """Test wrong profile cli arguments depending on the Ubuntu series."""
         # When on focal, profile options should have the "cis_" prefix
         profile_options.return_value = [
             "",
             "cis_level1_server",
             "cis_level2_server",
             "cis_level1_workstation",
-            "cis_level2_workstation"
+            "cis_level2_workstation",
         ]
         with self.assertRaises(SystemExit):
             check_cis_audit.parse_args(["-p", "level2_server"])
@@ -394,7 +395,7 @@ class TestCheckCisAudit(TestCase):
             "level1_server",
             "level2_server",
             "level1_workstation",
-            "level2_workstation"
+            "level2_workstation",
         ]
         with self.assertRaises(SystemExit):
             check_cis_audit.parse_args(["-p", "cis_level2_server"])
