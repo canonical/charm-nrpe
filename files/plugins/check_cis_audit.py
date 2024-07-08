@@ -34,10 +34,8 @@ def _get_major_version():
     raise OSError("No VERSION_ID in /etc/os-release")
 
 
-# cis audit changed from bionic to focal.
-DISTRO_VERSION = _get_major_version()
-
-if DISTRO_VERSION < 20:
+# cis-audit changed between bionic and focal
+if _get_major_version() < 20:
     AUDIT_FOLDER = "/usr/share/ubuntu-scap-security-guides"
     AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/cis-*-results.xml"
     PROFILE_MAP = {
