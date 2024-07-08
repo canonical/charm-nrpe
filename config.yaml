@@ -285,12 +285,18 @@ options:
     type: string
     description: |
       Verify that a specific cis audit profile was used for the audit. If not specified the
-      profile will be extracted from '/var/log/cloud-init-output.log', fallback is 'level1_server'.
-      To see the valid options to this configuration, check the documentation at
-      https://ubuntu.com/security/certifications/docs/usg/cis/compliance
+      profile will be extracted from '/var/log/cloud-init-output.log'.
+      Options are:
+        Ubuntu series < focal:  '' (disable profile check), 'level1_server', 'level2_server',
+          'level1_workstation' or 'level2_workstation'
+        Ubuntu series >= focal: '' (disable profile check), 'cis_level1_server',
+          'cis_level2_server', 'cis_level1_workstation' or 'cis_level2_workstation'
+
       This option cannot be used with cis_audit_tailoringfile at the same time, otherwise the charm
       blocks.
-      See also https://ubuntu.com/security/certifications/docs/cis-audit
+      See the docs:
+        https://ubuntu.com/security/certifications/docs/cis-audit
+        https://ubuntu.com/security/certifications/docs/usg/cis/compliance
   cis_audit_tailoringfile:
     default: ""
     type: string

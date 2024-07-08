@@ -615,7 +615,7 @@ class TestCISAuditCheck(unittest.TestCase):
         mock_tailor_handler.assert_not_called()
 
     @mock.patch("nrpe_helpers.hookenv.config")
-    def test_cis_misconfiguration(self, mock_config):
+    def test_is_cis_misconfigured(self, mock_config):
         """Test that is misconfigured if user pass profile and tailoring file."""
         config = {
             "cis_audit_profile": "level1_server",
@@ -624,7 +624,30 @@ class TestCISAuditCheck(unittest.TestCase):
         }
         mock_config.side_effect = lambda key: config[key]
 
-        self.assertTrue(nrpe_helpers.cis_misconfiguration())
+        self.assertTrue(nrpe_helpers.is_cis_misconfigured())
+
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_cis_not_misconfigured(self, mock_config):
+        """Test that is misconfigured if user pass profile and tailoring file."""
+        # using just the tailoring file
+        config = {
+            "cis_audit_profile": "",
+            "cis_audit_score": "-w 85 -c 80",
+            "cis_audit_tailoringfile": "my xml content",
+        }
+        mock_config.side_effect = lambda key: config[key]
+
+        self.assertFalse(nrpe_helpers.is_cis_misconfigured())
+
+        # using just the profile
+        config = {
+            "cis_audit_profile": "level1_server",
+            "cis_audit_score": "-w 85 -c 80",
+            "cis_audit_tailoringfile": "",
+        }
+        mock_config.side_effect = lambda key: config[key]
+
+        self.assertFalse(nrpe_helpers.is_cis_misconfigured())
 
     @mock.patch("nrpe_helpers.TAILORING_CIS_FILE")
     @mock.patch("nrpe_helpers.hookenv.config")

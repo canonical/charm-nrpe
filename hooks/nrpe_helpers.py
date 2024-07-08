@@ -902,11 +902,8 @@ def _get_cis_audit_check():
     return cis_audit_check
 
 
-def cis_misconfiguration():
-    """Check if CIS config are misconfigured.
-
-    if profile and tailoring file are used at the same time.
-    """
+def is_cis_misconfigured():
+    """Check if CIS config are misconfigured."""
     if hookenv.config("cis_audit_profile") and hookenv.config(
         "cis_audit_tailoringfile"
     ):
@@ -937,13 +934,15 @@ def cis_cmd_params(include_score=False):
     cmd_params = []
 
     profile = hookenv.config("cis_audit_profile")
-    cmd_params.append(f"-p {profile}" if profile else "")
+    if profile:
+        cmd_params.append(f"-p {profile}")
 
     cis_tailoring_file_handler()
     tailoring = hookenv.config("cis_audit_tailoringfile")
-    cmd_params.append("-t" if tailoring else "")
+    if tailoring:
+        cmd_params.append("-t")
 
     if include_score:
         cmd_params.append(hookenv.config("cis_audit_score"))
 
-    return " ".join(cmd for cmd in cmd_params if cmd)
+    return " ".join(cmd_params)

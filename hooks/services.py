@@ -105,7 +105,7 @@ def manage():
             status_set("blocked", "Nagios server not configured or related")
         elif nrpe_helpers.has_netlinks_error():
             status_set("blocked", "Netlinks parsing encountered failure; see logs")
-        elif nrpe_helpers.cis_misconfiguration():
+        elif nrpe_helpers.is_cis_misconfigured():
             status_set(
                 "blocked",
                 "You cannot provide both a tailoring file and a profile for CIS audit!",
