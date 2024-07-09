@@ -903,9 +903,12 @@ def _get_cis_audit_check():
 
 
 def is_cis_misconfigured():
-    """Check if CIS config are misconfigured."""
+    """Check if CIS config is misconfigured.
+
+    Return True if CIS config is invalid, otherwise return False.
+    """
     if hookenv.config("cis_audit_profile") and hookenv.config(
-        "cis_audit_tailoringfile"
+        "cis_audit_tailoring_file"
     ):
         return True
 
@@ -916,14 +919,14 @@ def cis_tailoring_file_handler():
     """Handle the tailoring file depending on the configuration.
 
     When tailoring file is passed, creates a file at the default location with
-    the content passed on cis_audit_tailoringfile charm config.
+    the content passed on cis_audit_tailoring_file charm config.
 
     Case tailoring file is not used, ensure that the file is erased
     to not overlap with the profile passed.
     """
-    if hookenv.config("cis_audit_tailoringfile"):
+    if hookenv.config("cis_audit_tailoring_file"):
         TAILORING_CIS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        TAILORING_CIS_FILE.write_text(hookenv.config("cis_audit_tailoringfile"))
+        TAILORING_CIS_FILE.write_text(hookenv.config("cis_audit_tailoring_file"))
         return
 
     TAILORING_CIS_FILE.unlink(missing_ok=True)
@@ -938,7 +941,7 @@ def cis_cmd_params(include_score=False):
         cmd_params.append(f"-p {profile}")
 
     cis_tailoring_file_handler()
-    tailoring = hookenv.config("cis_audit_tailoringfile")
+    tailoring = hookenv.config("cis_audit_tailoring_file")
     if tailoring:
         cmd_params.append("-t")
 

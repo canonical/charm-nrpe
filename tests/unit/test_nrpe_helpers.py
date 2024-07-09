@@ -593,7 +593,7 @@ class TestCISAuditCheck(unittest.TestCase):
             "cis_audit_enabled": True,
             "cis_audit_profile": "level1_server",
             "cis_audit_score": "-w 85 -c 80",
-            "cis_audit_tailoringfile": "",
+            "cis_audit_tailoring_file": "",
         }
         mock_config.side_effect = lambda key: config[key]
         expected_check = {
@@ -620,7 +620,7 @@ class TestCISAuditCheck(unittest.TestCase):
         config = {
             "cis_audit_profile": "level1_server",
             "cis_audit_score": "-w 85 -c 80",
-            "cis_audit_tailoringfile": "my xml content",
+            "cis_audit_tailoring_file": "my xml content",
         }
         mock_config.side_effect = lambda key: config[key]
 
@@ -633,7 +633,7 @@ class TestCISAuditCheck(unittest.TestCase):
         config = {
             "cis_audit_profile": "",
             "cis_audit_score": "-w 85 -c 80",
-            "cis_audit_tailoringfile": "my xml content",
+            "cis_audit_tailoring_file": "my xml content",
         }
         mock_config.side_effect = lambda key: config[key]
 
@@ -643,7 +643,7 @@ class TestCISAuditCheck(unittest.TestCase):
         config = {
             "cis_audit_profile": "level1_server",
             "cis_audit_score": "-w 85 -c 80",
-            "cis_audit_tailoringfile": "",
+            "cis_audit_tailoring_file": "",
         }
         mock_config.side_effect = lambda key: config[key]
 
@@ -656,7 +656,7 @@ class TestCISAuditCheck(unittest.TestCase):
         config = {
             "cis_audit_profile": "level1_server",
             "cis_audit_score": "-w 85 -c 80",
-            "cis_audit_tailoringfile": "",
+            "cis_audit_tailoring_file": "",
         }
         mock_config.side_effect = lambda key: config[key]
 
@@ -670,7 +670,7 @@ class TestCISAuditCheck(unittest.TestCase):
         config = {
             "cis_audit_profile": "",
             "cis_audit_score": "-w 85 -c 80",
-            "cis_audit_tailoringfile": "my xml content",
+            "cis_audit_tailoring_file": "my xml content",
         }
         mock_config.side_effect = lambda key: config[key]
 
@@ -685,7 +685,7 @@ class TestCISAuditCheck(unittest.TestCase):
             "cis_audit_enabled": True,
             "cis_audit_profile": "level1_server",
             "cis_audit_score": "-w 85 -c 80",
-            "cis_audit_tailoringfile": "",
+            "cis_audit_tailoring_file": "",
         }
         mock_config.side_effect = lambda key: config[key]
         # include score
@@ -705,7 +705,7 @@ class TestCISAuditCheck(unittest.TestCase):
         config = {
             "cis_audit_profile": "",
             "cis_audit_score": "-w 85 -c 80",
-            "cis_audit_tailoringfile": "my xml content",
+            "cis_audit_tailoring_file": "my xml content",
         }
         mock_config.side_effect = lambda key: config[key]
         # include score
