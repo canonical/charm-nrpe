@@ -108,7 +108,8 @@ def manage():
         elif nrpe_helpers.is_cis_misconfigured():
             status_set(
                 "blocked",
-                "You cannot provide both cis_audit_profile and cis_audit_tailoring_file",
+                "You cannot provide both cis_audit_profile "
+                "and cis_audit_tailoring_file",
             )
         else:
             status_set("active", "Ready{}".format(get_revision()))
