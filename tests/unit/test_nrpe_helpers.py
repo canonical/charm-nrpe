@@ -628,7 +628,7 @@ class TestCISAuditCheck(unittest.TestCase):
 
     @mock.patch("nrpe_helpers.hookenv.config")
     def test_cis_not_misconfigured(self, mock_config):
-        """Test that is misconfigured if user pass profile and tailoring file."""
+        """Test that is not misconfigured if only pass profile or tailoring file."""
         # using just the tailoring file
         config = {
             "cis_audit_profile": "",
