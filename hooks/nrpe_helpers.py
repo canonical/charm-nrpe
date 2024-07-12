@@ -6,15 +6,17 @@ import json
 import os
 import socket
 import subprocess
+from pathlib import Path
 
 from charmhelpers.core import hookenv
 from charmhelpers.core import unitdata
 from charmhelpers.core.host import is_container
 from charmhelpers.core.services import helpers
 
+
 import yaml
 
-
+TAILORING_CIS_FILE = Path("/etc/usg/default-tailoring.xml")
 NETLINKS_ERROR = False
 
 pkg_plugin_dir = "/usr/lib/nagios/plugins/"
@@ -486,17 +488,8 @@ class SubordinateCheckDefinitions(dict):
             },
         ]
 
-        if hookenv.config("cis_audit_enabled"):
-            cmd_params = "-p '{}' {}".format(
-                hookenv.config("cis_audit_profile"),
-                hookenv.config("cis_audit_score"),
-            )
-            cis_audit_check = {
-                "description": "Check CIS audit",
-                "cmd_name": "check_cis_audit",
-                "cmd_exec": local_plugin_dir + "check_cis_audit.py",
-                "cmd_params": cmd_params,
-            }
+        cis_audit_check = _get_cis_audit_check()
+        if cis_audit_check:
             checks.append(cis_audit_check)
 
         if not is_container():
@@ -888,3 +881,71 @@ def set_netlinks_error():
     """Set the flag indicating a netlinks related error."""
     global NETLINKS_ERROR
     NETLINKS_ERROR = True
+
+
+def _get_cis_audit_check():
+    """Get the CIS audit step for nrpe.
+
+    When CIS audit is disabled no step is necessary.
+    """
+    if not hookenv.config("cis_audit_enabled"):
+        return {}
+
+    cis_cmd = cis_cmd_params(include_score=True)
+
+    cis_audit_check = {
+        "description": "Check CIS audit",
+        "cmd_name": "check_cis_audit",
+        "cmd_exec": local_plugin_dir + "check_cis_audit.py",
+        "cmd_params": cis_cmd,
+    }
+    return cis_audit_check
+
+
+def is_cis_misconfigured():
+    """Check if CIS config is misconfigured.
+
+    Return True if CIS config is invalid, otherwise return False.
+    """
+    if hookenv.config("cis_audit_profile") and hookenv.config(
+        "cis_audit_tailoring_file"
+    ):
+        return True
+
+    return False
+
+
+def cis_tailoring_file_handler():
+    """Handle the tailoring file depending on the configuration.
+
+    When tailoring file is passed, creates a file at the default location with
+    the content passed on cis_audit_tailoring_file charm config.
+
+    Case tailoring file is not used, ensure that the file is erased
+    to not overlap with the profile passed.
+    """
+    if hookenv.config("cis_audit_tailoring_file"):
+        TAILORING_CIS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        TAILORING_CIS_FILE.write_text(hookenv.config("cis_audit_tailoring_file"))
+        return
+
+    TAILORING_CIS_FILE.unlink(missing_ok=True)
+
+
+def cis_cmd_params(include_score=False):
+    """Get the CIS command parameters to use in the CLIs."""
+    cmd_params = []
+
+    profile = hookenv.config("cis_audit_profile")
+    if profile:
+        cmd_params.append(f"-p {profile}")
+
+    cis_tailoring_file_handler()
+    tailoring = hookenv.config("cis_audit_tailoring_file")
+    if tailoring:
+        cmd_params.append("-t")
+
+    if include_score:
+        cmd_params.append(hookenv.config("cis_audit_score"))
+
+    return " ".join(cmd_params)

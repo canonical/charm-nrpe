@@ -289,6 +289,14 @@ options:
       Options are: '' (disable profile check), 'level1_server', 'level2_server',
                    'level1_workstation' or 'level2_workstation'
       See also https://ubuntu.com/security/certifications/docs/cis-audit
+  cis_audit_tailoring_file:
+    default: ""
+    type: string
+    description: |
+      Custom cis profile xml file content. The content will be saved in
+      /etc/usg/default-tailoring.xml. This option cannot be used with cis_audit_profile at the
+      same time, otherwise the charm blocks.
+      See also https://ubuntu.com/blog/cis-security-compliance-usg
   reboot:
     default: True
     type: boolean

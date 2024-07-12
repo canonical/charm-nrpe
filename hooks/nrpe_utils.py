@@ -233,11 +233,12 @@ def update_cis_audit_cronjob(service_name):
 
         return
 
+    cis_cmd = nrpe_helpers.cis_cmd_params()
     file = "/usr/local/lib/nagios/plugins/cron_cis_audit.py"
-    profile = hookenv.config("cis_audit_profile")
-    cronjob = "*/10 * * * * root ({} -p '{}') 2>&1 | logger -t {}\n"
+
+    cronjob = f"*/10 * * * * root ({file} {cis_cmd}) 2>&1 | logger -t cron_cis_audit\n"
     with open(crond_file, "w") as crond_fd:
-        crond_fd.write(cronjob.format(file, profile, "cron_cis_audit"))
+        crond_fd.write(cronjob)
         hookenv.log("Cronjob configured at {}".format(crond_file), hookenv.DEBUG)
 
 

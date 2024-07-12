@@ -90,14 +90,20 @@ def parse_profile_idref(profile_idref):
     raise CriticalError(msg.format(profile_idref))
 
 
-def get_audit_score_and_profile(results_filepath):
-    """Extract audit score and profile level from results xml file."""
+def get_audit_score_and_profile(results_filepath, tailoring):
+    """Extract audit score and profile level from results xml file.
+
+    If tailoring file is used the profile is the file itself.
+    """
     try:
         root = ElementTree.parse(results_filepath).getroot()
         namespace = root.tag.split("Benchmark")[0]
         score = root.find(namespace + "TestResult/" + namespace + "score").text
-        profile_xml = root.find(namespace + "TestResult/" + namespace + "profile")
-        profile = parse_profile_idref(profile_xml.attrib["idref"])
+        if tailoring:
+            profile = "default-tailoring-file"
+        else:
+            profile_xml = root.find(namespace + "TestResult/" + namespace + "profile")
+            profile = parse_profile_idref(profile_xml.attrib["idref"])
     except ElementTree.ParseError as parse_error:
         msg = "CRITICAL: Could not parse audit results file '{}': '{}'"
         raise CriticalError(msg.format(results_filepath, parse_error))
@@ -107,11 +113,11 @@ def get_audit_score_and_profile(results_filepath):
     return float(score), profile
 
 
-def check_cis_audit(target_profile, max_age, warning, critical):
+def check_cis_audit(target_profile, max_age, tailoring, warning, critical):
     """Check if recent audit report exists and score and level are as specified."""
     results_filepath = get_audit_result_filepath()
     check_file_max_age(max_age, results_filepath)
-    score, profile = get_audit_score_and_profile(results_filepath)
+    score, profile = get_audit_score_and_profile(results_filepath, tailoring)
 
     msg = "{}: cis-audit score is {:.2f} of 100; threshold -c {} -w {} ({}; {})"
     if score < critical:
@@ -160,6 +166,13 @@ def parse_args(args):
         default="",
     )
     parser.add_argument(
+        "--tailoring",
+        "-t",
+        action="store_true",
+        default=False,
+        help="Whether is using the default tailoring file or not."
+    )
+    parser.add_argument(
         "--warn",
         "-w",
         type=int,
@@ -174,13 +187,24 @@ def parse_args(args):
         default=-1,
     )
     args = parser.parse_args(args)
+
+    if args.tailoring and args.cis_profile:
+        parser.error("You cannot provide both a tailoring file and a profile!")
+
     return args
 
 
 def main():
     """Parse args and check the audit report."""
     args = parse_args(sys.argv[1:])
-    try_check(check_cis_audit, args.cis_profile, args.max_age, args.warn, args.crit)
+    try_check(
+        check_cis_audit,
+        args.cis_profile,
+        args.max_age,
+        args.tailoring,
+        args.warn,
+        args.crit,
+    )
 
 
 if __name__ == "__main__":
