@@ -615,8 +615,12 @@ class TestCISAuditCheck(unittest.TestCase):
         mock_tailor_handler.assert_not_called()
 
     @mock.patch("nrpe_helpers.hookenv.config")
-    def test_is_cis_misconfigured(self, mock_config):
+    def test_is_cis_misconfigured_tailoring_and_profile(self, mock_config):
         """Test that is misconfigured if user pass profile and tailoring file."""
+        expected = (
+            True,
+            "You cannot provide both cis_audit_profile and cis_audit_tailoring_file",
+        )
         config = {
             "cis_audit_profile": "level1_server",
             "cis_audit_score": "-w 85 -c 80",
@@ -624,11 +628,25 @@ class TestCISAuditCheck(unittest.TestCase):
         }
         mock_config.side_effect = lambda key: config[key]
 
-        self.assertTrue(nrpe_helpers.is_cis_misconfigured())
+        self.assertEqual(nrpe_helpers.is_cis_misconfigured(), expected)
+
+    @mock.patch("nrpe_helpers.hookenv.config")
+    def test_is_cis_misconfigured_profile(self, mock_config):
+        """Test that is misconfigured if user pass a not expected profile."""
+        expected = (True, "Invalid cis_audit_profile")
+        config = {
+            "cis_audit_profile": "cis_level1_server",
+            "cis_audit_score": "-w 85 -c 80",
+            "cis_audit_tailoring_file": "",
+        }
+        mock_config.side_effect = lambda key: config[key]
+
+        self.assertEqual(nrpe_helpers.is_cis_misconfigured(), expected)
 
     @mock.patch("nrpe_helpers.hookenv.config")
     def test_cis_not_misconfigured(self, mock_config):
         """Test that is not misconfigured if only pass profile or tailoring file."""
+        expected = (False, "")
         # using just the tailoring file
         config = {
             "cis_audit_profile": "",
@@ -637,7 +655,7 @@ class TestCISAuditCheck(unittest.TestCase):
         }
         mock_config.side_effect = lambda key: config[key]
 
-        self.assertFalse(nrpe_helpers.is_cis_misconfigured())
+        self.assertEqual(nrpe_helpers.is_cis_misconfigured(), expected)
 
         # using just the profile
         config = {
@@ -647,7 +665,7 @@ class TestCISAuditCheck(unittest.TestCase):
         }
         mock_config.side_effect = lambda key: config[key]
 
-        self.assertFalse(nrpe_helpers.is_cis_misconfigured())
+        self.assertEqual(nrpe_helpers.is_cis_misconfigured(), expected)
 
     @mock.patch("nrpe_helpers.TAILORING_CIS_FILE")
     @mock.patch("nrpe_helpers.hookenv.config")

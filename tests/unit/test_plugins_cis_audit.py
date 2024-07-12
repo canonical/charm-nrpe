@@ -69,17 +69,36 @@ class TestCronCisAudit(TestCase):
         if os.path.exists(cls.cloud_init_logfile):
             os.remove(cls.cloud_init_logfile)
 
-    def test_get_cis_hardening_profile_default(self):
-        """Test hardening profile passing defaults."""
+    @mock.patch("files.plugins.cron_cis_audit._get_profile_by_ubuntu_series")
+    def test_get_cis_hardening_profile_default_bionic(self, mock_profiles):
+        """Test hardening profile passing defaults on bionic."""
         # default profile should be return if profile passed is invalid
+        mock_profiles.return_value = self.bionic_profiles
         profile = cron_cis_audit._get_cis_hardening_profile("")
         self.assertEqual(
             profile,
-            cron_cis_audit.DEFAULT_PROFILE,
+            self.bionic_profiles[0],
             "Default profile should have been returned",
         )
+
+    @mock.patch("files.plugins.cron_cis_audit._get_profile_by_ubuntu_series")
+    def test_get_cis_hardening_profile_default_after_bionic(self, mock_profiles):
+        """Test hardening profile passing defaults after bionic."""
+        # default profile should be return if profile passed is invalid
+        mock_profiles.return_value = self.focal_profiles
+        profile = cron_cis_audit._get_cis_hardening_profile("")
+        self.assertEqual(
+            profile,
+            self.focal_profiles[0],
+            "Default profile should have been returned",
+        )
+
+    @mock.patch("files.plugins.cron_cis_audit._get_profile_by_ubuntu_series")
+    def test_get_cis_hardening_profile_valid_profile(self, mock_profiles):
+        """Test hardening profile when passing a valid option."""
         # parameter should be returned if parameter contains a valid profile
-        expected_profile = cron_cis_audit.PROFILES[3]
+        mock_profiles.return_value = self.focal_profiles
+        expected_profile = self.focal_profiles[3]
         profile = cron_cis_audit._get_cis_hardening_profile(expected_profile)
         self.assertEqual(
             profile,
@@ -125,11 +144,6 @@ class TestCronCisAudit(TestCase):
                 "File age should be small because the file was just created",
             )
 
-    @mock.patch.multiple(
-        "files.plugins.cron_cis_audit",
-        DEFAULT_PROFILE=bionic_profiles[0],
-        PROFILES=bionic_profiles,
-    )
     @mock.patch("sys.stderr", new_callable=StringIO)
     def test_parse_args(self, mock_stderr):
         """Test the default parsing behavior of the argument parser."""
@@ -199,14 +213,14 @@ class TestCronCisAudit(TestCase):
         "files.plugins.cron_cis_audit",
         AUDIT_FOLDER=bionic_audit_folder,
         AUDIT_BIN=bionic_audit_bin,
-        DISTRO_VERSION=18,
-        DEFAULT_PROFILE=bionic_profiles[0],
     )
     @mock.patch("files.plugins.cron_cis_audit._set_permissions", lambda: True)
     @mock.patch("sys.argv", [])
     @mock.patch("os.path.exists", lambda x: True)
-    def test_main_run_audit_bionic(self):
+    @mock.patch("files.plugins.cron_cis_audit._get_profile_by_ubuntu_series")
+    def test_main_run_audit_bionic(self, mock_profiles):
         """Test if main() calles cis-audit is called with correct arguments."""
+        mock_profiles.return_value = self.bionic_profiles
         with mock.patch("subprocess.run") as mock_subprocess_run:
             process_mock = mock.Mock()
             attrs = {"communicate.return_value": ("output", "error")}
@@ -224,14 +238,15 @@ class TestCronCisAudit(TestCase):
         "files.plugins.cron_cis_audit",
         AUDIT_FOLDER=focal_audit_folder,
         AUDIT_BIN=focal_audit_bin,
-        DISTRO_VERSION=18,
-        DEFAULT_PROFILE=focal_profiles[0],
+        DISTRO_VERSION=20,
     )
     @mock.patch("files.plugins.cron_cis_audit._set_permissions", lambda: True)
     @mock.patch("sys.argv", [])
     @mock.patch("os.path.exists", lambda x: True)
-    def test_main_run_audit_focal(self):
+    @mock.patch("files.plugins.cron_cis_audit._get_profile_by_ubuntu_series")
+    def test_main_run_audit_focal(self, mock_profiles):
         """Test if main() calles cis-audit is called with correct arguments."""
+        mock_profiles.return_value = self.focal_profiles
         with mock.patch("subprocess.run") as mock_subprocess_run:
             process_mock = mock.Mock()
             attrs = {"communicate.return_value": ("output", "error")}
@@ -241,6 +256,35 @@ class TestCronCisAudit(TestCase):
             mock_subprocess_run.assert_called_once_with(
                 self.focal_audit_bin + [self.focal_profiles[0]], stdout=-3, stderr=-3
             )
+
+    @mock.patch("files.plugins.cron_cis_audit._get_major_version")
+    def test_get_profile_by_ubuntu_series(self, mock_major):
+        """Tests the profiles options depending on the Ubuntu series."""
+        # Test when the Ubuntu series is focal
+        mock_major.return_value = 20
+        profiles = cron_cis_audit._get_profile_by_ubuntu_series()
+        self.assertListEqual(
+            profiles,
+            [
+                "cis_level1_server",
+                "cis_level2_server",
+                "cis_level1_workstation",
+                "cis_level2_workstation",
+            ],
+        )
+
+        # Test when the Ubuntu series is bionic
+        mock_major.return_value = 18
+        profiles = cron_cis_audit._get_profile_by_ubuntu_series()
+        self.assertListEqual(
+            profiles,
+            [
+                "level1_server",
+                "level2_server",
+                "level1_workstation",
+                "level2_workstation",
+            ],
+        )
 
 
 class TestCheckCisAudit(TestCase):

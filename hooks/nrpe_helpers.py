@@ -25,6 +25,15 @@ local_plugin_dir = "/usr/local/lib/nagios/plugins/"
 DB_KEY_KNOWN_REBOOT_TIME = "known_reboot_time"
 db = unitdata.kv()
 
+# These are the valid options to keep compatibility on changes between bionic and focal
+VALID_CHARM_CIS_PROFILES = [
+    "",
+    "level1_server",
+    "level2_server",
+    "level1_workstation",
+    "level2_workstation",
+]
+
 
 def get_cmd_output(cmd):
     """Get shell command output in unicode string."""
@@ -905,14 +914,21 @@ def _get_cis_audit_check():
 def is_cis_misconfigured():
     """Check if CIS config is misconfigured.
 
-    Return True if CIS config is invalid, otherwise return False.
+    Return True and a message if CIS config is invalid, otherwise
+    return False with empty message.
     """
     if hookenv.config("cis_audit_profile") and hookenv.config(
         "cis_audit_tailoring_file"
     ):
-        return True
+        return (
+            True,
+            "You cannot provide both cis_audit_profile and cis_audit_tailoring_file",
+        )
 
-    return False
+    if hookenv.config("cis_audit_profile") not in VALID_CHARM_CIS_PROFILES:
+        return True, "Invalid cis_audit_profile"
+
+    return False, ""
 
 
 def cis_tailoring_file_handler():

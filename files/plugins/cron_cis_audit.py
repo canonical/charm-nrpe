@@ -25,12 +25,13 @@ def _get_major_version():
 
 
 # cis audit changed from bionic ot focal.
-PROFILES = [
-    "level1_server",
-    "level2_server",
-    "level1_workstation",
-    "level2_workstation",
-]
+PROFILES_COMPATIBILITY = {
+    "level1_server": "cis_level1_server",
+    "level2_server": "cis_level2_server",
+    "level1_workstation": "cis_level1_workstation",
+    "level2_workstation": "cis_level2_workstation",
+}
+
 DISTRO_VERSION = _get_major_version()
 if DISTRO_VERSION < 20:
     AUDIT_FOLDER = "/usr/share/ubuntu-scap-security-guides"
@@ -39,12 +40,10 @@ if DISTRO_VERSION < 20:
 else:
     AUDIT_FOLDER = "/var/lib/usg/"
     AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/usg-results-*.*.xml"
-    PROFILES = ["cis_" + p for p in PROFILES]
     AUDIT_BIN = ["/usr/sbin/usg", "audit"]
 
 
 CLOUD_INIT_LOG = "/var/log/cloud-init-output.log"
-DEFAULT_PROFILE = PROFILES[0]
 
 MAX_SLEEP = 600
 PID_FILENAME = "/tmp/cron_cis_audit.pid"
@@ -52,7 +51,7 @@ TAILORING_CIS_FILE = Path("/etc/usg/default-tailoring.xml")
 
 
 def _get_cis_hardening_profile(profile):
-    """Try to read the cis profile from cloud init log or default to level1_server.
+    """Try to read the cis profile from cloud init log or defaults to the first option.
 
     If the "default" tailoring file exists in /etc/usg/default-tailoring.xml,
     no profile is passed.
@@ -60,16 +59,19 @@ def _get_cis_hardening_profile(profile):
     if TAILORING_CIS_FILE.exists():
         return None
 
-    if profile in PROFILES:
+    profiles = _get_profile_by_ubuntu_series()
+    default_profile = profiles[0]
+
+    if profile in profiles:
         return profile
 
     if not os.path.exists(CLOUD_INIT_LOG) or not os.access(CLOUD_INIT_LOG, os.R_OK):
         print(
             "{} not existing/accessible, default to profile '{}'".format(
-                CLOUD_INIT_LOG, DEFAULT_PROFILE
+                CLOUD_INIT_LOG, default_profile
             )
         )
-        return DEFAULT_PROFILE
+        return default_profile
 
     pattern = re.compile(r"Applying Level-(1|2) scored (server|workstation)")
     for _, line in enumerate(open(CLOUD_INIT_LOG)):
@@ -77,7 +79,14 @@ def _get_cis_hardening_profile(profile):
             level, machine_type = match.groups()
             return "level{}_{}".format(level, machine_type)
 
-    return DEFAULT_PROFILE
+    return default_profile
+
+
+def _get_profile_by_ubuntu_series():
+    """Get the valid profile options depending on the Ubuntu series."""
+    if _get_major_version() < 20:
+        return list(PROFILES_COMPATIBILITY.keys())
+    return list(PROFILES_COMPATIBILITY.values())
 
 
 def _get_cis_result_age():
@@ -132,11 +141,16 @@ def parse_args(args):
         help="maximum age (h) of result file before running the audit (default 168)",
         default=168,
     )
-    profile_options = PROFILES + [""]
     parser.add_argument(
         "--cis-profile",
         "-p",
-        choices=profile_options,
+        choices=[
+            "",
+            "level1_server",
+            "level2_server",
+            "level1_workstation",
+            "level2_workstation",
+        ],
         default="",
         type=str,
         help="cis-audit level parameter (verifies if audit report matches)",
