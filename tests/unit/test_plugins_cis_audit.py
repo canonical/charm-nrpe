@@ -42,19 +42,24 @@ class TestCronCisAudit(TestCase):
     """Test the cis-audit cron job functions."""
 
     cloud_init_logfile = os.path.join(tempfile.gettempdir(), "cloud-init-output.log")
-    bionic_profiles = [
-        "level1_server",
-        "level2_server",
-        "level1_workstation",
-        "level2_workstation",
-    ]
+    bionic_profiles = {
+        "level1_server": "level1_server",
+        "level2_server": "level2_server",
+        "level1_workstation": "level1_workstation",
+        "level2_workstation": "level2_workstation",
+    }
     bionic_audit_folder = "/usr/share/ubuntu-scap-security-guides"
     bionic_audit_result_glob = bionic_audit_folder + "/cis-*-results.xml"
     bionic_audit_bin = ["/usr/sbin/cis-audit"]
 
     focal_audit_folder = "/var/lib/usg/"
     focal_audit_result_glob = focal_audit_folder + "/usg-results-*.*.xml"
-    focal_profiles = ["cis_" + p for p in bionic_profiles]
+    focal_profiles = {
+        "level1_server": "cis_level1_server",
+        "level2_server": "cis_level2_server",
+        "level1_workstation": "cis_level1_workstation",
+        "level2_workstation": "cis_level2_workstation",
+    }
     focal_audit_bin = ["/usr/sbin/usg", "audit"]
 
     @classmethod
@@ -69,37 +74,39 @@ class TestCronCisAudit(TestCase):
         if os.path.exists(cls.cloud_init_logfile):
             os.remove(cls.cloud_init_logfile)
 
-    @mock.patch("files.plugins.cron_cis_audit._get_profile_by_ubuntu_series")
+    @mock.patch("files.plugins.cron_cis_audit._valid_profiles_for_platform")
     def test_get_cis_hardening_profile_default_bionic(self, mock_profiles):
         """Test hardening profile passing defaults on bionic."""
         # default profile should be return if profile passed is invalid
         mock_profiles.return_value = self.bionic_profiles
         profile = cron_cis_audit._get_cis_hardening_profile("")
+        expected_profile = "level1_server"
         self.assertEqual(
             profile,
-            self.bionic_profiles[0],
+            expected_profile,
             "Default profile should have been returned",
         )
 
-    @mock.patch("files.plugins.cron_cis_audit._get_profile_by_ubuntu_series")
+    @mock.patch("files.plugins.cron_cis_audit._valid_profiles_for_platform")
     def test_get_cis_hardening_profile_default_after_bionic(self, mock_profiles):
         """Test hardening profile passing defaults after bionic."""
         # default profile should be return if profile passed is invalid
         mock_profiles.return_value = self.focal_profiles
         profile = cron_cis_audit._get_cis_hardening_profile("")
+        expected_profile = "cis_level1_server"
         self.assertEqual(
             profile,
-            self.focal_profiles[0],
+            expected_profile,
             "Default profile should have been returned",
         )
 
-    @mock.patch("files.plugins.cron_cis_audit._get_profile_by_ubuntu_series")
+    @mock.patch("files.plugins.cron_cis_audit._valid_profiles_for_platform")
     def test_get_cis_hardening_profile_valid_profile(self, mock_profiles):
         """Test hardening profile when passing a valid option."""
         # parameter should be returned if parameter contains a valid profile
         mock_profiles.return_value = self.focal_profiles
-        expected_profile = self.focal_profiles[3]
-        profile = cron_cis_audit._get_cis_hardening_profile(expected_profile)
+        expected_profile = "cis_level2_server"
+        profile = cron_cis_audit._get_cis_hardening_profile("level2_server")
         self.assertEqual(
             profile,
             expected_profile,
@@ -154,11 +161,11 @@ class TestCronCisAudit(TestCase):
         )
 
         # test setting parameters
-        args = cron_cis_audit.parse_args(["-a 1", f"-p={self.bionic_profiles[3]}"])
+        args = cron_cis_audit.parse_args(["-a 1", "-p=level2_workstation"])
         self.assertEqual(
             args,
             argparse.Namespace(
-                cis_profile=self.bionic_profiles[3], max_age=1, tailoring=False
+                cis_profile="level2_workstation", max_age=1, tailoring=False
             ),
         )
 
@@ -177,7 +184,7 @@ class TestCronCisAudit(TestCase):
 
         # test setting mutual exclusive parameters
         with self.assertRaises(SystemExit):
-            cron_cis_audit.parse_args(["-t", f"-p={self.bionic_profiles[3]}"])
+            cron_cis_audit.parse_args(["-t", "-p=level2_workstation"])
         self.assertRegex(
             mock_stderr.getvalue(),
             r"You cannot provide both a tailoring file and a profile",
@@ -217,7 +224,7 @@ class TestCronCisAudit(TestCase):
     @mock.patch("files.plugins.cron_cis_audit._set_permissions", lambda: True)
     @mock.patch("sys.argv", [])
     @mock.patch("os.path.exists", lambda x: True)
-    @mock.patch("files.plugins.cron_cis_audit._get_profile_by_ubuntu_series")
+    @mock.patch("files.plugins.cron_cis_audit._valid_profiles_for_platform")
     def test_main_run_audit_bionic(self, mock_profiles):
         """Test if main() calles cis-audit is called with correct arguments."""
         mock_profiles.return_value = self.bionic_profiles
@@ -228,7 +235,7 @@ class TestCronCisAudit(TestCase):
             mock_subprocess_run.return_value = process_mock
             cron_cis_audit.main()
             mock_subprocess_run.assert_called_once_with(
-                [self.bionic_audit_bin[0], self.bionic_profiles[0]],
+                [self.bionic_audit_bin[0], "level1_server"],
                 stdout=-3,
                 stderr=-3,
             )
@@ -243,7 +250,7 @@ class TestCronCisAudit(TestCase):
     @mock.patch("files.plugins.cron_cis_audit._set_permissions", lambda: True)
     @mock.patch("sys.argv", [])
     @mock.patch("os.path.exists", lambda x: True)
-    @mock.patch("files.plugins.cron_cis_audit._get_profile_by_ubuntu_series")
+    @mock.patch("files.plugins.cron_cis_audit._valid_profiles_for_platform")
     def test_main_run_audit_focal(self, mock_profiles):
         """Test if main() calles cis-audit is called with correct arguments."""
         mock_profiles.return_value = self.focal_profiles
@@ -254,36 +261,36 @@ class TestCronCisAudit(TestCase):
             mock_subprocess_run.return_value = process_mock
             cron_cis_audit.main()
             mock_subprocess_run.assert_called_once_with(
-                self.focal_audit_bin + [self.focal_profiles[0]], stdout=-3, stderr=-3
+                self.focal_audit_bin + ["cis_level1_server"], stdout=-3, stderr=-3
             )
 
     @mock.patch("files.plugins.cron_cis_audit._get_major_version")
-    def test_get_profile_by_ubuntu_series(self, mock_major):
+    def test_valid_profiles_for_platform(self, mock_major):
         """Tests the profiles options depending on the Ubuntu series."""
         # Test when the Ubuntu series is focal
         mock_major.return_value = 20
-        profiles = cron_cis_audit._get_profile_by_ubuntu_series()
-        self.assertListEqual(
+        profiles = cron_cis_audit._valid_profiles_for_platform()
+        self.assertDictEqual(
             profiles,
-            [
-                "cis_level1_server",
-                "cis_level2_server",
-                "cis_level1_workstation",
-                "cis_level2_workstation",
-            ],
+            {
+                "level1_server": "cis_level1_server",
+                "level2_server": "cis_level2_server",
+                "level1_workstation": "cis_level1_workstation",
+                "level2_workstation": "cis_level2_workstation",
+            },
         )
 
         # Test when the Ubuntu series is bionic
         mock_major.return_value = 18
-        profiles = cron_cis_audit._get_profile_by_ubuntu_series()
-        self.assertListEqual(
+        profiles = cron_cis_audit._valid_profiles_for_platform()
+        self.assertDictEqual(
             profiles,
-            [
-                "level1_server",
-                "level2_server",
-                "level1_workstation",
-                "level2_workstation",
-            ],
+            {
+                "level1_server": "level1_server",
+                "level2_server": "level2_server",
+                "level1_workstation": "level1_workstation",
+                "level2_workstation": "level2_workstation",
+            },
         )
 
 

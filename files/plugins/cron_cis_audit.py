@@ -25,7 +25,14 @@ def _get_major_version():
 
 
 # cis audit changed from bionic ot focal.
-PROFILES_COMPATIBILITY = {
+BIONIC_PROFILES = {
+    "level1_server": "level1_server",
+    "level2_server": "level2_server",
+    "level1_workstation": "level1_workstation",
+    "level2_workstation": "level2_workstation",
+}
+
+FOCAL_PROFILES = {
     "level1_server": "cis_level1_server",
     "level2_server": "cis_level2_server",
     "level1_workstation": "cis_level1_workstation",
@@ -59,11 +66,11 @@ def _get_cis_hardening_profile(profile):
     if TAILORING_CIS_FILE.exists():
         return None
 
-    profiles = _get_profile_by_ubuntu_series()
-    default_profile = profiles[0]
+    profiles = _valid_profiles_for_platform()
+    default_profile = profiles["level1_server"]
 
     if profile in profiles:
-        return profile
+        return profiles[profile]
 
     if not os.path.exists(CLOUD_INIT_LOG) or not os.access(CLOUD_INIT_LOG, os.R_OK):
         print(
@@ -82,11 +89,11 @@ def _get_cis_hardening_profile(profile):
     return default_profile
 
 
-def _get_profile_by_ubuntu_series():
-    """Get the valid profile options depending on the Ubuntu series."""
+def _valid_profiles_for_platform():
+    """Get the valid profiles options depending on the Ubuntu series."""
     if _get_major_version() < 20:
-        return list(PROFILES_COMPATIBILITY.keys())
-    return list(PROFILES_COMPATIBILITY.values())
+        return BIONIC_PROFILES
+    return FOCAL_PROFILES
 
 
 def _get_cis_result_age():
