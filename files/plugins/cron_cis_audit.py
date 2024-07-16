@@ -58,7 +58,7 @@ TAILORING_CIS_FILE = Path("/etc/usg/default-tailoring.xml")
 
 
 def _get_cis_hardening_profile(profile):
-    """Try to read the cis profile from cloud init log or defaults to the first option.
+    """Try to read the cis profile from cloud init log or default to level1_server.
 
     If the "default" tailoring file exists in /etc/usg/default-tailoring.xml,
     no profile is passed.
