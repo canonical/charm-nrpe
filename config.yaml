@@ -289,6 +289,9 @@ options:
       Options are: '' (disable profile check), 'level1_server', 'level2_server',
                    'level1_workstation' or 'level2_workstation'
       See also https://ubuntu.com/security/certifications/docs/cis-audit
+      Note that because of compatibility between Ubuntu 18.04 and 20.04, profiles are not using the
+      'cis_' prefix, but internally the charm is using the right profiles. E.g: level1_server is
+      equivalent of cis_level1_server.
   cis_audit_tailoring_file:
     default: ""
     type: string
