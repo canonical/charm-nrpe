@@ -42,19 +42,12 @@ class TestCronCisAudit(TestCase):
     """Test the cis-audit cron job functions."""
 
     cloud_init_logfile = os.path.join(tempfile.gettempdir(), "cloud-init-output.log")
-    bionic_profiles = [
-        "level1_server",
-        "level2_server",
-        "level1_workstation",
-        "level2_workstation",
-    ]
     bionic_audit_folder = "/usr/share/ubuntu-scap-security-guides"
     bionic_audit_result_glob = bionic_audit_folder + "/cis-*-results.xml"
     bionic_audit_bin = ["/usr/sbin/cis-audit"]
 
     focal_audit_folder = "/var/lib/usg/"
     focal_audit_result_glob = focal_audit_folder + "/usg-results-*.*.xml"
-    focal_profiles = ["cis_" + p for p in bionic_profiles]
     focal_audit_bin = ["/usr/sbin/usg", "audit"]
 
     @classmethod
@@ -69,18 +62,41 @@ class TestCronCisAudit(TestCase):
         if os.path.exists(cls.cloud_init_logfile):
             os.remove(cls.cloud_init_logfile)
 
-    def test_get_cis_hardening_profile_default(self):
-        """Test hardening profile passing defaults."""
+    @mock.patch("files.plugins.cron_cis_audit._get_major_version")
+    def test_get_cis_hardening_profile_default_bionic(self, mock_major_version):
+        """Test hardening profile passing defaults on bionic."""
         # default profile should be return if profile passed is invalid
+        mock_major_version.return_value = 18
         profile = cron_cis_audit._get_cis_hardening_profile("")
+        expected_profile = "level1_server"
         self.assertEqual(
             profile,
-            cron_cis_audit.DEFAULT_PROFILE,
+            expected_profile,
             "Default profile should have been returned",
         )
+
+    @mock.patch("files.plugins.cron_cis_audit._get_major_version")
+    def test_get_cis_hardening_profile_default_after_bionic(self, mock_major_version):
+        """Test hardening profile passing defaults after bionic."""
+        # default profile should be return if profile passed is invalid
+        mock_major_version.return_value = 20
+        profile = cron_cis_audit._get_cis_hardening_profile("")
+        # after bionic is expected that the profiles have the "cis_" prefix
+        expected_profile = "cis_level1_server"
+        self.assertEqual(
+            profile,
+            expected_profile,
+            "Default profile should have been returned",
+        )
+
+    @mock.patch("files.plugins.cron_cis_audit._get_major_version")
+    def test_get_cis_hardening_profile_valid_profile(self, mock_major_version):
+        """Test hardening profile when passing a valid option."""
         # parameter should be returned if parameter contains a valid profile
-        expected_profile = cron_cis_audit.PROFILES[3]
-        profile = cron_cis_audit._get_cis_hardening_profile(expected_profile)
+        mock_major_version.return_value = 20
+        # after bionic is expected that the profiles have the "cis_" prefix
+        expected_profile = "cis_level2_server"
+        profile = cron_cis_audit._get_cis_hardening_profile("level2_server")
         self.assertEqual(
             profile,
             expected_profile,
@@ -125,11 +141,6 @@ class TestCronCisAudit(TestCase):
                 "File age should be small because the file was just created",
             )
 
-    @mock.patch.multiple(
-        "files.plugins.cron_cis_audit",
-        DEFAULT_PROFILE=bionic_profiles[0],
-        PROFILES=bionic_profiles,
-    )
     @mock.patch("sys.stderr", new_callable=StringIO)
     def test_parse_args(self, mock_stderr):
         """Test the default parsing behavior of the argument parser."""
@@ -140,11 +151,11 @@ class TestCronCisAudit(TestCase):
         )
 
         # test setting parameters
-        args = cron_cis_audit.parse_args(["-a 1", f"-p={self.bionic_profiles[3]}"])
+        args = cron_cis_audit.parse_args(["-a 1", "-p=level2_workstation"])
         self.assertEqual(
             args,
             argparse.Namespace(
-                cis_profile=self.bionic_profiles[3], max_age=1, tailoring=False
+                cis_profile="level2_workstation", max_age=1, tailoring=False
             ),
         )
 
@@ -163,7 +174,7 @@ class TestCronCisAudit(TestCase):
 
         # test setting mutual exclusive parameters
         with self.assertRaises(SystemExit):
-            cron_cis_audit.parse_args(["-t", f"-p={self.bionic_profiles[3]}"])
+            cron_cis_audit.parse_args(["-t", "-p=level2_workstation"])
         self.assertRegex(
             mock_stderr.getvalue(),
             r"You cannot provide both a tailoring file and a profile",
@@ -199,12 +210,11 @@ class TestCronCisAudit(TestCase):
         "files.plugins.cron_cis_audit",
         AUDIT_FOLDER=bionic_audit_folder,
         AUDIT_BIN=bionic_audit_bin,
-        DISTRO_VERSION=18,
-        DEFAULT_PROFILE=bionic_profiles[0],
     )
     @mock.patch("files.plugins.cron_cis_audit._set_permissions", lambda: True)
     @mock.patch("sys.argv", [])
     @mock.patch("os.path.exists", lambda x: True)
+    @mock.patch("files.plugins.cron_cis_audit._get_major_version", lambda: 18)
     def test_main_run_audit_bionic(self):
         """Test if main() calles cis-audit is called with correct arguments."""
         with mock.patch("subprocess.run") as mock_subprocess_run:
@@ -214,7 +224,7 @@ class TestCronCisAudit(TestCase):
             mock_subprocess_run.return_value = process_mock
             cron_cis_audit.main()
             mock_subprocess_run.assert_called_once_with(
-                [self.bionic_audit_bin[0], self.bionic_profiles[0]],
+                [self.bionic_audit_bin[0], "level1_server"],
                 stdout=-3,
                 stderr=-3,
             )
@@ -224,12 +234,12 @@ class TestCronCisAudit(TestCase):
         "files.plugins.cron_cis_audit",
         AUDIT_FOLDER=focal_audit_folder,
         AUDIT_BIN=focal_audit_bin,
-        DISTRO_VERSION=18,
-        DEFAULT_PROFILE=focal_profiles[0],
+        DISTRO_VERSION=20,
     )
     @mock.patch("files.plugins.cron_cis_audit._set_permissions", lambda: True)
     @mock.patch("sys.argv", [])
     @mock.patch("os.path.exists", lambda x: True)
+    @mock.patch("files.plugins.cron_cis_audit._get_major_version", lambda: 20)
     def test_main_run_audit_focal(self):
         """Test if main() calles cis-audit is called with correct arguments."""
         with mock.patch("subprocess.run") as mock_subprocess_run:
@@ -239,8 +249,37 @@ class TestCronCisAudit(TestCase):
             mock_subprocess_run.return_value = process_mock
             cron_cis_audit.main()
             mock_subprocess_run.assert_called_once_with(
-                self.focal_audit_bin + [self.focal_profiles[0]], stdout=-3, stderr=-3
+                self.focal_audit_bin + ["cis_level1_server"], stdout=-3, stderr=-3
             )
+
+    @mock.patch("files.plugins.cron_cis_audit._get_major_version")
+    def test_valid_profiles_for_platform(self, mock_major):
+        """Tests the profiles options depending on the Ubuntu series."""
+        # Test when the Ubuntu series is focal
+        mock_major.return_value = 20
+        profiles = cron_cis_audit._valid_profiles_for_platform()
+        self.assertDictEqual(
+            profiles,
+            {
+                "level1_server": "cis_level1_server",
+                "level2_server": "cis_level2_server",
+                "level1_workstation": "cis_level1_workstation",
+                "level2_workstation": "cis_level2_workstation",
+            },
+        )
+
+        # Test when the Ubuntu series is bionic
+        mock_major.return_value = 18
+        profiles = cron_cis_audit._valid_profiles_for_platform()
+        self.assertDictEqual(
+            profiles,
+            {
+                "level1_server": "level1_server",
+                "level2_server": "level2_server",
+                "level1_workstation": "level1_workstation",
+                "level2_workstation": "level2_workstation",
+            },
+        )
 
 
 class TestCheckCisAudit(TestCase):
