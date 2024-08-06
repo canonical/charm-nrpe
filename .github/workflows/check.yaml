@@ -26,16 +26,49 @@ jobs:
       working-directory: .
 
   func:
-    uses: canonical/bootstack-actions/.github/workflows/func.yaml@v2
     needs: lint-unit
+    name: functional tests
+    runs-on: ${{ matrix.architecture.runs-on }}
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
-        command: ['TEST_JUJU3=1 make functional']  # TEST_JUJU3 needed due https://github.com/openstack-charmers/zaza/blob/b22c2eed4c322f1dfc14ffb2d31e0dd18c911a40/setup.py#L47 to support Juju3+
-    with:
-      command: ${{ matrix.command }}
-      juju-channel: "3.4/stable"
-      nested-containers: false
-      provider: "lxd"
-      python-version: "3.10"
-      timeout-minutes: 120
+        juju-channel: ["3.4/stable"]
+        architecture:
+          - runs-on: [ubuntu-latest]  # github hosted runners are amd64
+            model-constraints: ""
+          - runs-on: [self-hosted, jammy, ARM64, medium]
+            model-constraints: arch=arm64
+    steps:
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Setup Juju environment
+        uses: charmed-kubernetes/actions-operator@main
+        with:
+          provider: "lxd"
+          juju-channel: ${{ matrix.juju-channel }}
+          charmcraft-channel: "2.x/stable"
+
+      - name: Install latest tox version
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install tox
+
+      - name: Show juju information
+        run: |
+          juju version
+          juju controllers | grep Version -A 1 | awk '{print $9}'
+
+      - name: Run tests
+        run: "make functional"
+        env:
+          TEST_JUJU3: "1"  # https://github.com/openstack-charmers/zaza/pull/653
+          TEST_MODEL_CONSTRAINTS: ${{ matrix.architecture.model-constraints }}
