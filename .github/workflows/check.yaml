@@ -72,3 +72,13 @@ jobs:
         env:
           TEST_JUJU3: "1"  # https://github.com/openstack-charmers/zaza/pull/653
           TEST_MODEL_CONSTRAINTS: ${{ matrix.architecture.model-constraints }}
+
+      - name: debug juju model
+        if: always()
+        run: |
+          sudo apt install -y jq
+          juju models
+          juju switch "$(juju models --format json | jq -r '.models[].name' | grep zaza)"
+          juju status
+          juju debug-log --replay
+
