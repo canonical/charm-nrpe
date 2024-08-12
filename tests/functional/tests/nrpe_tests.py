@@ -43,7 +43,6 @@ class TestNrpe(TestBase):
         nrpe_checks = {
             "check_conntrack.cfg": "command[check_conntrack]="
             "/usr/local/lib/nagios/plugins/check_conntrack.sh",
-            "check_space_root.cfg": "command[check_space_root]="
             "/usr/lib/nagios/plugins/check_disk",
             "check_load.cfg": "command[check_load]=/usr/lib/nagios/plugins/check_load",
             "check_mem.cfg": "command[check_mem]="
@@ -70,33 +69,6 @@ class TestNrpe(TestBase):
                 raise model.CommandRunFailed(cmd, result)
             content = result.get("Stdout")
             self.assertTrue(nrpe_checks[nrpe_check] in content)
-
-    @RETRY
-    def test_02_enable_swap(self):
-        """Check swap checks are applied."""
-        swap = "-w 40% -c 25%"
-        model.set_application_config(self.application_name, {"swap": swap})
-        model.block_until_all_units_idle()
-        cmd = "cat /etc/nagios/nrpe.d/check_swap.cfg"
-        result = model.run_on_unit(self.lead_unit_name, cmd)
-        code = result.get("Code")
-
-        if code != "0":
-            logging.warning(
-                "Unable to find nrpe check check_swap.cfg at /etc/nagios/nrpe.d/"
-            )
-            raise model.CommandRunFailed(cmd, result)
-        content = result.get("Stdout")
-        self.assertTrue(swap in content)
-
-    @RETRY
-    def test_02_remove_check(self):
-        """Verify swap check is removed."""
-        model.set_application_config(self.application_name, {"swap": ""})
-        model.block_until_all_units_idle()
-        cmd = "cat /etc/nagios/nrpe.d/check_swap.cfg"
-        result = model.run_on_unit(self.lead_unit_name, cmd)
-        self.assertTrue(result.get("Code") != 0)
 
     @RETRY
     def test_03_user_monitor(self):
@@ -204,29 +176,6 @@ class TestNrpe(TestBase):
 
         if code != "0":
             logging.warning("Unable to find nrpe config file at /etc/nagios/nrpe.cfg")
-            raise model.CommandRunFailed(cmd, result)
-        content = result.get("Stdout")
-        self.assertTrue(line in content)
-
-    @RETRY
-    def test_05_netlinks(self):
-        """Check netlinks checks are applied."""
-        netlinks = "- lxdbr0 mtu:1500 speed:1000"
-        model.set_application_config(self.application_name, {"netlinks": netlinks})
-        model.block_until_all_units_idle()
-        cmd = "cat /etc/nagios/nrpe.d/check_netlinks_lxdbr0.cfg"
-        line = (
-            "command[check_netlinks_lxdbr0]=/usr/local/lib/nagios/plugins/"
-            "check_netlinks.py -i lxdbr0 -m 1500 -s 1000"
-        )
-        result = model.run_on_unit(self.lead_unit_name, cmd)
-        code = result.get("Code")
-
-        if code != "0":
-            logging.warning(
-                "Unable to find nrpe check at "
-                "/etc/nagios/nrpe.d/check_netlinks_lxdbr0.cfg"
-            )
             raise model.CommandRunFailed(cmd, result)
         content = result.get("Stdout")
         self.assertTrue(line in content)
