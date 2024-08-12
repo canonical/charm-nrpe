@@ -30,3 +30,6 @@ report/*
 # virtualenv
 .venv/
 .unit-state.db
+
+# built charm
+*.charm
