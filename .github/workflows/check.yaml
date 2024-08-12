@@ -56,7 +56,7 @@ jobs:
           sudo apt -y install bridge-utils cpu-checker libvirt-clients libvirt-daemon qemu-kvm
           # check if kvm is working
           virsh list --all
-          kvm-ok
+          sudo kvm-ok
 
       - name: Setup Juju environment
         uses: charmed-kubernetes/actions-operator@main
