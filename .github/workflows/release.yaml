@@ -17,6 +17,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # charmhelpers library is a submodule
+          submodules: true
 
       - name: Initialize lxd  # This should dropped once it's implemented on charming-actions itself. https://github.com/canonical/charming-actions/issues/140
         uses: canonical/setup-lxd@v0.1.1
