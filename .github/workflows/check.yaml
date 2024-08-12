@@ -48,14 +48,6 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install kvm if necessary
-        run: |
-          apt search qemu || true
-          sudo apt -y install bridge-utils cpu-checker libvirt-clients libvirt-daemon qemu-kvm
-          # check if kvm is working
-          virsh list --all
-          sudo kvm-ok
-
       - name: Setup Juju environment
         uses: charmed-kubernetes/actions-operator@main
         with:
