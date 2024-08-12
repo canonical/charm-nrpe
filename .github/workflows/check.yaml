@@ -52,7 +52,8 @@ jobs:
 
       - name: Install kvm if necessary
         run: |
-          sudo apt -y install bridge-utils cpu-checker libvirt-clients libvirt-daemon qemu qemu-kvm
+          apt search qemu || true
+          sudo apt -y install bridge-utils cpu-checker libvirt-clients libvirt-daemon qemu-kvm
           # check if kvm is working
           virsh list --all
           kvm-ok
