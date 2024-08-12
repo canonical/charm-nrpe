@@ -54,6 +54,7 @@ jobs:
         run: |
           apt search qemu || true
           sudo apt -y install bridge-utils cpu-checker libvirt-clients libvirt-daemon qemu-kvm
+          sudo modprobe kvm
           # check if kvm is working
           virsh list --all
           sudo kvm-ok
