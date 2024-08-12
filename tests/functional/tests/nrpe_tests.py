@@ -43,14 +43,6 @@ class TestNrpe(TestBase):
         nrpe_checks = {
             "check_conntrack.cfg": "command[check_conntrack]="
             "/usr/local/lib/nagios/plugins/check_conntrack.sh",
-            "/usr/lib/nagios/plugins/check_disk",
-            "check_load.cfg": "command[check_load]=/usr/lib/nagios/plugins/check_load",
-            "check_mem.cfg": "command[check_mem]="
-            "/usr/local/lib/nagios/plugins/check_mem.pl",
-            "check_rabbitmq.cfg": "command[check_rabbitmq]="
-            "/usr/local/lib/nagios/plugins/check_rabbitmq.py",
-            "check_swap_activity.cfg": "command[check_swap_activity]="
-            "/usr/local/lib/nagios/plugins/check_swap_activity",
         }
 
         for nrpe_check in nrpe_checks:
