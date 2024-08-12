@@ -28,17 +28,15 @@ jobs:
   func:
     needs: lint-unit
     name: functional tests
-    runs-on: ${{ matrix.architecture.runs-on }}
+    runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
         juju-channel: ["3.4/stable"]
-        architecture:
-          - runs-on: [ubuntu-latest]  # github hosted runners are amd64
-            model-constraints: ""
-          - runs-on: ['Ubuntu_ARM64_4C_16G_01']
-            model-constraints: arch=arm64
+        runs-on:
+          - [ubuntu-latest]  # github hosted runners are amd64
+          - ['self-hosted', 'ARM64', 'jammy']
     steps:
 
       - uses: actions/checkout@v4
@@ -54,7 +52,6 @@ jobs:
         run: |
           apt search qemu || true
           sudo apt -y install bridge-utils cpu-checker libvirt-clients libvirt-daemon qemu-kvm
-          sudo modprobe kvm
           # check if kvm is working
           virsh list --all
           sudo kvm-ok
@@ -76,11 +73,16 @@ jobs:
           juju version
           juju controllers | grep Version -A 1 | awk '{print $9}'
 
+      - name: Set zaza juju model constraints for architecture
+        run: |
+          if [ "$(uname -m)" = "aarch64" ]; then
+            echo "TEST_MODEL_CONSTRAINTS=arch=arm64" >> "$GITHUB_ENV"
+          fi
+
       - name: Run tests
         run: "make functional"
         env:
           TEST_JUJU3: "1"  # https://github.com/openstack-charmers/zaza/pull/653
-          TEST_MODEL_CONSTRAINTS: ${{ matrix.architecture.model-constraints }}
 
       - name: debug juju model
         if: always()
