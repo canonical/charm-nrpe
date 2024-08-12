@@ -37,7 +37,7 @@ jobs:
         architecture:
           - runs-on: [ubuntu-latest]  # github hosted runners are amd64
             model-constraints: ""
-          - runs-on: [self-hosted, jammy, ARM64, medium]
+          - runs-on: ['Ubuntu_ARM64_4C_16G_01']
             model-constraints: arch=arm64
     steps:
 
@@ -62,9 +62,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install tox
 
-      - name: Install kvm support
+      - name: debug kvm support
         run: |
-          sudo apt install -y qemu-kvm libvirt-daemon bridge-utils
+          sudo kvm-ok || true
+          apt list --installed | grep kvm || true
+          apt list --installed | grep bridge || true
 
       - name: Show juju information
         run: |
