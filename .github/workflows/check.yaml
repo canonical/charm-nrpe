@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [master, main]
+    branches: [main]
     paths-ignore:
       - "**.md"
       - "**.rst"
@@ -75,13 +75,3 @@ jobs:
         run: "make functional"
         env:
           TEST_JUJU3: "1"  # https://github.com/openstack-charmers/zaza/pull/653
-
-      - name: debug juju model
-        if: always()
-        run: |
-          sudo apt install -y jq
-          juju models
-          juju switch "$(juju models --format json | jq -r '.models[].name' | grep zaza)"
-          juju status
-          juju debug-log --replay
-
