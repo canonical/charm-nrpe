@@ -35,8 +35,8 @@ jobs:
       matrix:
         juju-channel: ["3.4/stable"]
         runs-on:
-          - [ubuntu-latest]  # github hosted runners are amd64
-          - ['self-hosted', 'ARM64', 'jammy']
+          - ['ubuntu-latest']  # github hosted runners are amd64
+          - ['Ubuntu_ARM64_4C_16G_01']
     steps:
 
       - uses: actions/checkout@v4
