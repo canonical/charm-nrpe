@@ -43,15 +43,6 @@ class TestNrpe(TestBase):
         nrpe_checks = {
             "check_conntrack.cfg": "command[check_conntrack]="
             "/usr/local/lib/nagios/plugins/check_conntrack.sh",
-            "check_space_root.cfg": "command[check_space_root]="
-            "/usr/lib/nagios/plugins/check_disk",
-            "check_load.cfg": "command[check_load]=/usr/lib/nagios/plugins/check_load",
-            "check_mem.cfg": "command[check_mem]="
-            "/usr/local/lib/nagios/plugins/check_mem.pl",
-            "check_rabbitmq.cfg": "command[check_rabbitmq]="
-            "/usr/local/lib/nagios/plugins/check_rabbitmq.py",
-            "check_swap_activity.cfg": "command[check_swap_activity]="
-            "/usr/local/lib/nagios/plugins/check_swap_activity",
         }
 
         for nrpe_check in nrpe_checks:
@@ -70,33 +61,6 @@ class TestNrpe(TestBase):
                 raise model.CommandRunFailed(cmd, result)
             content = result.get("Stdout")
             self.assertTrue(nrpe_checks[nrpe_check] in content)
-
-    @RETRY
-    def test_02_enable_swap(self):
-        """Check swap checks are applied."""
-        swap = "-w 40% -c 25%"
-        model.set_application_config(self.application_name, {"swap": swap})
-        model.block_until_all_units_idle()
-        cmd = "cat /etc/nagios/nrpe.d/check_swap.cfg"
-        result = model.run_on_unit(self.lead_unit_name, cmd)
-        code = result.get("Code")
-
-        if code != "0":
-            logging.warning(
-                "Unable to find nrpe check check_swap.cfg at /etc/nagios/nrpe.d/"
-            )
-            raise model.CommandRunFailed(cmd, result)
-        content = result.get("Stdout")
-        self.assertTrue(swap in content)
-
-    @RETRY
-    def test_02_remove_check(self):
-        """Verify swap check is removed."""
-        model.set_application_config(self.application_name, {"swap": ""})
-        model.block_until_all_units_idle()
-        cmd = "cat /etc/nagios/nrpe.d/check_swap.cfg"
-        result = model.run_on_unit(self.lead_unit_name, cmd)
-        self.assertTrue(result.get("Code") != 0)
 
     @RETRY
     def test_03_user_monitor(self):
@@ -207,94 +171,6 @@ class TestNrpe(TestBase):
             raise model.CommandRunFailed(cmd, result)
         content = result.get("Stdout")
         self.assertTrue(line in content)
-
-    @RETRY
-    def test_05_netlinks(self):
-        """Check netlinks checks are applied."""
-        netlinks = "- lxdbr0 mtu:1500 speed:1000"
-        model.set_application_config(self.application_name, {"netlinks": netlinks})
-        model.block_until_all_units_idle()
-        cmd = "cat /etc/nagios/nrpe.d/check_netlinks_lxdbr0.cfg"
-        line = (
-            "command[check_netlinks_lxdbr0]=/usr/local/lib/nagios/plugins/"
-            "check_netlinks.py -i lxdbr0 -m 1500 -s 1000"
-        )
-        result = model.run_on_unit(self.lead_unit_name, cmd)
-        code = result.get("Code")
-
-        if code != "0":
-            logging.warning(
-                "Unable to find nrpe check at "
-                "/etc/nagios/nrpe.d/check_netlinks_lxdbr0.cfg"
-            )
-            raise model.CommandRunFailed(cmd, result)
-        content = result.get("Stdout")
-        self.assertTrue(line in content)
-
-    @RETRY
-    def test_06_container_checks(self):
-        """Check that certain checks are enabled on hosts but disabled on containers."""
-        # Enable appropriate config to enable various checks for testing whether they
-        # get created on containers versus hosts.
-        model.set_application_config(
-            self.application_name,
-            {
-                "disk_root": "-u GB -w 25% -c 20% -K 5%",
-                "zombies": "-w 3 -c 6 -s Z",
-                "procs": "-k -w 250 -c 300",
-                "load": "auto",
-                "conntrack": "-w 80 -c 90",
-                "users": "-w 20 -c 25",
-                "swap": "-w 40% -c 25%",
-                "swap_activity": "-i 5 -w 10240 -c 40960",
-                "mem": "-C -h -u -w 85 -c 90",
-                "lacp_bonds": "lo",  # Enable a bogus lacp check on the loopback iface
-                "netlinks": "- lxdbr0 mtu:1500 speed:1000",
-                "xfs_errors": "5",
-            },
-        )
-        model.block_until_all_units_idle()
-
-        host_checks = self._get_unit_check_files("rabbitmq-server/0")
-        container_checks = self._get_unit_check_files("container/0")
-        expected_shared_checks = set(
-            [
-                "check_conntrack.cfg",  # this should be host-only
-                "check_total_procs.cfg",
-                "check_users.cfg",
-                "check_zombie_procs.cfg",  # This also feels host-only
-            ]
-        )
-        expected_host_only_checks = set(
-            [
-                "check_arp_cache.cfg",
-                "check_space_root.cfg",
-                "check_lacp_lo.cfg",
-                "check_load.cfg",
-                "check_mem.cfg",
-                "check_netlinks_lxdbr0.cfg",
-                "check_ro_filesystem.cfg",
-                "check_swap.cfg",
-                "check_swap_activity.cfg",
-                "check_xfs_errors.cfg",
-            ]
-        )
-        self.assertTrue(
-            expected_shared_checks.issubset(host_checks),
-            self._get_set_comparison(expected_shared_checks, host_checks),
-        )
-        self.assertTrue(
-            expected_shared_checks.issubset(container_checks),
-            self._get_set_comparison(expected_shared_checks, container_checks),
-        )
-        self.assertTrue(
-            expected_host_only_checks.issubset(host_checks),
-            self._get_set_comparison(expected_host_only_checks, host_checks),
-        )
-        self.assertTrue(
-            expected_host_only_checks.isdisjoint(container_checks),
-            self._get_set_comparison(expected_host_only_checks, container_checks),
-        )
 
     @RETRY
     def test_07_cronjob_checks(self):

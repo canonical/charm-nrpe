@@ -1,18 +1,13 @@
 local_overlay_enabled: true
 applications:
   rabbitmq-server:
-    charm: ch:rabbitmq-server
+    charm: rabbitmq-server
     num_units: 1
-    constraints: root-disk=8G cores=2 virt-type=virtual-machine
-  container:
-    charm: ch:ubuntu
-    # temporary fix for https://github.com/juju-solutions/charm-ubuntu/issues/48
-    revision: 21
-    channel: stable
+  ubuntu:
+    charm: ubuntu
     num_units: 1
-    to: ["lxd:rabbitmq-server/0"]
   nagios:
-    charm: ch:nagios
+    charm: nagios
     num_units: 1
     series: bionic
   nrpe:
@@ -20,7 +15,7 @@ applications:
 relations:
   - - rabbitmq-server:nrpe-external-master
     - nrpe:nrpe-external-master
-  - - container:juju-info
+  - - ubuntu:juju-info
     - nrpe:general-info
   - - nrpe:monitors
     - nagios:monitors

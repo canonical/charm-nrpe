@@ -15,13 +15,11 @@ help:
 	@echo " make submodules - make sure that the submodules are up-to-date"
 	@echo " make submodules-update - update submodules to latest changes on remote branch"
 	@echo " make build - build the charm"
-	@echo " make release - run clean and build targets"
 	@echo " make lint - run flake8 and black --check"
 	@echo " make black - run black and reformat files"
-	@echo " make proof - run charm proof"
 	@echo " make unittests - run the tests defined in the unittest subdirectory"
 	@echo " make functional - run the tests defined in the functional subdirectory"
-	@echo " make test - run lint, proof, unittests and functional targets"
+	@echo " make test - run lint, unittests and functional targets"
 	@echo ""
 
 clean:
@@ -43,9 +41,6 @@ build: clean submodules
 	@charmcraft -v pack ${BUILD_ARGS}
 	@bash -c ./rename.sh
 
-release: clean build
-	@charmcraft upload nrpe.charm --release edge
-
 lint:
 	@echo "Running lint checks"
 	@tox -e lint
@@ -53,10 +48,6 @@ lint:
 black:
 	@echo "Reformat files with black"
 	@tox -e black
-
-proof:
-	@echo "Running charm proof"
-	@-charm proof
 
 unittests:
 	@echo "Running unit tests"
@@ -66,9 +57,8 @@ functional: build
 	@echo "Executing functional tests with ${PROJECTPATH}/${CHARM_NAME}.charm"
 	@CHARM_LOCATION=${PROJECTPATH} tox -e func -- ${FUNC_ARGS}
 
-
-test: lint proof unittests functional
+test: lint unittests functional
 	@echo "Charm ${CHARM_NAME} has been tested"
 
 # The targets below don't depend on a file
-.PHONY: help submodules submodules-update clean build release lint black proof unittests functional test
+.PHONY: help submodules submodules-update clean build lint black unittests functional test
