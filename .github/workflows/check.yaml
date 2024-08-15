@@ -1,4 +1,9 @@
-name: Check workflow running linter, unit and functional tests
+# This file is centrally managed as a template file in https://github.com/canonical/solutions-engineering-automation
+# To update the file:
+# - Edit it in the canonical/solutions-engineering-automation repository.
+# - Open a PR with the changes.
+# - When the PR merges, the soleng-terraform bot will open a PR to the target repositories with the changes.
+name: Tests
 
 on:
   workflow_call:
@@ -23,7 +28,6 @@ jobs:
         python-version: ["3.8", "3.10"]
     with:
       python-version: ${{ matrix.python-version }}
-      working-directory: .
 
   func:
     needs: lint-unit
@@ -33,9 +37,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        juju-channel: ["3.4/stable"]
         runs-on:
-          - ['ubuntu-latest']  # github hosted runners are amd64
+          - [ubuntu-latest]  # github hosted runners are amd64
           - ['Ubuntu_ARM64_4C_16G_01']
     steps:
 
@@ -52,7 +55,7 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: "lxd"
-          juju-channel: ${{ matrix.juju-channel }}
+          juju-channel: "3.4/stable"
           charmcraft-channel: "2.x/stable"
 
       - name: Show juju information
@@ -60,6 +63,7 @@ jobs:
           juju version
           juju controllers | grep Version -A 1 | awk '{print $9}'
 
+        # this is used by zaza in the functional tests
       - name: Set zaza juju model constraints for architecture
         run: |
           if [ "$(uname -m)" = "aarch64" ]; then
