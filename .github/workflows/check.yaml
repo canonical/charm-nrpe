@@ -38,6 +38,7 @@ jobs:
       fail-fast: false
       matrix:
         runs-on: [[ubuntu-latest], [Ubuntu_ARM64_4C_16G_01]]
+        test-command: ['make functional']
     steps:
 
       - uses: actions/checkout@v4
@@ -69,6 +70,6 @@ jobs:
           fi
 
       - name: Run tests
-        run: "make functional"
+        run: ${{ matrix.test-command }}
         env:
           TEST_JUJU3: "1"  # https://github.com/openstack-charmers/zaza/pull/653
