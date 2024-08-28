@@ -45,6 +45,12 @@ jobs:
         with:
           submodules: true
 
+        # arm64 runners don't have make or gcc installed by default
+      - name: Install dependencies
+￼        run: |
+￼          sudo apt update
+￼          sudo apt install -y make gcc
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -57,11 +63,6 @@ jobs:
           juju-channel: "3.4/stable"
           charmcraft-channel: "2.x/stable"
 
-      - name: Show juju information
-        run: |
-          juju version
-          juju controllers | grep Version -A 1 | awk '{print $9}'
-
         # This is used by zaza in the functional tests for non-amd64 architectures (if applicable)
       - name: Set zaza juju model constraints for architecture
         run: |
@@ -73,3 +74,41 @@ jobs:
         run: ${{ matrix.test-command }}
         env:
           TEST_JUJU3: "1"  # https://github.com/openstack-charmers/zaza/pull/653
+          TEST_JUJU_CHANNEL: ${{ matrix.juju-channel }}
+
+      # Save output for debugging
+
+      - name: Generate debugging information
+        if: always()
+        run: |
+          set -x
+          # install dependencies
+          sudo snap install --classic juju-crashdump
+          sudo apt install -y jq uuid
+
+          # Print juju controller information for debugging
+          # to check controller and client are compatible versions;
+          # we can have a mismatch if using an external controller.
+          juju version
+          juju controllers
+
+          models="$(juju models --format json | jq -r '.models[]."short-name"')"
+          dir="$(mktemp -d)"
+          # Use a different dir to avoid charmed-kubernetes/actions-operator from also trying to upload crashdumps.
+          # We don't want to rely on that action, because it doesn't use a descriptive enough name for the artefact,
+          # and we may stop using that action soon.
+          echo "CRASHDUMPS_DIR=$dir" | tee -a "$GITHUB_ENV"
+          echo "CRASHDUMPS_ARTEFACT_SUFFIX=$(uuid)-$(uname -m)" | tee -a "$GITHUB_ENV"
+
+          for model in $models; do
+            # show status here for quick debugging
+            juju status -m "$model"
+            juju-crashdump --as-root -m "$model" -u "$model-$(uname -m)" -o "$dir"
+          done
+
+      - name: Upload juju crashdumps
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "juju-crashdumps-${{ env.CRASHDUMPS_ARTEFACT_SUFFIX }}"
+          path: "${{ env.CRASHDUMPS_DIR }}/juju-crashdump-*.tar.xz"
