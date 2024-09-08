@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [[ubuntu-latest], [Ubuntu_ARM64_4C_16G_01]]
+        runs-on: [[ubuntu-22.04], [Ubuntu_ARM64_4C_16G_01]]
         test-command: ['make functional']
         juju-channel: ["3.4/stable"]
     steps:
