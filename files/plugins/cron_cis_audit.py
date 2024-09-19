@@ -44,10 +44,12 @@ if DISTRO_VERSION < 20:
     AUDIT_FOLDER = "/usr/share/ubuntu-scap-security-guides"
     AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/cis-*-results.xml"
     AUDIT_BIN = ["/usr/sbin/cis-audit"]
+    LVL_FORMAT = "level{}_{}"
 else:
     AUDIT_FOLDER = "/var/lib/usg/"
     AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/usg-results-*.*.xml"
     AUDIT_BIN = ["/usr/sbin/usg", "audit"]
+    LVL_FORMAT = "cis_level{}_{}"
 
 
 CLOUD_INIT_LOG = "/var/log/cloud-init-output.log"
@@ -84,7 +86,7 @@ def _get_cis_hardening_profile(profile):
     for _, line in enumerate(open(CLOUD_INIT_LOG)):
         for match in re.finditer(pattern, line):
             level, machine_type = match.groups()
-            return "level{}_{}".format(level, machine_type)
+            return LVL_FORMAT.format(level, machine_type)
 
     return default_profile
 
@@ -124,7 +126,8 @@ def run_audit(profile):
     try:
         print("Run cis-audit: {}".format(cmd_run_audit), flush=True)
         subprocess.run(
-            cmd_run_audit, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            cmd_run_audit, stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL, check=True
         )
         _set_permissions()
     except subprocess.CalledProcessError as e:
