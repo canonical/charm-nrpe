@@ -104,9 +104,24 @@ class TestCronCisAudit(TestCase):
         )
 
     @mock.patch("files.plugins.cron_cis_audit.CLOUD_INIT_LOG", cloud_init_logfile)
-    def test_get_cis_hardening_profile_cloudinit(self):
+    @mock.patch("files.plugins.cron_cis_audit._get_major_version")
+    def test_get_cis_hardening_profile_cloudinit(self, mock_major_version):
         """Test the detection of the hardening profile from cloudinit.log."""
+        mock_major_version.return_value = 18
         expected_profile = "level2_server"
+        profile = cron_cis_audit._get_cis_hardening_profile("")
+        self.assertEqual(
+            profile,
+            expected_profile,
+            "Profile from Dummy file should be 'level2_server'",
+        )
+
+    @mock.patch("files.plugins.cron_cis_audit.CLOUD_INIT_LOG", cloud_init_logfile)
+    @mock.patch("files.plugins.cron_cis_audit._get_major_version")
+    def test_get_cis_hardening_profile_cloudinit_after_bionic(self, mock_major_version):
+        """Test the detection of the hardening profile from cloudinit.log."""
+        mock_major_version.return_value = 20
+        expected_profile = "cis_level2_server"
         profile = cron_cis_audit._get_cis_hardening_profile("")
         self.assertEqual(
             profile,
@@ -227,6 +242,7 @@ class TestCronCisAudit(TestCase):
                 [self.bionic_audit_bin[0], "level1_server"],
                 stdout=-3,
                 stderr=-3,
+                check=True,
             )
 
     @mock.patch("files.plugins.cron_cis_audit.MAX_SLEEP", 1)
@@ -249,7 +265,10 @@ class TestCronCisAudit(TestCase):
             mock_subprocess_run.return_value = process_mock
             cron_cis_audit.main()
             mock_subprocess_run.assert_called_once_with(
-                self.focal_audit_bin + ["cis_level1_server"], stdout=-3, stderr=-3
+                self.focal_audit_bin + ["cis_level1_server"],
+                stdout=-3,
+                stderr=-3,
+                check=True,
             )
 
     @mock.patch("files.plugins.cron_cis_audit._get_major_version")
