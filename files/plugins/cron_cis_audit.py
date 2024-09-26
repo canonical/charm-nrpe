@@ -80,11 +80,13 @@ def _get_cis_hardening_profile(profile):
         )
         return default_profile
 
+    lvl_format = "level{}_{}" if _get_major_version() < 20 else "cis_level{}_{}"
+
     pattern = re.compile(r"Applying Level-(1|2) scored (server|workstation)")
     for _, line in enumerate(open(CLOUD_INIT_LOG)):
         for match in re.finditer(pattern, line):
             level, machine_type = match.groups()
-            return "level{}_{}".format(level, machine_type)
+            return lvl_format.format(level, machine_type)
 
     return default_profile
 
@@ -124,7 +126,8 @@ def run_audit(profile):
     try:
         print("Run cis-audit: {}".format(cmd_run_audit), flush=True)
         subprocess.run(
-            cmd_run_audit, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            cmd_run_audit, stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL, check=True
         )
         _set_permissions()
     except subprocess.CalledProcessError as e:
