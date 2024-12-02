@@ -1,6 +1,6 @@
 #!/bin/bash
 
-check=$(action-get name | sed -e 's/-/_/g')
+check=$(action-get name)
 
 nrpedir="/etc/nagios/nrpe.d"
 checkfile="$nrpedir/${check}.cfg"
