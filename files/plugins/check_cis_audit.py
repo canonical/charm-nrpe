@@ -17,7 +17,6 @@ import sys
 import time
 import xml.etree.ElementTree as ElementTree
 
-
 from nagios_plugin3 import (
     CriticalError,
     WarnError,
@@ -25,8 +24,35 @@ from nagios_plugin3 import (
 )
 
 
-AUDIT_FOLDER = "/usr/share/ubuntu-scap-security-guides"
-AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/cis-*-results.xml"
+def _get_major_version():
+    """Get major version from /etc/os-release."""
+    with open(os.path.join(os.sep, "etc", "os-release")) as fin:
+        for line in fin:
+            if "VERSION_ID" in line:
+                value = line.strip().split("=", 1)[1]
+                return int(float(value.strip('"')))
+    raise OSError("No VERSION_ID in /etc/os-release")
+
+
+# cis-audit changed between bionic and focal
+if _get_major_version() < 20:
+    AUDIT_FOLDER = "/usr/share/ubuntu-scap-security-guides"
+    AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/cis-*-results.xml"
+    PROFILE_MAP = {
+        "level1_server": "cis_profile_Level_1_Server",
+        "level2_server": "cis_profile_Level_2_Server",
+        "level1_workstation": "cis_profile_Level_1_Workstation",
+        "level2_workstation": "cis_profile_Level_2_Workstation",
+    }
+else:
+    AUDIT_FOLDER = "/var/lib/usg"
+    AUDIT_RESULT_GLOB = AUDIT_FOLDER + "/usg-results-*.*.xml"
+    PROFILE_MAP = {
+        "level1_server": "cis_level1_server",
+        "level2_server": "cis_level2_server",
+        "level1_workstation": "cis_level1_workstation",
+        "level2_workstation": "cis_level2_workstation",
+    }
 
 
 def get_audit_result_filepath():
@@ -56,28 +82,28 @@ def check_file_max_age(max_age, results_filepath):
 
 def parse_profile_idref(profile_idref):
     """Parse the profile idref and return cis-audit level."""
-    profiles = {  # name: match_string
-        "level1_server": "cis_profile_Level_1_Server",
-        "level2_server": "cis_profile_Level_2_Server",
-        "level1_workstation": "cis_profile_Level_1_Workstation",
-        "level2_workstation": "cis_profile_Level_2_Workstation",
-    }
-    for profile in profiles:
-        if profile_idref.endswith(profiles[profile]):
+    for profile in PROFILE_MAP:
+        if profile_idref.endswith(PROFILE_MAP[profile]):
             return profile
 
     msg = "CRITICAL: could not determine profile from idref '{}'"
     raise CriticalError(msg.format(profile_idref))
 
 
-def get_audit_score_and_profile(results_filepath):
-    """Extract audit score and profile level from results xml file."""
+def get_audit_score_and_profile(results_filepath, tailoring):
+    """Extract audit score and profile level from results xml file.
+
+    If tailoring file is used the profile is the file itself.
+    """
     try:
         root = ElementTree.parse(results_filepath).getroot()
         namespace = root.tag.split("Benchmark")[0]
         score = root.find(namespace + "TestResult/" + namespace + "score").text
-        profile_xml = root.find(namespace + "TestResult/" + namespace + "profile")
-        profile = parse_profile_idref(profile_xml.attrib["idref"])
+        if tailoring:
+            profile = "default-tailoring-file"
+        else:
+            profile_xml = root.find(namespace + "TestResult/" + namespace + "profile")
+            profile = parse_profile_idref(profile_xml.attrib["idref"])
     except ElementTree.ParseError as parse_error:
         msg = "CRITICAL: Could not parse audit results file '{}': '{}'"
         raise CriticalError(msg.format(results_filepath, parse_error))
@@ -87,11 +113,11 @@ def get_audit_score_and_profile(results_filepath):
     return float(score), profile
 
 
-def check_cis_audit(target_profile, max_age, warning, critical):
+def check_cis_audit(target_profile, max_age, tailoring, warning, critical):
     """Check if recent audit report exists and score and level are as specified."""
     results_filepath = get_audit_result_filepath()
     check_file_max_age(max_age, results_filepath)
-    score, profile = get_audit_score_and_profile(results_filepath)
+    score, profile = get_audit_score_and_profile(results_filepath, tailoring)
 
     msg = "{}: cis-audit score is {:.2f} of 100; threshold -c {} -w {} ({}; {})"
     if score < critical:
@@ -140,6 +166,13 @@ def parse_args(args):
         default="",
     )
     parser.add_argument(
+        "--tailoring",
+        "-t",
+        action="store_true",
+        default=False,
+        help="Whether is using the default tailoring file or not."
+    )
+    parser.add_argument(
         "--warn",
         "-w",
         type=int,
@@ -154,13 +187,24 @@ def parse_args(args):
         default=-1,
     )
     args = parser.parse_args(args)
+
+    if args.tailoring and args.cis_profile:
+        parser.error("You cannot provide both a tailoring file and a profile!")
+
     return args
 
 
 def main():
     """Parse args and check the audit report."""
     args = parse_args(sys.argv[1:])
-    try_check(check_cis_audit, args.cis_profile, args.max_age, args.warn, args.crit)
+    try_check(
+        check_cis_audit,
+        args.cis_profile,
+        args.max_age,
+        args.tailoring,
+        args.warn,
+        args.crit,
+    )
 
 
 if __name__ == "__main__":

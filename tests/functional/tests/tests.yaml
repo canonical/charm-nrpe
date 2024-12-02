@@ -2,7 +2,6 @@ charm_name: nrpe
 gate_bundles:
   - jammy
   - focal
-  - bionic
 smoke_bundles:
   - focal
 tests:

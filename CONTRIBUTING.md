@@ -21,6 +21,11 @@ make unittests       # unit tests
 make functional      # functional tests
 ```
 
+NOTE: this repository includes submodules.
+It is important that these are checked out before building or testing the charm.
+The `build` make target will init and update the submodules as a dependency,
+or you can manually run `make submodules` or use the `git submodule` commands directly.
+
 ## Build the charm
 
 Build the charm in this git repository using:
