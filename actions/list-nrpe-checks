@@ -6,13 +6,15 @@ if [ ! -d $nrpedir ]; then
     action-fail "No $nrpedir exists"
     exit 1
 else
+  result=""
   for i in $nrpedir/*.cfg; do
     if [ -f $i ]; then
-      check=$(grep command $i | sed "s/command\[\(.*\\)]=\(.*\)$/\1/" | tr _ -);
+      check=$(grep command $i | sed "s/command\[\(.*\\)]=\(.*\)$/\1/");
       command=$(grep command $i | sed "s/command\[\(.*\\)]=\(.*\)$/\2/");
-      action-set checks.$check="$command";
+      result+="$check: $command"$'\n'
     fi
   done
 fi
+action-set checks="$result"
 
 action-set timestamp="$(date)"
