@@ -1,14 +1,18 @@
 #!/bin/bash
 
-check=$(action-get name | sed -e 's/-/_/g')
+check=$(action-get name | sed -e 's/-/./g' | sed -e 's/_/./g')
 
 nrpedir="/etc/nagios/nrpe.d"
-checkfile="$nrpedir/${check}.cfg"
+checkfile_regex="$nrpedir/${check}.cfg"
+find_file_result=$(find $nrpedir -regex $checkfile_regex | wc -l)
+checkfile=$(find $nrpedir -regex $checkfile_regex)
 
-if [ -f $checkfile ]; then
+if [ $find_file_result -eq 1 ]; then
     command=$(grep command $checkfile | sed -e "s/command\[.*\]=//")
     output=$(echo $command | xargs sudo -u nagios)
     action-set check-output="$output"
 else
-    action-fail "$checkfile does not exist or the check failed"
+    action-fail "Regex search for $checkfile_regex did not find any entries, \
+or found multiple entries, or the check failed"
 fi
+
