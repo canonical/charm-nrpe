@@ -51,9 +51,7 @@ def count_systemd_scopes_state(state):
         )
     except ValueError:
         # ideally, this should never occur
-        raise UnknownError(
-            "UNKNOWN: Counting systemd abandoned state scopes returns non-integer"
-        )
+        raise UnknownError("UNKNOWN: Counting systemd abandoned state scopes returns non-integer")
 
 
 def check_systemd_scopes(args):
@@ -65,23 +63,17 @@ def check_systemd_scopes(args):
             "CRITICAL: System has {} systemd scopes in error state".format(error_count)
         )
     elif error_count >= args.warn_error:
-        raise WarnError(
-            "WARNING: System has {} systemd scopes in error state".format(error_count)
-        )
+        raise WarnError("WARNING: System has {} systemd scopes in error state".format(error_count))
 
     # Check scopes in 'abandoned' state
     abandoned_count = count_systemd_scopes_state("abandoned")
     if error_count >= args.crit_abandoned:
         raise CriticalError(
-            "CRITICAL: System has {} systemd scopes in abandoned state".format(
-                error_count
-            )
+            "CRITICAL: System has {} systemd scopes in abandoned state".format(error_count)
         )
     elif error_count >= args.warn_abandoned:
         raise WarnError(
-            "WARNING: System has {} systemd scopes in abandoned state".format(
-                error_count
-            )
+            "WARNING: System has {} systemd scopes in abandoned state".format(error_count)
         )
 
     # With no nagios errors raised, we are in an "OK" state
@@ -107,9 +99,7 @@ def positive_int(value):
 
 def parse_args(args=None):
     """Parse command-line options."""
-    parser = ArgumentParser(
-        description=__doc__, formatter_class=ArgumentDefaultsHelpFormatter
-    )
+    parser = ArgumentParser(description=__doc__, formatter_class=ArgumentDefaultsHelpFormatter)
 
     # Thresholds for the scopes in 'error' state
     parser.add_argument(

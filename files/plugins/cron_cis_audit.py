@@ -126,8 +126,7 @@ def run_audit(profile):
     try:
         print("Run cis-audit: {}".format(cmd_run_audit), flush=True)
         subprocess.run(
-            cmd_run_audit, stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL, check=True
+            cmd_run_audit, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
         )
         _set_permissions()
     except subprocess.CalledProcessError as e:
@@ -170,7 +169,7 @@ def parse_args(args):
         "-t",
         action="store_true",
         default=False,
-        help="Whether is using the default tailoring file or not."
+        help="Whether is using the default tailoring file or not.",
     )
 
     args = parser.parse_args(args)
@@ -188,9 +187,7 @@ def main():
     # folder does not exist - usg-cisbenchmark likely not installed
     if not os.path.exists(AUDIT_FOLDER) and DISTRO_VERSION < 20:
         raise FileNotFoundError(
-            "Folder {} does not exist, is usg-cisbenchmark installed?".format(
-                AUDIT_FOLDER
-            )
+            "Folder {} does not exist, is usg-cisbenchmark installed?".format(AUDIT_FOLDER)
         )
 
     # Ensure a single instance via a simple pidfile

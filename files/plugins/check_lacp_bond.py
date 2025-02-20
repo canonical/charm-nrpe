@@ -115,10 +115,7 @@ def parse_args():
 
     if not args.iface:
         ifaces = map(os.path.basename, glob.glob("/sys/class/net/bond?"))
-        print(
-            "UNKNOWN: Please specify one of these bond "
-            "ifaces: {}".format(",".join(ifaces))
-        )
+        print("UNKNOWN: Please specify one of these bond " "ifaces: {}".format(",".join(ifaces)))
         sys.exit(1)
     return args
 

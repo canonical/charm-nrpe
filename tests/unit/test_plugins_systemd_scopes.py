@@ -93,9 +93,7 @@ class TestCheckSystemdScopes(TestCase):
             ["-e", "1000", "-E", "2000", "-a", "1000", "-A", "2000", "-o", "Nominal"]
         )
 
-        self.assert_check_stdout(
-            args, "OK: Nominal; 4 in error state, 4 in abandoned state\n"
-        )
+        self.assert_check_stdout(args, "OK: Nominal; 4 in error state, 4 in abandoned state\n")
 
         # test arguments to invoke WARN on error state x4 scopes
         args = check_systemd_scopes.parse_args(

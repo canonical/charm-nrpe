@@ -64,7 +64,7 @@ def install_charm_files(service_name):
     """Install files shipped with charm."""
     # The preinst script of nagios-nrpe-server deb package will add nagios user
     # and create this dir as home
-    # ref: https://git.launchpad.net/ubuntu/+source/nagios-nrpe/tree/debian/nagios-nrpe-server.preinst#n28  # NOQA: E501
+    # ref: https://git.launchpad.net/ubuntu/+source/nagios-nrpe/tree/debian/nagios-nrpe-server.preinst#n28  # noqa: W505
     nagios_home = "/var/lib/nagios"
 
     # it's possible dir owner be changed to root by other process, e.g.: LP1866382
@@ -98,9 +98,7 @@ def install_charm_files(service_name):
     os.chmod(pkg_plugin_dir + "/nagios_plugin3.py", 0o644)
 
     if hookenv.config("export_nagios_definitions"):
-        shutil.copy2(
-            os.path.join(charm_file_dir, "default_rsync"), "/etc/default/rsync"
-        )
+        shutil.copy2(os.path.join(charm_file_dir, "default_rsync"), "/etc/default/rsync")
         shutil.copy2(os.path.join(charm_file_dir, "rsyncd.conf"), "/etc/rsyncd.conf")
         host.mkdir("/etc/rsync-juju.d", perms=0o755)
 
@@ -200,9 +198,7 @@ def update_nrpe_external_master_relation(service_name):
     principal_relation = nrpe_helpers.PrincipalRelation()
 
     for rid in hookenv.relation_ids("nrpe-external-master"):
-        hookenv.relation_set(
-            relation_id=rid, relation_settings=principal_relation.provide_data()
-        )
+        hookenv.relation_set(relation_id=rid, relation_settings=principal_relation.provide_data())
 
 
 def update_monitor_relation(service_name):
@@ -210,9 +206,7 @@ def update_monitor_relation(service_name):
     monitor_relation = nrpe_helpers.MonitorsRelation()
 
     for rid in hookenv.relation_ids("monitors"):
-        hookenv.relation_set(
-            relation_id=rid, relation_settings=monitor_relation.provide_data()
-        )
+        hookenv.relation_set(relation_id=rid, relation_settings=monitor_relation.provide_data())
 
 
 def has_consumer():

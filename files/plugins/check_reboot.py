@@ -77,9 +77,7 @@ def main():
     parser.add_argument(
         "known_reboot_time",
         type=convert_time,
-        help="in format {}, same as output from `uptime --since`".format(
-            UPTIME_FORMAT_HUMAN
-        ),
+        help="in format {}, same as output from `uptime --since`".format(UPTIME_FORMAT_HUMAN),
     )
 
     args = parser.parse_args()
@@ -90,13 +88,9 @@ def main():
     # `uptime --since` output maybe flapping because ntp is changing sytem time
     # here we allow 5s gap to avoid fake alert
     if delta.total_seconds() > 5.0:
-        nagios_exit(
-            NAGIOS_STATUS_CRITICAL, "unknown reboot at {}".format(current_reboot_time)
-        )
+        nagios_exit(NAGIOS_STATUS_CRITICAL, "unknown reboot at {}".format(current_reboot_time))
     else:
-        nagios_exit(
-            NAGIOS_STATUS_OK, "system is up since {}".format(current_reboot_time)
-        )
+        nagios_exit(NAGIOS_STATUS_OK, "system is up since {}".format(current_reboot_time))
 
 
 if __name__ == "__main__":

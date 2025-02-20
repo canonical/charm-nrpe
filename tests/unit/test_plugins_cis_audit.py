@@ -146,9 +146,7 @@ class TestCronCisAudit(TestCase):
         self.assertFalse(cron_cis_audit._get_cis_result_age())
 
         # file was created when test initiated, should return 0
-        with mock.patch(
-            "files.plugins.cron_cis_audit.AUDIT_RESULT_GLOB", self.cloud_init_logfile
-        ):
+        with mock.patch("files.plugins.cron_cis_audit.AUDIT_RESULT_GLOB", self.cloud_init_logfile):
             age_in_hours = cron_cis_audit._get_cis_result_age()
             self.assertLess(
                 age_in_hours,
@@ -161,31 +159,23 @@ class TestCronCisAudit(TestCase):
         """Test the default parsing behavior of the argument parser."""
         # test empty parameters
         args = cron_cis_audit.parse_args([])
-        self.assertEqual(
-            args, argparse.Namespace(cis_profile="", max_age=168, tailoring=False)
-        )
+        self.assertEqual(args, argparse.Namespace(cis_profile="", max_age=168, tailoring=False))
 
         # test setting parameters
         args = cron_cis_audit.parse_args(["-a 1", "-p=level2_workstation"])
         self.assertEqual(
             args,
-            argparse.Namespace(
-                cis_profile="level2_workstation", max_age=1, tailoring=False
-            ),
+            argparse.Namespace(cis_profile="level2_workstation", max_age=1, tailoring=False),
         )
 
         # test to use tailoring file
         args = cron_cis_audit.parse_args(["-t"])
-        self.assertEqual(
-            args, argparse.Namespace(cis_profile="", max_age=168, tailoring=True)
-        )
+        self.assertEqual(args, argparse.Namespace(cis_profile="", max_age=168, tailoring=True))
 
         # test setting invalid parameter
         with self.assertRaises(SystemExit):
             cron_cis_audit.parse_args(["-p=invalid-parameter-test"])
-        self.assertRegex(
-            mock_stderr.getvalue(), r"invalid choice: 'invalid-parameter-test'"
-        )
+        self.assertRegex(mock_stderr.getvalue(), r"invalid choice: 'invalid-parameter-test'")
 
         # test setting mutual exclusive parameters
         with self.assertRaises(SystemExit):
@@ -209,9 +199,7 @@ class TestCronCisAudit(TestCase):
     @mock.patch("grp.getgrnam")
     def test_set_permissions(self, mock_grp, mock_chown, mock_chmod, mock_glob):
         """Test if _set_permissions changes the permissions as expected."""
-        mock_grp.return_value = grp.struct_group(
-            ("mockgroup", "mockpasswd", "1000", "mockuser")
-        )
+        mock_grp.return_value = grp.struct_group(("mockgroup", "mockpasswd", "1000", "mockuser"))
         cron_cis_audit._set_permissions()
         mock_chown.assert_has_calls(
             [
@@ -367,9 +355,7 @@ class TestCheckCisAudit(TestCase):
             self.bionic_audit_result_glob,
         ):
             audit_result_filepath = check_cis_audit.get_audit_result_filepath()
-            expected = os.path.join(
-                self.audit_result_folder, "cis-testfile2-results.xml"
-            )
+            expected = os.path.join(self.audit_result_folder, "cis-testfile2-results.xml")
             self.assertEqual(audit_result_filepath, expected)
         # check focal
         with mock.patch(
@@ -377,9 +363,7 @@ class TestCheckCisAudit(TestCase):
             self.focal_audit_result_glob,
         ):
             audit_result_filepath = check_cis_audit.get_audit_result_filepath()
-            expected = os.path.join(
-                self.audit_result_folder, "usg-results-testfile2.123.xml"
-            )
+            expected = os.path.join(self.audit_result_folder, "usg-results-testfile2.123.xml")
             self.assertEqual(audit_result_filepath, expected)
 
     def test_check_file_max_age(self):
@@ -394,9 +378,7 @@ class TestCheckCisAudit(TestCase):
             check_cis_audit.parse_profile_idref("unknown_profile")
 
         profile_id = "xccdf_com.ubuntu.bionic.cis_profile_Level_2_Workstation"
-        self.assertEqual(
-            "level2_workstation", check_cis_audit.parse_profile_idref(profile_id)
-        )
+        self.assertEqual("level2_workstation", check_cis_audit.parse_profile_idref(profile_id))
 
     @mock.patch("files.plugins.check_cis_audit.PROFILE_MAP", bionic_profile_map)
     def test_get_audit_score_and_profile_bionic(self):
@@ -406,9 +388,7 @@ class TestCheckCisAudit(TestCase):
             check_cis_audit.get_audit_score_and_profile(self.bionic_testfile1, False)
 
         # score and profile correctly read from xml
-        score, profile = check_cis_audit.get_audit_score_and_profile(
-            self.bionic_testfile2, False
-        )
+        score, profile = check_cis_audit.get_audit_score_and_profile(self.bionic_testfile2, False)
         self.assertEqual(score, 89.444443)
         self.assertEqual(profile, "level1_server")
 
@@ -420,9 +400,7 @@ class TestCheckCisAudit(TestCase):
             check_cis_audit.get_audit_score_and_profile(self.focal_testfile1, False)
 
         # score and profile correctly read from xml
-        score, profile = check_cis_audit.get_audit_score_and_profile(
-            self.focal_testfile2, False
-        )
+        score, profile = check_cis_audit.get_audit_score_and_profile(self.focal_testfile2, False)
         self.assertEqual(score, 66.160233)
         self.assertEqual(profile, "level1_server")
 
@@ -434,9 +412,7 @@ class TestCheckCisAudit(TestCase):
             check_cis_audit.get_audit_score_and_profile(self.focal_testfile1, True)
 
         # score and profile correctly read from xml
-        score, profile = check_cis_audit.get_audit_score_and_profile(
-            self.focal_testfile2, True
-        )
+        score, profile = check_cis_audit.get_audit_score_and_profile(self.focal_testfile2, True)
         self.assertEqual(score, 66.160233)
         self.assertEqual(profile, "default-tailoring-file")
 
@@ -472,9 +448,7 @@ class TestCheckCisAudit(TestCase):
         )
 
         # test setting tailoring
-        arguments = check_cis_audit.parse_args(
-            ["-a", "1", "-c", "99", "-w", "90", "-t"]
-        )
+        arguments = check_cis_audit.parse_args(["-a", "1", "-c", "99", "-w", "90", "-t"])
         self.assertEqual(
             arguments,
             argparse.Namespace(

@@ -35,9 +35,7 @@ check_delta = int(sys.argv[1])
 # dmesg -T formatted timestamps are inside [], so we need to add them
 datetime_delta = datetime.now() - timedelta(minutes=check_delta)
 
-recent_logs = [
-    i for i in err_results if datetime.strptime(i[1:25], "%c") >= datetime_delta
-]
+recent_logs = [i for i in err_results if datetime.strptime(i[1:25], "%c") >= datetime_delta]
 
 if recent_logs:
     print("CRITICAL: Recent XFS errors in kern.log." + "\n" + "{}".format(recent_logs))
