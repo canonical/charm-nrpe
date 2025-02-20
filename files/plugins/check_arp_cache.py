@@ -45,14 +45,10 @@ def check_arp_cache(warn, crit):
     crit_threshold = gc_thresh3 * crit / 100
 
     if arp_cache >= crit_threshold:
-        message = "CRITICAL: arp cache is more than {} of limit, {}".format(
-            crit, extra_info
-        )
+        message = "CRITICAL: arp cache is more than {} of limit, {}".format(crit, extra_info)
         raise CriticalError(message)
     if arp_cache >= warn_threshold:
-        message = "WARNING: arp cache is more than {} of limit, {}".format(
-            warn, extra_info
-        )
+        message = "WARNING: arp cache is more than {} of limit, {}".format(warn, extra_info)
         raise WarnError(message)
 
     print("OK: arp cache is healthy: {}".format(extra_info))

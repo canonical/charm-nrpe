@@ -172,9 +172,7 @@ def get_ingress_address(binding, external=False):
         network_info = hookenv.network_get(binding)
         if network_info is not None and "ingress-addresses" in network_info:
             try:
-                ip_address = network_info["bind-addresses"][0]["addresses"][0][
-                    "address"
-                ]
+                ip_address = network_info["bind-addresses"][0]["addresses"][0]["address"]
                 hookenv.log("Using ingress-addresses, found %s" % ip_address)
             except KeyError:
                 hookenv.log("Using primary-addresses")
@@ -182,9 +180,7 @@ def get_ingress_address(binding, external=False):
 
     except (NotImplementedError, FileNotFoundError) as e:
         hookenv.log(
-            "Unable to determine inbound IP address for binding {} with {}".format(
-                binding, e
-            ),
+            "Unable to determine inbound IP address for binding {} with {}".format(binding, e),
             level=hookenv.ERROR,
         )
 
@@ -392,10 +388,7 @@ class RsyncEnabled(helpers.RelationContext):
     def __init__(self):
         """Set export_nagios_definitions."""
         self["export_nagios_definitions"] = hookenv.config("export_nagios_definitions")
-        if (
-            hookenv.config("nagios_master")
-            and hookenv.config("nagios_master") != "None"
-        ):
+        if hookenv.config("nagios_master") and hookenv.config("nagios_master") != "None":
             self["export_nagios_definitions"] = True
 
     def is_ready(self):
@@ -414,13 +407,9 @@ class NRPECheckCtxt(dict):
         plugin_path = "/usr/lib/nagios/plugins"
         if checktype == "procrunning":
             self["cmd_exec"] = plugin_path + "/check_procs"
-            self["description"] = "Check process {executable} is running".format(
-                **check_opts
-            )
+            self["description"] = "Check process {executable} is running".format(**check_opts)
             self["cmd_name"] = "check_proc_" + check_opts["executable"]
-            self["cmd_params"] = "-w {min} -c {max} -C {executable}".format(
-                **check_opts
-            )
+            self["cmd_params"] = "-w {min} -c {max} -C {executable}".format(**check_opts)
         elif checktype == "processcount":
             self["cmd_exec"] = plugin_path + "/check_procs"
             self["description"] = "Check process count"
@@ -431,9 +420,7 @@ class NRPECheckCtxt(dict):
                 self["cmd_params"] = "-c {max}".format(**check_opts)
         elif checktype == "disk":
             self["cmd_exec"] = plugin_path + "/check_disk"
-            self["description"] = "Check disk usage " + check_opts["path"].replace(
-                "/", "_"
-            )
+            self["description"] = "Check disk usage " + check_opts["path"].replace("/", "_")
             self["cmd_name"] = "check_disk_principal"
             self["cmd_params"] = "-w 20 -c 10 -p " + check_opts["path"]
         elif checktype == "custom":
@@ -546,17 +533,13 @@ class SubordinateCheckDefinitions(dict):
                     {
                         "description": "ARP cache entries",
                         "cmd_name": "check_arp_cache",
-                        "cmd_exec": os.path.join(
-                            local_plugin_dir, "check_arp_cache.py"
-                        ),
+                        "cmd_exec": os.path.join(local_plugin_dir, "check_arp_cache.py"),
                         "cmd_params": hookenv.config("arp_cache"),
                     },
                     {
                         "description": "Readonly filesystems",
                         "cmd_name": "check_ro_filesystem",
-                        "cmd_exec": os.path.join(
-                            local_plugin_dir, "check_ro_filesystem.py"
-                        ),
+                        "cmd_exec": os.path.join(local_plugin_dir, "check_ro_filesystem.py"),
                         "cmd_params": (
                             "-e {}".format(hookenv.config("ro_filesystem_excludes"))
                             if hookenv.config("ro_filesystem_excludes")
@@ -591,9 +574,7 @@ class SubordinateCheckDefinitions(dict):
                         "cmd_name": "check_space{}".format(check_path),
                         "cmd_exec": pkg_plugin_dir + "check_disk",
                         "cmd_params": (
-                            cmd_params
-                            if space_check["check"].strip() != "disabled"
-                            else ""
+                            cmd_params if space_check["check"].strip() != "disabled" else ""
                         ),
                     }
                 )
@@ -632,9 +613,7 @@ class SubordinateCheckDefinitions(dict):
                     checks.append(netlink_check)
 
         # Checking if CPU governor is supported by the system and add nrpe check
-        cpu_governor_supported = glob.glob(
-            "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
-        )
+        cpu_governor_supported = glob.glob("/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor")
         cpu_governor_setting = hookenv.config("cpu_governor")
         if not cpu_governor_setting:
             principal_unit = hookenv.principal_unit()
@@ -672,9 +651,7 @@ class SubordinateCheckDefinitions(dict):
         if enable_check_reboot:
             # read from db if exist, or set current uptime in db and use it
             known_reboot_time = get_known_reboot_time() or set_known_reboot_time()
-            check_reboot_context = get_check_reboot_context(
-                known_reboot_time=known_reboot_time
-            )
+            check_reboot_context = get_check_reboot_context(known_reboot_time=known_reboot_time)
         else:
             # set to None will disable/remove this check
             check_reboot_context = get_check_reboot_context(known_reboot_time=None)
@@ -692,9 +669,7 @@ class SubordinateCheckDefinitions(dict):
             md = hookenv._metadata_unit(principal_unit)
             if md and md.pop("name", None) == "nagios":
                 sub_postfix = "sub"
-        nrpe_config_sub_tmpl = "/etc/nagios/nrpe.d/{}{}*.cfg".format(
-            "{}", sub_postfix_sep
-        )
+        nrpe_config_sub_tmpl = "/etc/nagios/nrpe.d/{}{}*.cfg".format("{}", sub_postfix_sep)
         nrpe_config_tmpl = "/etc/nagios/nrpe.d/{}.cfg"
         disable_system_checks = hookenv.config("disable_system_checks")
         for check in checks:
@@ -707,17 +682,13 @@ class SubordinateCheckDefinitions(dict):
             check["description"] += " (sub)"
             if sub_postfix:
                 check["cmd_name"] += sub_postfix_sep + sub_postfix
-            check["cmd_params"] = (
-                check["cmd_params"] if not disable_system_checks else ""
-            )
+            check["cmd_params"] = check["cmd_params"] if not disable_system_checks else ""
             self["checks"].append(check)
 
     def _get_proc_thresholds(self):
         """Return suitable processor thresholds."""
         if hookenv.config("procs") == "auto":
-            proc_thresholds = "-k -w {} -c {}".format(
-                25 * self.procs + 100, 50 * self.procs + 100
-            )
+            proc_thresholds = "-k -w {} -c {}".format(25 * self.procs + 100, 50 * self.procs + 100)
         else:
             proc_thresholds = hookenv.config("procs")
         return proc_thresholds
@@ -786,9 +757,7 @@ class SubordinateCheckDefinitions(dict):
                 matches = [target]
 
             iface_devs = [
-                target
-                for target in matches
-                if os.path.exists(iface_path.format(target))
+                target for target in matches if os.path.exists(iface_path.format(target))
             ]
             # no ifaces found; SKIP
             if not iface_devs:
@@ -872,10 +841,7 @@ def match_cidr_to_ifaces(cidr):
     matches = []
     for adapter in netifaces.interfaces():
         ipv4_addr_structs = netifaces.ifaddresses(adapter).get(netifaces.AF_INET, [])
-        addrs = [
-            ipaddress.IPv4Address(addr_struct["addr"])
-            for addr_struct in ipv4_addr_structs
-        ]
+        addrs = [ipaddress.IPv4Address(addr_struct["addr"]) for addr_struct in ipv4_addr_structs]
         if any(addr in network for addr in addrs):
             matches.append(adapter)
     return matches
@@ -917,9 +883,7 @@ def is_cis_misconfigured():
     Return True and a message if CIS config is invalid, otherwise
     return False with empty message.
     """
-    if hookenv.config("cis_audit_profile") and hookenv.config(
-        "cis_audit_tailoring_file"
-    ):
+    if hookenv.config("cis_audit_profile") and hookenv.config("cis_audit_tailoring_file"):
         return (
             True,
             "You cannot provide both cis_audit_profile and cis_audit_tailoring_file",

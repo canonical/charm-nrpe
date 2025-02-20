@@ -125,9 +125,7 @@ def check_cis_audit(target_profile, max_age, tailoring, warning, critical):
             msg.format("CRITICAL", score, critical, warning, profile, results_filepath)
         )
     if score < warning:
-        raise WarnError(
-            msg.format("WARNING", score, critical, warning, profile, results_filepath)
-        )
+        raise WarnError(msg.format("WARNING", score, critical, warning, profile, results_filepath))
 
     if target_profile != "" and target_profile != profile:
         msg = (
@@ -170,7 +168,7 @@ def parse_args(args):
         "-t",
         action="store_true",
         default=False,
-        help="Whether is using the default tailoring file or not."
+        help="Whether is using the default tailoring file or not.",
     )
     parser.add_argument(
         "--warn",

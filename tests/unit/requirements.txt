@@ -1,3 +1,4 @@
+setuptools
 coverage
 six
 PyYAML

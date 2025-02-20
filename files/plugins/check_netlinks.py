@@ -58,15 +58,12 @@ def check_iface(iface, skiperror, crit_thr):
                 continue
             else:
                 raise CriticalError(
-                    "CRITICAL: {} ({} returns "
-                    "invalid argument)".format(iface, metric_key)
+                    "CRITICAL: {} ({} returns " "invalid argument)".format(iface, metric_key)
                 )
 
         if metric_key == "operstate" and metric_value != "up":
             if metric_value != crit_thr["operstate"]:
-                raise CriticalError(
-                    "CRITICAL: {} link state is {}".format(iface, metric_value)
-                )
+                raise CriticalError("CRITICAL: {} link state is {}".format(iface, metric_value))
 
         if metric_value != crit_thr[metric_key]:
             raise CriticalError(
@@ -79,8 +76,7 @@ def check_iface(iface, skiperror, crit_thr):
             crit_thr[metric] = "n/a"
     crit_thr["iface"] = iface
     print(
-        "OK: {iface} matches thresholds: "
-        "o:{operstate}, m:{mtu}, s:{speed}".format(**crit_thr)
+        "OK: {iface} matches thresholds: " "o:{operstate}, m:{mtu}, s:{speed}".format(**crit_thr)
     )
 
 
@@ -107,9 +103,7 @@ def parse_args():
         type=str,
         help="operstate: up, down, unknown (default: up)",
     )
-    parser.add_argument(
-        "--mtu", "-m", default="1500", type=str, help="mtu size (default: 1500)"
-    )
+    parser.add_argument("--mtu", "-m", default="1500", type=str, help="mtu size (default: 1500)")
     parser.add_argument(
         "--speed",
         "-s",
@@ -121,10 +115,7 @@ def parse_args():
 
     if not args.iface:
         ifaces = map(os.path.basename, glob.glob("/sys/class/net/*"))
-        print(
-            "UNKNOWN: Please specify one of these "
-            "ifaces: {}".format(",".join(ifaces))
-        )
+        print("UNKNOWN: Please specify one of these " "ifaces: {}".format(",".join(ifaces)))
         sys.exit(1)
     return args
 

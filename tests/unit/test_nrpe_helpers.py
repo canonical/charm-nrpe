@@ -49,9 +49,7 @@ class TestMatchCidrToIfaces(unittest.TestCase):
     def _run_mocked_test(self, cidr, matches, ifaces_mock, addrs_mock):
         iface_ip_tuples = list(self.mock_iface_ip_data.items())
         ifaces_mock.return_value = [t[0] for t in iface_ip_tuples]
-        addrs_mock.side_effect = [
-            {netifaces.AF_INET: [{"addr": t[1]}]} for t in iface_ip_tuples
-        ]
+        addrs_mock.side_effect = [{netifaces.AF_INET: [{"addr": t[1]}]} for t in iface_ip_tuples]
         self.assertEqual(match_cidr_to_ifaces(cidr), matches)
 
 
@@ -82,9 +80,7 @@ class TestIngressAddress(unittest.TestCase):
             "egress-subnets": ["3.8.134.119/32"],
             "ingress-addresses": ["3.8.134.119"],
         }
-        self.assertEqual(
-            nrpe_helpers.get_ingress_address("mockbinding"), "172.31.29.247"
-        )
+        self.assertEqual(nrpe_helpers.get_ingress_address("mockbinding"), "172.31.29.247")
 
     @mock.patch("nrpe_helpers.hookenv.config")
     @mock.patch("nrpe_helpers.hookenv.network_get")
@@ -121,9 +117,7 @@ class TestIngressAddress(unittest.TestCase):
         """Prove we get a public IP address for Nagios relation."""
         mock_config.return_value = "public"
         mock_unit_get.return_value = "1.2.3.4"
-        self.assertEqual(
-            nrpe_helpers.get_ingress_address("mockbinding", external=True), "1.2.3.4"
-        )
+        self.assertEqual(nrpe_helpers.get_ingress_address("mockbinding", external=True), "1.2.3.4")
 
 
 class TestCheckReboot(unittest.TestCase):
@@ -148,7 +142,7 @@ class TestCheckReboot(unittest.TestCase):
         """Test get_check_reboot_context will render time correctly."""
         t0 = nrpe_helpers.get_cmd_output(["uptime", "--since"])
         context = nrpe_helpers.get_check_reboot_context(known_reboot_time=t0)
-        self.assertEquals(context["cmd_params"], '"{}"'.format(t0))
+        self.assertEqual(context["cmd_params"], '"{}"'.format(t0))
 
     def test_get_check_reboot_context_remove(self):
         """Test get_check_reboot_context will render None correctly."""
@@ -310,9 +304,7 @@ class TestDiskSpaceCheck(unittest.TestCase):
             (mp, False),
         ]
         for partition, expected in params:
-            with self.subTest(
-                msg="Validate partition filtering", p1=partition, p2=expected
-            ):
+            with self.subTest(msg="Validate partition filtering", p1=partition, p2=expected):
                 if expected:
                     self.assertIn(partition, partitions)
                 else:
@@ -712,9 +704,7 @@ class TestCISAuditCheck(unittest.TestCase):
             "-p level1_server -w 85 -c 80",
         )
         # doesn't include score
-        self.assertEqual(
-            nrpe_helpers.cis_cmd_params(include_score=False), "-p level1_server"
-        )
+        self.assertEqual(nrpe_helpers.cis_cmd_params(include_score=False), "-p level1_server")
 
     @mock.patch("nrpe_helpers.cis_tailoring_file_handler")
     @mock.patch("nrpe_helpers.hookenv.config")
@@ -727,9 +717,7 @@ class TestCISAuditCheck(unittest.TestCase):
         }
         mock_config.side_effect = lambda key: config[key]
         # include score
-        self.assertEqual(
-            nrpe_helpers.cis_cmd_params(include_score=True), "-t -w 85 -c 80"
-        )
+        self.assertEqual(nrpe_helpers.cis_cmd_params(include_score=True), "-t -w 85 -c 80")
         # doesn't include score
         self.assertEqual(nrpe_helpers.cis_cmd_params(include_score=False), "-t")
         mock_tailor_handler.assert_called()

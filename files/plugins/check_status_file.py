@@ -36,9 +36,7 @@ def parse_args():
         default="WARNING",
         help="String indicating warning status",
     )
-    parser.add_argument(
-        "-o", "--ok-text", default="OK", help="String indicating OK status"
-    )
+    parser.add_argument("-o", "--ok-text", default="OK", help="String indicating OK status")
     parser.add_argument(
         "-u",
         "--unknown-text",

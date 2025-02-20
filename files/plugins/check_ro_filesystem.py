@@ -44,9 +44,7 @@ def check_ro_filesystem(excludes=""):
         # if current fs matches EXCLUDE_FS then next, else check it's not readonly
         if fs in EXCLUDE_FS:
             continue
-        if not any(
-            mount_point.startswith(exclusion.strip()) for exclusion in exclude_mounts
-        ):
+        if not any(mount_point.startswith(exclusion.strip()) for exclusion in exclude_mounts):
             mount_options = mount_options.split(",")
             if "ro" in mount_options:
                 ro_filesystems.append(mount_point)

@@ -42,9 +42,7 @@ def get_manager():
                     nrpe_utils.create_host_export_fragment,
                     nrpe_utils.render_nrped_files,
                     nrpe_utils.update_cis_audit_cronjob,
-                    helpers.render_template(
-                        source="nrpe.tmpl", target="/etc/nagios/nrpe.cfg"
-                    ),
+                    helpers.render_template(source="nrpe.tmpl", target="/etc/nagios/nrpe.cfg"),
                 ],
                 "provided_data": [nrpe_helpers.PrincipalRelation()],
                 "ports": [hookenv.config("server_port"), "ICMP"],

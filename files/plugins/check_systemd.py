@@ -23,9 +23,7 @@ try:
     try:
         service_unit = manager.LoadUnit(service_name)
         service_proxy = bus.get_object("org.freedesktop.systemd1", str(service_unit))
-        service = dbus.Interface(
-            service_proxy, dbus_interface="org.freedesktop.systemd1.Unit"
-        )
+        service = dbus.Interface(service_proxy, dbus_interface="org.freedesktop.systemd1.Unit")
         service_res = service_proxy.Get(
             "org.freedesktop.systemd1.Unit",
             "SubState",

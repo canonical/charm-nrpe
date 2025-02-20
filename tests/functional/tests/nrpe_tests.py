@@ -36,9 +36,7 @@ class TestNrpe(TestBase):
     @RETRY
     def test_01_nrpe_check(self):
         """Verify nrpe check exists."""
-        logging.debug(
-            "Verify the nrpe checks are created and have the required content..."
-        )
+        logging.debug("Verify the nrpe checks are created and have the required content...")
 
         nrpe_checks = {
             "check_conntrack.cfg": "command[check_conntrack]="
@@ -53,9 +51,7 @@ class TestNrpe(TestBase):
 
             if code != "0":
                 logging.warning(
-                    "Unable to find nrpe check {} at /etc/nagios/nrpe.d/".format(
-                        nrpe_check
-                    )
+                    "Unable to find nrpe check {} at /etc/nagios/nrpe.d/".format(nrpe_check)
                 )
 
                 raise model.CommandRunFailed(cmd, result)
@@ -99,9 +95,7 @@ class TestNrpe(TestBase):
                 },
             },
         }
-        model.set_application_config(
-            self.application_name, {"monitors": yaml.dump(user_monitors)}
-        )
+        model.set_application_config(self.application_name, {"monitors": yaml.dump(user_monitors)})
         model.block_until_all_units_idle()
 
         local_nrpe_checks = {
@@ -121,9 +115,7 @@ class TestNrpe(TestBase):
 
             if code != "0":
                 logging.warning(
-                    "Unable to find nrpe check {} at /etc/nagios/nrpe.d/".format(
-                        nrpe_check
-                    )
+                    "Unable to find nrpe check {} at /etc/nagios/nrpe.d/".format(nrpe_check)
                 )
                 raise model.CommandRunFailed(cmd, result)
             content = result.get("Stdout")
@@ -136,15 +128,9 @@ class TestNrpe(TestBase):
         }
 
         for nrpe_check in remote_nrpe_checks:
-            logging.info(
-                "Checking content of '{}' nrpe command in nagios unit".format(
-                    nrpe_check
-                )
-            )
+            logging.info("Checking content of '{}' nrpe command in nagios unit".format(nrpe_check))
             cmd = "cat /etc/nagios3/conf.d/commands/" + nrpe_check
-            nagios_lead_unit_name = model.get_lead_unit_name(
-                "nagios", model_name=self.model_name
-            )
+            nagios_lead_unit_name = model.get_lead_unit_name("nagios", model_name=self.model_name)
             result = model.run_on_unit(nagios_lead_unit_name, cmd)
             code = result.get("Code")
 
@@ -257,11 +243,7 @@ class TestNrpeActions(TestBase):
     @RETRY
     def test_01_ack_reboot(self):
         """Test the ack-reboot action."""
-        uptime = (
-            model.run_on_leader(self.application_name, "uptime --since")
-            .get("Stdout")
-            .strip()
-        )
+        uptime = model.run_on_leader(self.application_name, "uptime --since").get("Stdout").strip()
         action = model.run_action_on_leader(self.application_name, "ack-reboot")
         message = action.data["results"].get("message")
         self.assertIsNotNone(message)

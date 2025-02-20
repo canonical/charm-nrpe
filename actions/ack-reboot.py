@@ -26,8 +26,6 @@ import services  # noqa: E402
 if hookenv.config("reboot"):
     reboot_time = nrpe_helpers.set_known_reboot_time()
     services.get_manager().reconfigure_services("nrpe-config")
-    hookenv.action_set(
-        {"message": "known reboot time updated to {}".format(reboot_time)}
-    )
+    hookenv.action_set({"message": "known reboot time updated to {}".format(reboot_time)})
 else:
     hookenv.action_fail("reboot check is not enabled, this action has no effect")
