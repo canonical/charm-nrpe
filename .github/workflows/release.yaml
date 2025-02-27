@@ -16,7 +16,6 @@ jobs:
     uses: ./.github/workflows/check.yaml
     secrets: inherit
 
-
   release:
     needs: check
     runs-on: ubuntu-24.04
