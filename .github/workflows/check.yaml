@@ -136,6 +136,15 @@ jobs:
           TEST_JUJU3: "1"  # https://github.com/openstack-charmers/zaza/pull/653
           TEST_JUJU_CHANNEL: ${{ matrix.juju-channel }}
 
+      - name: Determine system architecture
+        run: echo "SYSTEM_ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Upload the tested charms
+        uses: actions/upload-artifact@v4
+        with:
+          name: built_charms_${{ env.SYSTEM_ARCH }}
+          path: ./*.charm
+
       # Save output for debugging
 
       - name: Generate debugging information
