@@ -1,7 +1,6 @@
 """Nrpe service definifition."""
 
-import os
-from subprocess import CalledProcessError
+import subprocess
 
 from charmhelpers.core import hookenv
 from charmhelpers.core.hookenv import WARNING, log, status_set
@@ -9,7 +8,6 @@ from charmhelpers.core.services import helpers
 from charmhelpers.core.services.base import ServiceManager
 
 import nrpe_helpers
-
 import nrpe_utils
 
 config = hookenv.config()
@@ -72,39 +70,32 @@ def get_manager():
     )
 
 
-def get_revision():
-    """Get charm revision str."""
-    revision = ""
-    if os.path.exists("version"):
-        with open("version") as f:
-            line = f.readline().strip()
-        # We only want the first 8 characters, that's enough to tell
-        # which version of the charm we're using.
-        if len(line) > 8:
-            revision = " (source version/commit {}...)".format(line[:8])
-        else:
-            revision = " (source version/commit {})".format(line)
-    return revision
-
-
 def manage():
     """Manage nrpe service."""
     status_set("maintenance", "starting")
     try:
         manager = get_manager()
-    except (CalledProcessError, KeyError, IndexError) as err:
+    except (subprocess.CalledProcessError, KeyError, IndexError) as err:
         msg = "Public address not available yet"
         log(msg, level=WARNING)
         log(err, level=WARNING)
         status_set("waiting", msg)
     else:
         manager.manage()
-        cis_misconfigured, cis_message = nrpe_helpers.is_cis_misconfigured()
-        if not nrpe_utils.has_consumer():
-            status_set("blocked", "Nagios server not configured or related")
-        elif nrpe_helpers.has_netlinks_error():
-            status_set("blocked", "Netlinks parsing encountered failure; see logs")
-        elif cis_misconfigured:
-            status_set("blocked", cis_message)
-        else:
-            status_set("active", "Ready{}".format(get_revision()))
+        update_status()
+
+
+def update_status():
+    """Update Nrpe Juju status."""
+    cis_misconfigured, cis_message = nrpe_helpers.is_cis_misconfigured()
+
+    if not nrpe_utils.has_consumer():
+        status_set("blocked", "Nagios server not configured or related")
+    elif nrpe_helpers.has_netlinks_error():
+        status_set("blocked", "Netlinks parsing encountered failure; see logs")
+    elif cis_misconfigured:
+        status_set("blocked", cis_message)
+    elif subprocess.call(["systemctl", "is-active", "--quiet", "nagios-nrpe-server"]) != 0:
+        status_set("blocked", "nagios-nrpe-server service inactive.")
+    else:
+        status_set("active", "Ready")
