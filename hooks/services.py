@@ -10,11 +10,10 @@ from charmhelpers.core.services.base import ServiceManager
 import nrpe_helpers
 import nrpe_utils
 
-config = hookenv.config()
-
 
 def get_manager():
     """Instantiate a ServiceManager object."""
+    config = hookenv.config()
     return ServiceManager(
         [
             {
