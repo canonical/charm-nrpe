@@ -1,4 +1,6 @@
-# Contributing
+# Development
+
+## Setup
 
 To make contributions to this charm, you'll need a working [development setup](https://juju.is/docs/sdk/dev-setup).
 
