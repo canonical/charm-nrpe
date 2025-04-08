@@ -7,7 +7,6 @@ from os.path import abspath, dirname, join
 from unittest.mock import mock_open, patch
 
 from check_ro_filesystem import check_ro_filesystem
-
 from nagios_plugin3 import CriticalError
 
 DIR_REPO_ROOT = dirname(dirname(dirname(abspath(__file__))))

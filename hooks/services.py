@@ -2,13 +2,12 @@
 
 import subprocess
 
+import nrpe_helpers
+import nrpe_utils
 from charmhelpers.core import hookenv
 from charmhelpers.core.hookenv import WARNING, log, status_set
 from charmhelpers.core.services import helpers
 from charmhelpers.core.services.base import ServiceManager
-
-import nrpe_helpers
-import nrpe_utils
 
 
 def get_manager():

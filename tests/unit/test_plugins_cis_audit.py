@@ -8,9 +8,9 @@ from io import StringIO
 from time import sleep
 from unittest import TestCase, mock
 
-from files.plugins import check_cis_audit, cron_cis_audit
-
 from nagios_plugin3 import CriticalError, WarnError
+
+from files.plugins import check_cis_audit, cron_cis_audit
 
 DUMMY_LOGLINES = """
 Processing triggers for man-db (2.8.3-2ubuntu0.1) ...

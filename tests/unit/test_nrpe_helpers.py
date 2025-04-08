@@ -5,11 +5,9 @@ import unittest
 from unittest import mock
 
 import netifaces
-
 import nrpe_helpers
-from nrpe_helpers import match_cidr_to_ifaces
-
 import yaml
+from nrpe_helpers import match_cidr_to_ifaces
 
 
 class TestMatchCidrToIfaces(unittest.TestCase):

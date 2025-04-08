@@ -12,7 +12,6 @@ import subprocess
 import sys
 from datetime import datetime, timedelta
 
-
 # error messages commonly seen in dmesg on xfs errors
 raw_xfs_errors = [
     "XFS_WANT_CORRUPTED_",

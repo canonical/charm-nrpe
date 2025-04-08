@@ -11,9 +11,7 @@ from subprocess import CalledProcessError
 from unittest import TestCase, mock
 
 from nagios_plugin3 import CriticalError, UnknownError, WarnError
-
 from plugins import check_systemd_scopes
-
 
 SAMPLE_SCOPES_OUTPUT_X4 = """
   UNIT             LOAD   ACTIVE SUB     DESCRIPTION               
