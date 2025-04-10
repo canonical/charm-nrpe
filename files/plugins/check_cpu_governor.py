@@ -5,10 +5,7 @@ import argparse
 import os
 import re
 
-from nagios_plugin3 import (
-    CriticalError,
-    try_check,
-)
+from nagios_plugin3 import CriticalError, try_check
 
 
 def wanted_governor(governor):

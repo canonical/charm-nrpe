@@ -8,11 +8,7 @@
 
 import argparse
 
-from nagios_plugin3 import (
-    CriticalError,
-    UnknownError,
-    try_check,
-)
+from nagios_plugin3 import CriticalError, UnknownError, try_check
 
 EXCLUDE = {"/snap/", "/sys/fs/cgroup"}
 EXCLUDE_FS = {"nsfs", "ramfs", "tmpfs"}

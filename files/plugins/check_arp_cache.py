@@ -8,12 +8,7 @@
 import argparse
 import os
 
-from nagios_plugin3 import (
-    CriticalError,
-    UnknownError,
-    WarnError,
-    try_check,
-)
+from nagios_plugin3 import CriticalError, UnknownError, WarnError, try_check
 
 
 def check_arp_cache(warn, crit):
