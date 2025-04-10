@@ -15,11 +15,7 @@ import os
 import sys
 from subprocess import getoutput
 
-from nagios_plugin3 import (
-    CriticalError,
-    WarnError,
-    try_check,
-)
+from nagios_plugin3 import CriticalError, WarnError, try_check
 
 FILTER = ("operstate", "mtu", "speed")
 

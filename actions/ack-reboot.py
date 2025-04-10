@@ -16,12 +16,11 @@ import sys
 # current dir will be charm root dir
 sys.path.append("hooks")
 
+import nrpe_helpers  # noqa: E402
+import services  # noqa: E402
+
 # ignore E402 since we have to import these after we append hooks to sys.path
 from charmhelpers.core import hookenv  # noqa: E402
-
-import nrpe_helpers  # noqa: E402
-
-import services  # noqa: E402
 
 if hookenv.config("reboot"):
     reboot_time = nrpe_helpers.set_known_reboot_time()

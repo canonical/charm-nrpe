@@ -5,15 +5,13 @@ import os
 import shutil
 import subprocess
 
+import nrpe_helpers
+import yaml
 from charmhelpers import fetch
 from charmhelpers.core import hookenv, host
 from charmhelpers.core.services import helpers
 from charmhelpers.core.services.base import ManagerCallback, PortManagerCallback
 from charmhelpers.core.templating import render
-
-import nrpe_helpers
-
-import yaml
 
 
 def restart_rsync(service_name):

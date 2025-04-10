@@ -8,13 +8,10 @@ import socket
 import subprocess
 from pathlib import Path
 
-from charmhelpers.core import hookenv
-from charmhelpers.core import unitdata
+import yaml
+from charmhelpers.core import hookenv, unitdata
 from charmhelpers.core.host import is_container
 from charmhelpers.core.services import helpers
-
-
-import yaml
 
 TAILORING_CIS_FILE = Path("/etc/usg/default-tailoring.xml")
 NETLINKS_ERROR = False

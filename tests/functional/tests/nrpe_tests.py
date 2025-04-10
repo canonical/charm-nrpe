@@ -5,7 +5,6 @@ import pprint
 import unittest
 
 import tenacity
-
 import yaml
 import zaza.model as model  # noqa I201
 

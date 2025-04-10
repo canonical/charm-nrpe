@@ -7,7 +7,7 @@
 
 import re
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, ArgumentTypeError
-from subprocess import CalledProcessError, PIPE, check_output
+from subprocess import PIPE, CalledProcessError, check_output
 
 from nagios_plugin3 import CriticalError, UnknownError, WarnError, try_check
 

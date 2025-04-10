@@ -12,7 +12,6 @@ import sys
 
 import dbus
 
-
 service_arg = sys.argv[1]
 service_name = "%s.service" % service_arg
 

@@ -17,11 +17,7 @@ import sys
 import time
 import xml.etree.ElementTree as ElementTree
 
-from nagios_plugin3 import (
-    CriticalError,
-    WarnError,
-    try_check,
-)
+from nagios_plugin3 import CriticalError, WarnError, try_check
 
 
 def _get_major_version():
