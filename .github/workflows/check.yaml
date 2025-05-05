@@ -98,9 +98,6 @@ jobs:
         path: .coverage-unit-${{ env.ARTIFACT_SUFFIX }}
 
   build:
-    needs:
-      - lint
-      - unit
     name: build charms
     runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 120
