@@ -144,7 +144,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [[ubuntu-24.04], [Ubuntu_ARM64_4C_16G_01]]
+        runs-on: [[ubuntu-24.04], [Ubuntu_ARM64_4C_16G_01], [self-hosted, linux, s390x],[self-hosted, ppc64el]]
         test-command: ['tox -e func']
         juju-channel: ["3.4/stable"]
     steps:
@@ -159,9 +159,17 @@ jobs:
           sudo apt install -y gcc
 
       - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+        run: |
+          # sudo add-apt-repository -y ppa:deadsnakes/ppa
+          sudo apt update
+          sudo apt install python3.12
+
+      # - name: Install dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     # pin tox to the current major version to avoid
+      #     # workflows breaking all at once when a new major version is released.
+      #     python -m pip install 'tox<5'
 
       - name: Setup Juju environment
         uses: charmed-kubernetes/actions-operator@main
