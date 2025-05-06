@@ -155,13 +155,8 @@ jobs:
           sudo apt update
           sudo apt install -y gcc
 
-      - name: Install dependencies
-        run: |
+          # check the python version installed
           python3 --version
-          python3 -m pip install --upgrade pip
-          # pin tox to the current major version to avoid
-          # workflows breaking all at once when a new major version is released.
-          python3 -m pip install 'tox<5'
 
       - name: Setup Juju environment
         uses: charmed-kubernetes/actions-operator@main
