@@ -98,6 +98,11 @@ jobs:
         path: .coverage-unit-${{ env.ARTIFACT_SUFFIX }}
 
   build:
+    # Commenting out the needs to speed up testing.
+    # TODO: reinstate the needs below once the func test jobs are working
+    # needs:
+    #   - lint
+    #   - unit
     name: build charms
     runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 120
@@ -141,9 +146,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [[ubuntu-24.04], [Ubuntu_ARM64_4C_16G_01], [self-hosted, linux, s390x],[self-hosted, ppc64el]]
+        runs-on: [[ubuntu-24.04], [arm64, noble, self-hosted], [s390x, noble, self-hosted], [ppc64el, noble, self-hosted]]
         test-command: ['tox -e func']
-        juju-channel: ["3.4/stable"]
+        juju-channel: ["3.6/stable"]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -164,8 +169,8 @@ jobs:
 
       - name: Setup Juju environment
         # https://github.com/charmed-kubernetes/actions-operator/pull/97
-        # https://github.com/charmed-kubernetes/actions-operator/pull/100
-        uses: charmed-kubernetes/actions-operator@0dc1feab7555ddcf83c5876182c1ebc428f216e7
+        # TODO: revert to `main` branch once the above PR is merged
+        uses: charmed-kubernetes/actions-operator@issues/94/95/extra-architectures
         with:
           provider: "lxd"
           juju-channel: ${{ matrix.juju-channel }}
