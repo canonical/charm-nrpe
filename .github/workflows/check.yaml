@@ -155,9 +155,6 @@ jobs:
           sudo apt update
           sudo apt install -y gcc
 
-          # check the python version installed
-          python3 --version
-
       - name: Setup Juju environment
         uses: charmed-kubernetes/actions-operator@main
         with:
