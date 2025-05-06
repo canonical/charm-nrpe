@@ -149,11 +149,14 @@ jobs:
         with:
           submodules: true
 
-        # arm64 runners don't have gcc installed by default
       - name: Install dependencies
         run: |
           sudo apt update
+          # arm64 runners don't have gcc installed by default
           sudo apt install -y gcc
+
+          # s390x runners don't have a rust toolchain available
+          sudo apt install -y cargo
 
       - name: Update system PATH for running pipx software
         run: |
