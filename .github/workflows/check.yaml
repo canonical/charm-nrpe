@@ -163,8 +163,8 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Setup Juju environment
-        # https://github.com/charmed-kubernetes/actions-operator/pull/96
-        uses: charmed-kubernetes/actions-operator@f3a7f9daa79650b49a615074752a4b61dd415eb8
+        # https://github.com/charmed-kubernetes/actions-operator/pull/97
+        uses: charmed-kubernetes/actions-operator@issues/94/95/extra-architectures
         with:
           provider: "lxd"
           juju-channel: ${{ matrix.juju-channel }}
