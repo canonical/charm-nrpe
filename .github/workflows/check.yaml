@@ -164,8 +164,8 @@ jobs:
 
       - name: Setup Juju environment
         # https://github.com/charmed-kubernetes/actions-operator/pull/97
-        # https://github.com/charmed-kubernetes/actions-operator/pull/99
-        uses: charmed-kubernetes/actions-operator@7b3206ecc7fb38f0dc46af7c83b5a8a93bd29300
+        # https://github.com/charmed-kubernetes/actions-operator/pull/100
+        uses: charmed-kubernetes/actions-operator@0dc1feab7555ddcf83c5876182c1ebc428f216e7
         with:
           provider: "lxd"
           juju-channel: ${{ matrix.juju-channel }}
