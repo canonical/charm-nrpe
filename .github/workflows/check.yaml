@@ -156,7 +156,8 @@ jobs:
           sudo apt install -y gcc
 
       - name: Setup Juju environment
-        uses: charmed-kubernetes/actions-operator@main
+        # https://github.com/charmed-kubernetes/actions-operator/pull/96
+        uses: charmed-kubernetes/actions-operator@f3a7f9daa79650b49a615074752a4b61dd415eb8
         with:
           provider: "lxd"
           juju-channel: ${{ matrix.juju-channel }}
