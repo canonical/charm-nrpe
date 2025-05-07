@@ -186,8 +186,12 @@ jobs:
         # This is used by zaza in the functional tests for non-amd64 architectures (if applicable)
       - name: Set zaza juju model constraints for architecture
         run: |
-          if [ "${{ env.SYSTEM_ARCH }}" = "aarch64" ]; then
+          if [ "$SYSTEM_ARCH" = "aarch64" ]; then
             echo "TEST_MODEL_CONSTRAINTS=arch=arm64" >> "$GITHUB_ENV"
+          elif [ "$SYSTEM_ARCH" = "ppc64le" ]; then
+            echo "TEST_MODEL_CONSTRAINTS=arch=ppc64el" >> "$GITHUB_ENV"
+          elif [ "$SYSTEM_ARCH" = "s390x" ]; then
+            echo "TEST_MODEL_CONSTRAINTS=arch=s390x" >> "$GITHUB_ENV"
           fi
 
       - name: Download the built charms
