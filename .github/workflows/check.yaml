@@ -163,6 +163,9 @@ jobs:
           # s390x runners don't have a rust toolchain available
           # NOTE: only required for building from source bcrypt>=4.0.0 or cryptography>=3.4
           sudo apt install -y cargo
+          # also for building cryptography>=3.4, on s390x runners
+          sudo apt install -y libssl-dev
+          sudo apt install -y pkg-config
 
       - name: Update system PATH for running pipx software
         run: |
