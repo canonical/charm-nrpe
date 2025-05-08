@@ -269,7 +269,9 @@ jobs:
           for model in $models; do
             # show status here for quick debugging
             juju status -m "$model"
-            juju-crashdump --as-root -m "$model" -u "$model-$(uname -m)" -o "$dir"
+            # cannot use the --as-root flag to juju-crashdump, because the latest revision is not released to the snap store for s390x or ppc64el
+            # https://github.com/juju/juju-crashdump/issues/109
+            juju-crashdump -m "$model" -u "$model-$(uname -m)" -o "$dir"
           done
 
       - name: Upload juju crashdumps
