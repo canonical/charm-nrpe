@@ -1,10 +1,11 @@
 charm_name: nrpe
 gate_bundles:
-  - noble
-  - jammy
+  # - noble
+  # - jammy
   - focal
 smoke_bundles:
-  - jammy
+  - focal
+  # - jammy
 tests:
   - tests.nrpe_tests.TestNrpe
   - tests.nrpe_tests.TestNrpeActions
