@@ -144,24 +144,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [[ubuntu-24.04], [Ubuntu_ARM64_4C_16G_01]]
+        runs-on: [[ubuntu-24.04], [arm64, noble, self-hosted], [s390x, noble, self-hosted], [ppc64el, noble, self-hosted]]
         test-command: ['tox -e func']
-        juju-channel: ["3.4/stable"]
+        juju-channel: ["3.6/stable"]
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
 
-        # arm64 runners don't have gcc installed by default
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y gcc
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+          # s390x runners don't have a rust toolchain available
+          # NOTE: only required for building from source bcrypt>=4.0.0 or cryptography>=3.4
+          sudo apt install -y cargo
+          # also for building cryptography>=3.4, on s390x runners
+          sudo apt install -y libssl-dev
+          sudo apt install -y pkg-config
+
+      # - name: Update system PATH for running pipx software
+      #   run: |
+      #     echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Setup Juju environment
         uses: charmed-kubernetes/actions-operator@main
@@ -176,8 +180,12 @@ jobs:
         # This is used by zaza in the functional tests for non-amd64 architectures (if applicable)
       - name: Set zaza juju model constraints for architecture
         run: |
-          if [ "${{ env.SYSTEM_ARCH }}" = "aarch64" ]; then
+          if [ "$SYSTEM_ARCH" = "aarch64" ]; then
             echo "TEST_MODEL_CONSTRAINTS=arch=arm64" >> "$GITHUB_ENV"
+          elif [ "$SYSTEM_ARCH" = "ppc64le" ]; then
+            echo "TEST_MODEL_CONSTRAINTS=arch=ppc64el" >> "$GITHUB_ENV"
+          elif [ "$SYSTEM_ARCH" = "s390x" ]; then
+            echo "TEST_MODEL_CONSTRAINTS=arch=s390x" >> "$GITHUB_ENV"
           fi
 
       - name: Download the built charms
@@ -257,7 +265,9 @@ jobs:
           for model in $models; do
             # show status here for quick debugging
             juju status -m "$model"
-            juju-crashdump --as-root -m "$model" -u "$model-$(uname -m)" -o "$dir"
+            # cannot use the --as-root flag to juju-crashdump, because the latest revision is not released to the snap store for s390x or ppc64el
+            # https://github.com/juju/juju-crashdump/issues/109
+            juju-crashdump -m "$model" -u "$model-$(uname -m)" -o "$dir"
           done
 
       - name: Upload juju crashdumps
