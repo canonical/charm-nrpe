@@ -172,9 +172,7 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Setup Juju environment
-        # https://github.com/charmed-kubernetes/actions-operator/pull/97
-        # TODO: revert to `main` branch once the above PR is merged
-        uses: charmed-kubernetes/actions-operator@issues/94/95/extra-architectures
+        uses: charmed-kubernetes/actions-operator@main
         with:
           provider: "lxd"
           juju-channel: ${{ matrix.juju-channel }}
