@@ -98,11 +98,9 @@ jobs:
         path: .coverage-unit-${{ env.ARTIFACT_SUFFIX }}
 
   build:
-    # Commenting out the needs to speed up testing.
-    # TODO: reinstate the needs below once the func test jobs are working
-    # needs:
-    #   - lint
-    #   - unit
+    needs:
+      - lint
+      - unit
     name: build charms
     runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 120
@@ -157,8 +155,6 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          # arm64 runners don't have gcc installed by default
-          sudo apt install -y gcc
 
           # s390x runners don't have a rust toolchain available
           # NOTE: only required for building from source bcrypt>=4.0.0 or cryptography>=3.4
@@ -167,9 +163,9 @@ jobs:
           sudo apt install -y libssl-dev
           sudo apt install -y pkg-config
 
-      - name: Update system PATH for running pipx software
-        run: |
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      # - name: Update system PATH for running pipx software
+      #   run: |
+      #     echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Setup Juju environment
         uses: charmed-kubernetes/actions-operator@main
