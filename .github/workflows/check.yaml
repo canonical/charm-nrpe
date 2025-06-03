@@ -107,7 +107,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [[ubuntu-24.04], [Ubuntu_ARM64_4C_16G_01], [self-hosted, linux, s390x],[self-hosted, ppc64el]]
+        runs-on: [[ubuntu-24.04], [ubuntu-24.04-arm], [s390x, noble, self-hosted], [ppc64el, noble, self-hosted]]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -144,7 +144,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [[ubuntu-24.04], [arm64, noble, self-hosted], [s390x, noble, self-hosted], [ppc64el, noble, self-hosted]]
+        runs-on: [[ubuntu-24.04], [ubuntu-24.04-arm], [s390x, noble, self-hosted], [ppc64el, noble, self-hosted]]
         test-command: ['tox -e func']
         juju-channel: ["3.6/stable"]
     steps:
@@ -162,10 +162,6 @@ jobs:
           # also for building cryptography>=3.4, on s390x runners
           sudo apt install -y libssl-dev
           sudo apt install -y pkg-config
-
-      # - name: Update system PATH for running pipx software
-      #   run: |
-      #     echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Setup Juju environment
         uses: charmed-kubernetes/actions-operator@main
