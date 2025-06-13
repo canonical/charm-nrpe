@@ -267,3 +267,71 @@ jobs:
           name: "juju-crashdumps-${{ env.CRASHDUMPS_ARTEFACT_SUFFIX }}"
           path: "${{ env.CRASHDUMPS_DIR }}/juju-crashdump-*.tar.xz"
 
+  tics-analysis:
+    runs-on: [self-hosted, linux, amd64, tiobe, jammy]
+    if: >
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    needs: func
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install coverage tools
+        run: |
+          pip install coverage[toml]
+
+      # Install everything from all requirements.txt files otherwise TICS errors.
+      - name: Install all charm dependencies
+        run: |
+          for f in $(find -name '*requirements.txt'); do
+              echo "${f}"
+              pip3 install --requirement "${f}"
+          done
+
+          # For reactive charms
+          for f in $(find -name 'wheelhouse.txt'); do
+              echo "${f}"
+              pip3 install --requirement "${f}"
+          done
+
+      - name: Determine system architecture
+        run: echo "SYSTEM_ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Download Coverage Files
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*-${{ env.SYSTEM_ARCH }}
+          merge-multiple: true
+          path: artifacts/
+        continue-on-error: true
+
+      - name: Merge coverage reports
+        run: |
+          # Create the path that is expected to have a coverage.xml for tics
+          mkdir -p tests/report/
+
+          coverage_files=(./artifacts/.coverage*)
+
+          if [ -e "${coverage_files[0]}" ]; then
+            echo "Merging coverage files: ${coverage_files[*]}"
+            coverage combine "${coverage_files[@]}"
+
+            # Check if there is actual data to report before generating XML with merged reports
+            if coverage report > /dev/null 2>&1; then
+              coverage report --show-missing
+              coverage xml -o tests/report/coverage.xml
+            fi
+
+          fi
+
+      - name: Run TICS analysis
+        uses: tiobe/tics-github-action@v3
+        with:
+          mode: qserver
+          project: charm-nrpe
+          viewerUrl: https://canonical.tiobe.com/tiobeweb/TICS/api/cfg?name=default
+          branchdir: ${{ github.workspace }}
+          ticsAuthToken: ${{ secrets.TICSAUTHTOKEN }}
+          installTics: true
