@@ -4,6 +4,7 @@ gate_bundles:
   - jammy
   - focal
 smoke_bundles:
+  - focal
   - jammy
 tests:
   - tests.nrpe_tests.TestNrpe
